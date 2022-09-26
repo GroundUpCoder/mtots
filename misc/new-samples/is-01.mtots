@@ -1,0 +1,17 @@
+print('5 is 5')
+print(5 is 5)
+
+print('"hi" is "hi"')
+print("hi" is "hi")
+
+print('"hi" is "hello"')
+print("hi" is "hello")
+
+print('5 is not 5')
+print(5 is not 5)
+
+print('"hi" is not "hi"')
+print("hi" is not "hi")
+
+print('"hi" is not "hello"')
+print("hi" is not "hello")

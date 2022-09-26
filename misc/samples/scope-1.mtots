@@ -1,0 +1,7 @@
+
+var x = 'outer-x';
+{
+    var x = 'inner ' + x;
+    print x;
+}
+print x;

@@ -1,0 +1,3 @@
+print("Hello %s" % ['bob'])
+print("%" % [])
+print("%r %r" % ['asdf', 123])

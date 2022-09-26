@@ -1,0 +1,42 @@
+class Zoo:
+  def __init__():
+    this.aardvark = 1
+    this.baboon   = 1
+    this.cat      = 1
+    this.donkey   = 1
+    this.elephant = 1
+    this.fox      = 1
+
+  def ant():
+    return this.aardvark
+
+  def banana():
+    return this.baboon
+
+  def tuna():
+    return this.cat
+
+  def hay():
+    return this.donkey
+
+  def grass():
+    return this.elephant
+
+  def mouse():
+    return this.fox
+
+var zoo = Zoo()
+var sum = 0
+
+print('start loop')
+var start = clock()
+while sum < 100000000:
+  sum = (sum + zoo.ant()
+            + zoo.banana()
+            + zoo.tuna()
+            + zoo.hay()
+            + zoo.grass()
+            + zoo.mouse())
+
+print(clock() - start)
+print(sum)

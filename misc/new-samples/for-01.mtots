@@ -1,0 +1,14 @@
+
+
+def toTen():
+  var i = 1
+  def iterator():
+    if i <= 10:
+      i = i + 1
+      return i - 1
+    return StopIteration
+
+  return iterator
+
+for i in toTen():
+  print('i = ' + str(i))

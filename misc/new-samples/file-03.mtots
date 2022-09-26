@@ -1,0 +1,8 @@
+
+
+
+var fin = open("Makefile")
+print("BEFORE")
+print(fin.read())
+print("AFTER")
+fin.close()

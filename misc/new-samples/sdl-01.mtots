@@ -1,0 +1,46 @@
+import sdl
+
+var SCREEN_WIDTH = 640
+var SCREEN_HEIGHT = 480
+
+sdl.init()
+
+var window = sdl.createWindow(
+  "my window",
+  sdl.WINDOWPOS_CENTERED, sdl.WINDOWPOS_CENTERED,
+  SCREEN_WIDTH, SCREEN_HEIGHT, 0)
+
+print(window)
+
+var event = sdl.Event()
+print('sdl = %s' % [sdl])
+
+var kstate = sdl.getKeyboardState()
+var sc = sdl.scancode
+var scancodes = sc.getKeys()
+
+def eventLoop():
+  while true:
+    while sdl.pollEvent(event):
+      if event.type == sdl.QUIT:
+        print('Quit event received')
+        sdl.quit()
+        return 0
+      elif event.type == sdl.KEYDOWN and event.repeat:
+        pass # ignore repeats
+      elif event.type == sdl.KEYDOWN and event.key == sdl.key.p:
+        print('P:')
+        for codestr in scancodes:
+          if kstate[sc[codestr]]:
+            print('  KEY %r' % [codestr])
+      elif (event.type == sdl.KEYDOWN and
+            event.key >= sdl.key.a and
+            event.key <= sdl.key.z):
+        print('Key %r' % [chr(ord('A') + event.key - sdl.key.a)])
+      elif event.type == sdl.KEYDOWN:
+        print('KEY %r' % [sdl.key.rget(event.key)])
+      else:
+        # print('event.type = %s' % [event.type])
+        pass
+
+eventLoop()

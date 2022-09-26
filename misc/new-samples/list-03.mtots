@@ -1,0 +1,11 @@
+
+
+var bs = [1, 2, 3, 4]
+var xs = [1, 2, 3]
+var ys = [2, 3, 4]
+var zs = [2, 3, 4]
+
+print('xs == bs: %s' % [xs == bs])
+print('xs == ys: %s' % [xs == ys])
+print('ys == ys: %s' % [ys == ys])
+print('zs == ys: %s' % [zs == ys])

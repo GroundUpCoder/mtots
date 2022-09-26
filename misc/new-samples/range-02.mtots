@@ -1,0 +1,17 @@
+
+
+print("range(10):")
+for i in range(10):
+  print('  ' + str(i))
+
+print("range(5, 10):")
+for i in range(5, 10):
+  print('  ' + str(i))
+
+print("range(5, 10, -1):")
+for i in range(5, 10, -1):
+  print('  ' + str(i))
+
+print("range(14, 10, -1):")
+for i in range(14, 10, -1):
+  print('  ' + str(i))

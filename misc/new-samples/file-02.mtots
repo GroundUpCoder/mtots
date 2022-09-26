@@ -1,0 +1,4 @@
+
+
+# stdout.write(r"Hello world!\nSecond Line\nThird")
+stdout.write("Hello world!\nSecond Line\nThird\n")

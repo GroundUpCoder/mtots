@@ -1,0 +1,7 @@
+var fin = open("Makefile")
+var s = fin.read(5)
+print(repr(s))
+print(repr(fin.read(5)))
+print(repr(fin.read(10)))
+print(repr(fin.read()))
+fin.close()

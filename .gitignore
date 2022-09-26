@@ -1,0 +1,8 @@
+/mtots
+/mtots.dSYM/
+/sdl-demo
+/sdl-demo.dSYM/
+*.pyc
+/venv
+/requirements.txt
+.DS_Store

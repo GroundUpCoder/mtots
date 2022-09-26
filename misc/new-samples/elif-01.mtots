@@ -1,0 +1,47 @@
+
+
+def foo(n):
+  if n < 5:
+    return 'less than five'
+  elif n >= 5 and n <= 10:
+    return 'between five and ten'
+  elif n >= 11 and n <= 20:
+    return 'betwen eleven and twenty'
+  else:
+    return 'greater than twenty'
+
+# for (var i = 0; i <= 30; i = i + 1):
+#   print i
+#   print foo(i)
+
+def noelse(n):
+  if n < 5:
+    return 'less than five'
+  elif n >= 5 and n <= 10:
+    return 'between five and ten'
+  elif n >= 11 and n <= 20:
+    return 'betwen eleven and twenty'
+  elif n > 20:
+    return 'greater than twenty'
+
+# for (var i = 0; i <= 30; i = i + 1):
+#   print i
+#   print noelse(i)
+
+def ifonly(n):
+  if n < 5:
+    return 'less than five'
+
+for (var i = 0; i <= 10; i = i + 1):
+  print i
+  print ifonly(i)
+
+def ifelse(n):
+  if n < 5:
+    return 'less than five'
+  else:
+    return 'greater than or equal to five'
+
+for (var i = 0; i <= 10; i = i + 1):
+  print i
+  print ifelse(i)

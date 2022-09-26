@@ -1,0 +1,13 @@
+var k = 'k value'
+
+print('k = %s' % [k])
+
+print("before import")
+import importable
+print('after import')
+print(importable)
+print('importable.foo() = ' + str(importable.foo()))
+print('after call')
+
+print('k = %s' % [k])
+print('x = %s' % [x])

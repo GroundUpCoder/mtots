@@ -1,0 +1,10 @@
+
+var total = 0;
+
+for (var i = 5; i < 100; i = i + 1) {
+    total = total + i;
+}
+
+# The following two values should be the same
+print(total);
+print(100 * 99 / 2 - (1 + 2 + 3 + 4));

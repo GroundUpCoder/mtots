@@ -1,0 +1,10 @@
+
+
+var fout = open("out.txt", "w")
+fout.write("Hello world!\n")
+fout.write("Hello world!\n")
+fout.write("Hello world!\n")
+fout.write("Hello world!\n")
+fout.write("Hello world!\n")
+for i in range(100):
+  fout.write("i = " + str(i) + "\n")

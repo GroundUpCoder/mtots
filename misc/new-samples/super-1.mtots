@@ -1,0 +1,26 @@
+
+class Doughnut:
+  def cook():
+    print("Dunk in the fryer.")
+    this.finish("sprinkles")
+
+  def finish(ingredient):
+    print("Finish with " + ingredient)
+
+class Cruller(Doughnut):
+  def finish(ingredient):
+    # No sprinkles, always icing.
+    print('before super')
+    super.finish("icing")
+    print('after super')
+
+if true:
+  print('before')
+
+  var dn = Doughnut()
+  dn.finish('dn-ingr')
+
+  var cr = Cruller()
+  cr.finish('ingr')
+
+  print('after')

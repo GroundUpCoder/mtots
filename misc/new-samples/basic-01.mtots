@@ -1,0 +1,18 @@
+
+
+fun foo(x):
+  print(
+    x
+  )
+
+
+var i = 0
+
+while i < 10:
+  i = i + 1
+  if i > 5:
+    print i
+  else:
+    print -i
+
+foo('hello')

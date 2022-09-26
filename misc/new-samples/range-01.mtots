@@ -1,0 +1,10 @@
+
+print(StopIteration)
+var r = range(5, 10)
+
+print(r)
+
+var next = r()
+while next != StopIteration:
+  print(next)
+  next = r()

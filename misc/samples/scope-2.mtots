@@ -1,0 +1,9 @@
+
+var x = 'outer-x';
+{
+    var x = 'inner-x';
+    x = x + '*' + x;
+    print x + '/' + x;
+}
+x = x + x;
+print x + '/' + x;

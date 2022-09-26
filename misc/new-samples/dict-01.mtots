@@ -1,0 +1,27 @@
+
+var d = {}
+print('d = ' + repr(d))
+print("len(d) = %r" % [len(d)])
+
+d = {1: 2, "Hello": "world"}
+print("d = %r" % [d])
+print("len(d) = %r" % [len(d)])
+print('d[1] = %r' % [d[1]])
+print('d["Hello"] = %r' % [d["Hello"]])
+
+print('{1: 2, "a": "b", "x": "y"} = %s' % [{1: 2, "a": "b", "x": "y"}])
+print('len({1: 2, "a": "b", "x": "y"}) = %s' % [len({1: 2, "a": "b", "x": "y"})])
+d = {1: 2, "a": "b", "x": "y"}
+
+print("FFF len(d) = %r" % [len(d)] )
+print("FFF d.delete(1) = %r" % [d.delete(1)])
+print("FFF len(d) = %r" % [len(d)] )
+print("FFF d.delete(1) = %r" % [d.delete(1)])
+print("FFF len(d) = %r" % [len(d)] )
+print("FFF d.delete('k') = %r" % [d.delete('k')])
+print("FFF len(d) = %r" % [len(d)] )
+print("FFF d.delete('x') = %r" % [d.delete('x')])
+print("FFF len(d) = %r" % [len(d)] )
+print("FFF (d[1] = 111) = %r" % [(d[1] = 111)])
+print("FFF len(d) = %r" % [len(d)] )
+print("FFF d = %r" % [d])

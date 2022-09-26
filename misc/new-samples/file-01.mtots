@@ -1,0 +1,4 @@
+
+
+print(stdin)
+print([stdin, stderr, stdout])

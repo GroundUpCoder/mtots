@@ -1,0 +1,6 @@
+
+print("type = %r" % [type])
+print("type(10) = %r" % [type(10)])
+print("type('hello') = %r" % [type('hello')])
+print("type(type) = %r" % [type(type)])
+print("type(type(type)) = %r" % [type(type(type))])

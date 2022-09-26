@@ -1,0 +1,23 @@
+var ls = []
+ls.append(30)
+print(ls)
+
+var i = 50
+while i < 60:
+  ls.append(i)
+  i = i + 1
+
+print(ls)
+
+print(ls.pop())
+print(ls.pop())
+print(ls.pop())
+print(ls)
+
+print('len = ' + str(len(ls)))
+for (var i = 0; i < len(ls); i = i + 1):
+  print('i = ' + str(i) + ' ' + str(ls[i]))
+
+ls[0] = 'hello'
+
+print(ls)

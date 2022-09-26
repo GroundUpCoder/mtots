@@ -1,0 +1,5 @@
+import os
+
+print(os)
+print('%r' % [os.name])
+print('%r' % [type(os)])

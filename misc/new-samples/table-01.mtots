@@ -1,0 +1,36 @@
+
+
+var table = Table()
+print('keys = %r' % [table.getKeys()])
+print('len = %r' % [table.__len__()])
+
+table.x = 5
+print(table.x)
+print('keys = %r' % [table.getKeys()])
+
+print('rget(5) = %r' % [table.rget(5)])
+print('rget("x", 7) = %r' % [table.rget("x", 7)])
+print('rget("y", 7) = %r' % [table.rget("y", 7)])
+print('rget(123, 7) = %r' % [table.rget(123, 7)])
+print('rget(17, 888) = %r' % [table.rget(17, 888)])
+print('len = %r' % [table.__len__()])
+
+table.y = 123
+print('rget("y", 7) = %r' % [table.rget("y", 7)])
+print('rget(123, 7) = %r' % [table.rget(123, 7)])
+print('len = %r' % [len(table)])
+
+print('delete("y") = %r' % [table.delete("y")])
+print('len = %r' % [len(table)])
+print('delete("y") = %r' % [table.delete("y")])
+print('len = %r' % [len(table)])
+
+table.z = 123
+print('rget("z", 7) = %r' % [table.rget("z", 7)])
+print('rget(123, 7) = %r' % [table.rget(123, 7)])
+print('len = %r' % [len(table)])
+
+table.y = 123
+print('rget("y", 7) = %r' % [table.rget("y", 7)])
+print('rget(123, 7) = %r' % [table.rget(123, 7)])
+print('len = %r' % [len(table)])

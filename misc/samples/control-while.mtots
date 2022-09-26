@@ -1,0 +1,13 @@
+
+
+var total = 0;
+var i = 5;
+
+while (i < 100) {
+    total = total + i;
+    i = i + 1;
+}
+
+# The following two values should be the same
+print(total);
+print(100 * 99 / 2 - (1 + 2 + 3 + 4));
