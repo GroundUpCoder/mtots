@@ -9,6 +9,9 @@
 			"include": "#number"
 		},
 		{
+			"include": "#line_comment"
+		},
+		{
 			"include": "#string_literal"
 		},
 		{
@@ -49,6 +52,14 @@
 					"comment": "Reserved keyword",
 					"name": "invalid.deprecated.mtots",
 					"match": "\\b(assert|async|await|break|continue|del|except|finally|global|raise|try|with|yield|lambda)\\b"
+				}
+			]
+		},
+		"line_comment": {
+			"patterns": [
+				{
+					"name": "comment.line.number-sign.mtots",
+					"match": "#.*"
 				}
 			]
 		},

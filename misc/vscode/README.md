@@ -8,6 +8,10 @@ language itself is more fleshed out.
 
 ## Release Notes
 
+### 0.0.2
+
+Properly color line comments
+
 ### 0.0.1
 
 An extension is reborn~
