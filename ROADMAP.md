@@ -36,7 +36,8 @@ Focus mainly on adding bindings I will need for making games
   * ANGLE bindings to do next,
   * Steam API
   * Box2D?
-  * Port of P5?
+  * Port of Processing/P5.js?
+  * Bindings for dyncall?
 
 Also investigate how to deploying to `itch.io` and `Steam` might work
 
