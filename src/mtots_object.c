@@ -367,3 +367,7 @@ const char *getObjectTypeName(ObjType type) {
   }
   return "OBJ_<unrecognized>";
 }
+
+ubool isNative(Value value, NativeObjectDescriptor *descriptor) {
+  return IS_NATIVE(value) && AS_NATIVE(value)->descriptor == descriptor;
+}

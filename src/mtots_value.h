@@ -26,7 +26,7 @@ typedef enum {
   VAL_OBJ
 } ValueType;
 
-typedef struct {
+typedef struct Value {
   ValueType type;
   union {
     ubool boolean;
@@ -38,14 +38,28 @@ typedef struct {
   } as;
 } Value;
 
+typedef enum TypePatternType {
+  TYPE_PATTERN_ANY = 0,
+  TYPE_PATTERN_STRING,
+  TYPE_PATTERN_NUMBER,
+  TYPE_PATTERN_NATIVE
+} TypePatternType;
+
+typedef struct TypePattern {
+  TypePatternType type;
+  void *nativeTypeDescriptor;
+} TypePattern;
+
 struct CFunction {
   ubool (*body)(i16 argCount, Value *args, Value *out);
   const char *name;
   i16 arity;
   i16 maxArity;
+  TypePattern *argTypes;
+  TypePattern receiverType;
 };
 
-typedef struct {
+typedef struct ValueArray {
   size_t capacity;
   size_t count;
   Value *values;
@@ -91,5 +105,8 @@ void freeValueArray(ValueArray *array);
 void printValue(Value value);
 const char *getValueTypeName(ValueType type);
 const char *getKindName(Value value);
+
+ubool typePatternMatch(TypePattern pattern, Value value);
+const char *getTypePatternName(TypePattern pattern);
 
 #endif/*mtots_value_h*/

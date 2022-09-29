@@ -5,12 +5,24 @@ var SCREEN_HEIGHT = 480
 
 sdl.init()
 
+var rect = sdl.Rect(
+  SCREEN_WIDTH / 4,
+  SCREEN_HEIGHT / 4,
+  SCREEN_WIDTH / 2,
+  SCREEN_HEIGHT / 2)
+
 var window = sdl.createWindow(
   "my window",
   sdl.WINDOWPOS_CENTERED, sdl.WINDOWPOS_CENTERED,
   SCREEN_WIDTH, SCREEN_HEIGHT, 0)
 
-print(window)
+var r = sdl.createRenderer(window, -1, 0)
+r.setDrawColor(255, 160, 255, 255)
+r.clear()
+r.setDrawColor(160, 176, 0, 255)
+r.fillRect(rect)
+r.present()
+print(r)
 
 var event = sdl.Event()
 print('sdl = %s' % [sdl])

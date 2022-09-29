@@ -2,6 +2,7 @@
 #include "mtots_memory.h"
 #include "mtots_value.h"
 #include "mtots_object.h"
+#include "mtots_vm.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -137,4 +138,32 @@ const char *getKindName(Value value) {
     }
   }
   return "<unrecognized-value>";
+}
+
+ubool typePatternMatch(TypePattern pattern, Value value) {
+  switch (pattern.type) {
+    case TYPE_PATTERN_ANY: return UTRUE;
+    case TYPE_PATTERN_NATIVE:
+      return IS_NATIVE(value) && (
+        pattern.nativeTypeDescriptor == NULL ||
+        AS_NATIVE(value)->descriptor == pattern.nativeTypeDescriptor);
+    case TYPE_PATTERN_NUMBER: return IS_NUMBER(value);
+    case TYPE_PATTERN_STRING: return IS_STRING(value);
+  }
+  panic("Unrecognized TypePattern type %d", pattern.type);
+  return UFALSE;
+}
+
+const char *getTypePatternName(TypePattern pattern) {
+  switch (pattern.type) {
+    case TYPE_PATTERN_ANY: return "any";
+    case TYPE_PATTERN_NUMBER: return "number";
+    case TYPE_PATTERN_STRING: return "string";
+    case TYPE_PATTERN_NATIVE:
+      return pattern.nativeTypeDescriptor ?
+        ((NativeObjectDescriptor*) pattern.nativeTypeDescriptor)->name :
+        "native";
+  }
+  panic("Unrecognized TypePattern type %d", pattern.type);
+  return UFALSE;
 }

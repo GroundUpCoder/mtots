@@ -204,6 +204,8 @@ ObjClass *getClass(Value value);
 void printObject(Value value);
 const char *getObjectTypeName(ObjType type);
 
+/* should-be-inline */ ubool isNative(
+  Value value, NativeObjectDescriptor *descriptor);
 /* should-be-inline */ ubool isObjType(Value value, ObjType type);
 
 #endif/*mtots_object_h*/

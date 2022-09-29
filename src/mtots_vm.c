@@ -205,7 +205,7 @@ static ubool isIterator(Value value) {
 }
 
 static ubool callCFunction(CFunction *cfunc, i16 argCount) {
-  Value result = NIL_VAL();
+  Value result = NIL_VAL(), *argsStart;
   ubool status;
   if (cfunc->arity != argCount) {
     /* not an exact match for the arity
@@ -232,7 +232,29 @@ static ubool callCFunction(CFunction *cfunc, i16 argCount) {
       return UFALSE;
     }
   }
-  status = cfunc->body(argCount, vm.stackTop - argCount, &result);
+  argsStart = vm.stackTop - argCount;
+  /* NOTE: Every call always has a value in the receiver slot -
+   * In particular, normal function calls will have the function
+   * itself in the receiver slot */
+  if (!typePatternMatch(cfunc->receiverType, argsStart[-1])) {
+    runtimeError(
+      "Invalid receiver passed to method %s()",
+      cfunc->name);
+    return UFALSE;
+  }
+  if (cfunc->argTypes != NULL) {
+    size_t i;
+    for (i = 0; i < argCount; i++) {
+      if (!typePatternMatch(cfunc->argTypes[i], argsStart[i])) {
+        runtimeError(
+          "%s() expects %s for argument %d, but got %s",
+          cfunc->name, getTypePatternName(cfunc->argTypes[i]),
+          i, getKindName(argsStart[i]));
+        return UFALSE;
+      }
+    }
+  }
+  status = cfunc->body(argCount, argsStart, &result);
   if (!status) {
     return UFALSE;
   }

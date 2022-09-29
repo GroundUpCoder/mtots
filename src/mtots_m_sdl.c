@@ -18,6 +18,10 @@ typedef struct {
 static ObjString *string_type;
 static ObjString *string_key;
 static ObjString *string_repeat;
+static ObjString *string_x;
+static ObjString *string_y;
+static ObjString *string_w;
+static ObjString *string_h;
 
 /**********************************************************
  * ObjWindow
@@ -111,6 +115,144 @@ static ubool implKeyboardStateGetItem(i16 argCount, Value *args, Value *out) {
 }
 
 /**********************************************************
+ * Rect
+ *********************************************************/
+
+typedef struct {
+  ObjNative obj;
+  SDL_Rect handle;
+} ObjRect;
+
+static ObjRect *newRect(int x, int y, int w, int h);
+
+static ubool implRect(i16 argCount, Value *args, Value *out) {
+  size_t i;
+  for (i = 0; i < 4; i++) {
+    if (!IS_NUMBER(args[i])) {
+      runtimeError("Rect() requires number arguments but got %s",
+        getKindName(args[i]));
+      return UFALSE;
+    }
+  }
+  *out = OBJ_VAL(newRect(
+    AS_NUMBER(args[0]),
+    AS_NUMBER(args[1]),
+    AS_NUMBER(args[2]),
+    AS_NUMBER(args[3])));
+  return UTRUE;
+}
+
+static CFunction funcRect = { implRect, "Rect", 4 };
+
+static ubool rectGetField(ObjNative *n, ObjString *key, Value *out) {
+  ObjRect *rect = (ObjRect*)n;
+  if (key == string_x) {
+    *out = NUMBER_VAL(rect->handle.x);
+    return UTRUE;
+  } else if (key == string_y) {
+    *out = NUMBER_VAL(rect->handle.y);
+    return UTRUE;
+  } else if (key == string_w) {
+    *out = NUMBER_VAL(rect->handle.w);
+    return UTRUE;
+  } else if (key == string_h) {
+    *out = NUMBER_VAL(rect->handle.h);
+    return UTRUE;
+  }
+  return UFALSE;
+}
+
+static NativeObjectDescriptor descriptorRect = {
+  nopBlacken, nopFree, rectGetField, &funcRect,
+  sizeof(ObjRect), "Rect" };
+
+static ObjRect *newRect(int x, int y, int w, int h) {
+  ObjRect *rect = NEW_NATIVE(ObjRect, &descriptorRect);
+  rect->handle.x = x;
+  rect->handle.y = y;
+  rect->handle.w = w;
+  rect->handle.h = h;
+  return rect;
+}
+
+/**********************************************************
+ * Renderer
+ *********************************************************/
+
+typedef struct {
+  ObjNative obj;
+  SDL_Renderer *handle;
+} ObjRenderer;
+
+static ubool implRendererSetDrawColor(i16 argCount, Value *args, Value *out) {
+  ObjRenderer *renderer = (ObjRenderer*)AS_OBJ(args[-1]);
+  SDL_SetRenderDrawColor(
+    renderer->handle,
+    AS_NUMBER(args[0]),
+    AS_NUMBER(args[1]),
+    AS_NUMBER(args[2]),
+    AS_NUMBER(args[3]));
+  return UTRUE;
+}
+static TypePattern argsRendererSetDrawColor[] = {
+    { TYPE_PATTERN_NUMBER },
+    { TYPE_PATTERN_NUMBER },
+    { TYPE_PATTERN_NUMBER },
+    { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcRendererSetDrawColor = {
+  implRendererSetDrawColor, "setDrawColor",
+  sizeof(argsRendererSetDrawColor)/sizeof(TypePattern), 0,
+  argsRendererSetDrawColor };
+
+static ubool implRendererClear(i16 argCount, Value *args, Value *out) {
+  ObjRenderer *renderer = (ObjRenderer*)AS_OBJ(args[-1]);
+  if (SDL_RenderClear(renderer->handle) != 0) {
+    runtimeError("SDL error: %s", SDL_GetError());
+    return UFALSE;
+  }
+  return UTRUE;
+}
+static CFunction funcRendererClear = { implRendererClear, "clear", 0 };
+
+static ubool implRendererFillRect(i16 argCount, Value *args, Value *out) {
+  ObjRenderer *renderer = (ObjRenderer*)AS_OBJ(args[-1]);
+  ObjRect *rect = (ObjRect*)AS_OBJ(args[0]);
+  if (SDL_RenderFillRect(renderer->handle, &rect->handle) != 0) {
+    runtimeError("SDL error: %s", SDL_GetError());
+    return UFALSE;
+  }
+  return UTRUE;
+}
+static TypePattern argsRendererFillRect[] = {
+  { TYPE_PATTERN_NATIVE, &descriptorRect },
+};
+static CFunction funcRendererFillRect = {
+  implRendererFillRect, "fillRect",
+  sizeof(argsRendererFillRect)/sizeof(TypePattern), 0,
+  argsRendererFillRect };
+
+static ubool implRendererPresent(i16 argCount, Value *args, Value *out) {
+  ObjRenderer *renderer = (ObjRenderer*)AS_OBJ(args[-1]);
+  SDL_RenderPresent(renderer->handle);
+  return UTRUE;
+}
+static CFunction funcRendererPresent = { implRendererPresent, "present", 0 };
+
+static CFunction *rendererMethods[] = {
+  &funcRendererSetDrawColor,
+  &funcRendererClear,
+  &funcRendererFillRect,
+  &funcRendererPresent,
+  NULL,
+};
+
+static NativeObjectDescriptor descriptorRenderer = {
+  nopBlacken, nopFree, NULL, NULL,
+  sizeof(ObjRenderer), "Renderer",
+  rendererMethods };
+
+/**********************************************************
  * functions: Initialization and Startup
  *********************************************************/
 
@@ -194,10 +336,65 @@ static ubool implGetKeyboardState(i16 argCount, Value *args, Value *out) {
 static CFunction funcGetKeyboardState = {
   implGetKeyboardState, "getKeyboardState", 0 };
 
+/**********************************************************
+ * functions: Video
+ *********************************************************/
+
+static ubool implCreateRenderer(i16 argCount, Value *args, Value *out) {
+  ObjRenderer *renderer;
+  ObjWindow *window;
+  int index;
+  Uint32 flags;
+
+  if (!IS_NATIVE(args[0]) ||
+      AS_NATIVE(args[0])->descriptor != &descriptorWindow) {
+    runtimeError(
+      "createRenderer() requires a sdl.Window as its first "
+      "argument but got %s", getKindName(args[0]));
+    return UFALSE;
+  }
+  window = (ObjWindow*)AS_NATIVE(args[0]);
+
+  if (!IS_NUMBER(args[1])) {
+    runtimeError(
+      "createRenderer() requires a number as its second argument "
+      "but got %s", getKindName(args[1]));
+    return UFALSE;
+  }
+  index = (int)AS_NUMBER(args[1]);
+
+  if (!IS_NUMBER(args[2])) {
+    runtimeError(
+      "createRenderer() requires a number as its third argument "
+      "but got %s", getKindName(args[2]));
+    return UFALSE;
+  }
+  flags = (Uint32)AS_NUMBER(args[2]);
+
+  renderer = NEW_NATIVE(ObjRenderer, &descriptorRenderer);
+  renderer->handle = SDL_CreateRenderer(window->handle, index, flags);
+  if (renderer->handle == NULL) {
+    runtimeError("Failed to create SDL renderer: %s", SDL_GetError());
+    return UFALSE;
+  }
+
+  *out = OBJ_VAL(renderer);
+  return UTRUE;
+}
+
+static CFunction funcCreateRenderer = {
+  implCreateRenderer, "createRenderer", 3 };
+
+/**********************************************************
+ * The SDL module itself
+ *********************************************************/
+
 static NativeObjectDescriptor *descriptors[] = {
   &descriptorWindow,
   &descriptorEvent,
   &descriptorKeyboardState,
+  &descriptorRect,
+  &descriptorRenderer,
 };
 
 static CFunction *functions[] = {
@@ -206,6 +403,7 @@ static CFunction *functions[] = {
   &funcCreateWindow,
   &funcPollEvent,
   &funcGetKeyboardState,
+  &funcCreateRenderer,
 };
 
 static ubool impl(i16 argCount, Value *args, Value *out) {
@@ -214,6 +412,10 @@ static ubool impl(i16 argCount, Value *args, Value *out) {
     {&string_type, "type"},
     {&string_key, "key"},
     {&string_repeat, "repeat"},
+    {&string_x, "x"},
+    {&string_y, "y"},
+    {&string_w, "w"},
+    {&string_h, "h"},
   };
   size_t i;
   ObjList *list;
@@ -237,6 +439,8 @@ static ubool impl(i16 argCount, Value *args, Value *out) {
     klass->descriptor = descriptor;
     for (method = descriptor->methods; method && *method; method++) {
       tableSetN(&klass->methods, (*method)->name, CFUNCTION_VAL(*method));
+      (*method)->receiverType.type = TYPE_PATTERN_NATIVE;
+      (*method)->receiverType.nativeTypeDescriptor = descriptor;
     }
   }
 
