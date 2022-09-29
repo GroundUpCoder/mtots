@@ -1,0 +1,31 @@
+{
+  "name": "mtots",
+  "displayName": "mtots",
+  "description": "Syntax highlighting for mtots scripts",
+  "version": "0.0.1",
+  "publisher": "mtots",
+  "license": "Apache-2.0",
+  "repository": {
+      "type": "git",
+      "url": "https://github.com/wombatnomad/mtots"
+  },
+  "engines": {
+      "vscode": "^1.45.0"
+  },
+  "categories": [
+      "Programming Languages"
+  ],
+  "contributes": {
+      "languages": [{
+          "id": "mtots",
+          "aliases": ["mtots", "mtots"],
+          "extensions": [".mtots"],
+          "configuration": "./language-configuration.json"
+      }],
+      "grammars": [{
+          "language": "mtots",
+          "scopeName": "source.mtots",
+          "path": "./syntaxes/mtots.tmLanguage.json"
+      }]
+  }
+}
