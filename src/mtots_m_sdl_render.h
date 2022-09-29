@@ -93,7 +93,7 @@ static CFunction *rendererMethods[] = {
  *********************************************************/
 
 NativeObjectDescriptor descriptorRenderer = {
-  nopBlacken, nopFree, NULL, NULL,
+  nopBlacken, nopFree, NULL, NULL, NULL,
   sizeof(ObjRenderer), "Renderer",
   rendererMethods };
 

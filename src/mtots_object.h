@@ -101,6 +101,7 @@ typedef struct {
   void (*blacken)(ObjNative*);
   void (*free)(ObjNative*);
   ubool (*getField)(ObjNative*, ObjString*, Value*);
+  ubool (*setField)(ObjNative*, ObjString*, Value);
   CFunction *instantiate;
   size_t objectSize;
   const char *name;

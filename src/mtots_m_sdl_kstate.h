@@ -31,7 +31,7 @@ static CFunction *keyboardStateMethods[] = {
 };
 
 NativeObjectDescriptor descriptorKeyboardState = {
-  nopBlacken, nopFree, NULL, NULL,
+  nopBlacken, nopFree, NULL, NULL, NULL,
   sizeof(ObjKeyboardState), "KeyboardState",
   keyboardStateMethods };
 

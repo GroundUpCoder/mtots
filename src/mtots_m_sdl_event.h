@@ -26,7 +26,7 @@ static ubool eventGetField(ObjNative *n, ObjString *key, Value *out) {
 }
 
 NativeObjectDescriptor descriptorEvent = {
-  nopBlacken, nopFree, eventGetField, &funcEvent,
+  nopBlacken, nopFree, eventGetField, NULL, &funcEvent,
   sizeof(ObjEvent), "Event"};
 
 #endif/*mtots_m_sdl_event_h*/

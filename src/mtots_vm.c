@@ -648,16 +648,37 @@ InterpretResult run(i16 returnFrameCount) {
         Value value;
         ObjInstance *instance;
 
-        if (!IS_INSTANCE(peek(1))) {
-          runtimeError("Only instances hace fields");
-          return INTERPRET_RUNTIME_ERROR;
+        if (IS_INSTANCE(peek(1))) {
+          instance = AS_INSTANCE(peek(1));
+          tableSet(&instance->fields, READ_STRING(), peek(0));
+          value = pop();
+          pop();
+          push(value);
+          break;
         }
 
-        instance = AS_INSTANCE(peek(1));
-        tableSet(&instance->fields, READ_STRING(), peek(0));
-        value = pop();
-        pop();
-        push(value);
+        if (IS_NATIVE(peek(1))) {
+          ObjNative *n = AS_NATIVE(peek(1));
+          if (n->descriptor->setField) {
+            ObjString *name = READ_STRING();
+            if (n->descriptor->setField(n, name, peek(0))) {
+              value = pop();
+              pop();
+              push(value);
+              break;
+            } else {
+              runtimeError(
+                "Field %s not found on %s",
+                name->chars,
+                getKindName(peek(1)));
+              return INTERPRET_RUNTIME_ERROR;
+            }
+          }
+        }
+
+        runtimeError(
+          "%s values do not have have fields", getKindName(peek(0)));
+        return INTERPRET_RUNTIME_ERROR;
         break;
       }
       case OP_IS: {

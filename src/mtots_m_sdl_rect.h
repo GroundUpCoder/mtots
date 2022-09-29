@@ -13,14 +13,6 @@ static ObjRect *newRect(int x, int y, int w, int h) {
 }
 
 static ubool implRect(i16 argCount, Value *args, Value *out) {
-  size_t i;
-  for (i = 0; i < 4; i++) {
-    if (!IS_NUMBER(args[i])) {
-      runtimeError("Rect() requires number arguments but got %s",
-        getKindName(args[i]));
-      return UFALSE;
-    }
-  }
   *out = OBJ_VAL(newRect(
     AS_NUMBER(args[0]),
     AS_NUMBER(args[1]),
@@ -29,7 +21,15 @@ static ubool implRect(i16 argCount, Value *args, Value *out) {
   return UTRUE;
 }
 
-static CFunction funcRect = { implRect, "Rect", 4 };
+static TypePattern argsRect[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+
+static CFunction funcRect = { implRect, "Rect",
+  sizeof(argsRect)/sizeof(TypePattern), 0, argsRect };
 
 static ubool rectGetField(ObjNative *n, ObjString *key, Value *out) {
   ObjRect *rect = (ObjRect*)n;
@@ -49,8 +49,31 @@ static ubool rectGetField(ObjNative *n, ObjString *key, Value *out) {
   return UFALSE;
 }
 
+static ubool rectSetField(ObjNative *n, ObjString *key, Value out) {
+  ObjRect *rect = (ObjRect*)n;
+  if (!IS_NUMBER(out)) {
+    panic("Rect.%s requires a number value but got %s",
+      key->chars, getKindName(out));
+    return UFALSE;
+  }
+  if (key == string_x) {
+    rect->handle.x = AS_NUMBER(out);
+    return UTRUE;
+  } else if (key == string_y) {
+    rect->handle.y = AS_NUMBER(out);
+    return UTRUE;
+  } else if (key == string_w) {
+    rect->handle.w = AS_NUMBER(out);
+    return UTRUE;
+  } else if (key == string_h) {
+    rect->handle.h = AS_NUMBER(out);
+    return UTRUE;
+  }
+  return UFALSE;
+}
+
 NativeObjectDescriptor descriptorRect = {
-  nopBlacken, nopFree, rectGetField, &funcRect,
+  nopBlacken, nopFree, rectGetField, rectSetField, &funcRect,
   sizeof(ObjRect), "Rect" };
 
 #endif/*mtots_m_sdl_rect_h*/
