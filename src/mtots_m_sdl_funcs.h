@@ -26,22 +26,7 @@ static ubool implQuit(i16 argCount, Value *args, Value *out) {
 static CFunction funcQuit = { implQuit, "quit", 0 };
 
 static ubool implCreateWindow(i16 argCount, Value *args, Value *out) {
-  size_t i;
   ObjWindow *window;
-  if (!IS_STRING(args[0])) {
-    runtimeError(
-      "createWindow() title must be a string but got %s",
-      getKindName(args[0]));
-    return UFALSE;
-  }
-  for (i = 1; i < argCount; i++) {
-    if (!IS_NUMBER(args[i])) {
-      runtimeError(
-        "createWindow() coordinates must be a number, but got %s",
-        getKindName(args[i]));
-      return UFALSE;
-    }
-  }
   window = NEW_NATIVE(ObjWindow, &descriptorWindow);
   window->handle = SDL_CreateWindow(
     AS_STRING(args[0])->chars,
@@ -54,7 +39,17 @@ static ubool implCreateWindow(i16 argCount, Value *args, Value *out) {
   return UTRUE;
 }
 
-static CFunction funcCreateWindow = { implCreateWindow, "createWindow", 6 };
+static TypePattern argsCreateWindow[] = {
+  { TYPE_PATTERN_STRING },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+
+static CFunction funcCreateWindow = { implCreateWindow, "createWindow",
+  sizeof(argsCreateWindow)/sizeof(TypePattern), 0, argsCreateWindow };
 
 /**********************************************************
  * functions: Input
@@ -62,19 +57,17 @@ static CFunction funcCreateWindow = { implCreateWindow, "createWindow", 6 };
 
 static ubool implPollEvent(i16 argCount, Value *args, Value *out) {
   ObjEvent *event;
-  if (!IS_NATIVE(args[0]) ||
-      AS_NATIVE(args[0])->descriptor != &descriptorEvent) {
-    runtimeError(
-      "sdl.pollEvent() requires an sdl.Event argument but got %s",
-      getKindName(args[0]));
-    return UFALSE;
-  }
   event = (ObjEvent*)AS_OBJ(args[0]);
   *out = BOOL_VAL(SDL_PollEvent(&event->data));
   return UTRUE;
 }
 
-static CFunction funcPollEvent = { implPollEvent, "pollEvent", 1 };
+static TypePattern argsPollEvent[] = {
+  { TYPE_PATTERN_NATIVE, &descriptorEvent },
+};
+
+static CFunction funcPollEvent = { implPollEvent, "pollEvent",
+  sizeof(argsPollEvent)/sizeof(TypePattern), 0, argsPollEvent};
 
 static ubool implGetKeyboardState(i16 argCount, Value *args, Value *out) {
   ObjKeyboardState *kstate =

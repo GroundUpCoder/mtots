@@ -31,7 +31,7 @@ static CFunction funcRendererSetDrawColor = {
   argsRendererSetDrawColor };
 
 /**********************************************************
- * Renderer.Clear()
+ * Renderer.clear()
  *********************************************************/
 
 static ubool implRendererClear(i16 argCount, Value *args, Value *out) {
@@ -46,7 +46,7 @@ static ubool implRendererClear(i16 argCount, Value *args, Value *out) {
 static CFunction funcRendererClear = { implRendererClear, "clear", 0 };
 
 /**********************************************************
- * Renderer.FillRect()
+ * Renderer.fillRect()
  *********************************************************/
 
 static ubool implRendererFillRect(i16 argCount, Value *args, Value *out) {
@@ -69,7 +69,7 @@ static CFunction funcRendererFillRect = {
   argsRendererFillRect };
 
 /**********************************************************
- * Renderer.Present()
+ * Renderer.present()
  *********************************************************/
 
 static ubool implRendererPresent(i16 argCount, Value *args, Value *out) {
