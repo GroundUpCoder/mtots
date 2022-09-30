@@ -415,6 +415,9 @@ static u8 argumentList() {
   u8 argCount = 0;
   if (!check(TOKEN_RIGHT_PAREN)) {
     do {
+      if (check(TOKEN_RIGHT_PAREN)) {
+        break;
+      }
       expression();
       if (argCount == 255) {
         error("Can't have more than 255 arguments");
