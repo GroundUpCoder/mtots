@@ -41,6 +41,7 @@ typedef struct Value {
 typedef enum TypePatternType {
   TYPE_PATTERN_ANY = 0,
   TYPE_PATTERN_STRING,
+  TYPE_PATTERN_BYTE_ARRAY,
   TYPE_PATTERN_NUMBER,
   TYPE_PATTERN_NATIVE
 } TypePatternType;

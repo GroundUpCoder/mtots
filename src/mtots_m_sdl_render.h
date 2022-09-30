@@ -111,6 +111,37 @@ static CFunction funcRendererCreateTextureFromSurface = {
   argsRendererCreateTextureFromSurface };
 
 /**********************************************************
+ * Renderer.copy()
+ *********************************************************/
+
+static ubool implRendererCopy(i16 argCount, Value *args, Value *out) {
+  ObjRenderer *renderer = (ObjRenderer*)AS_OBJ(args[-1]);
+  ObjTexture *texture = (ObjTexture*)AS_OBJ(args[0]);
+  ObjRect *srcRect = (ObjRect*)AS_OBJ(args[1]);
+  ObjRect *dstRect = (ObjRect*)AS_OBJ(args[2]);
+  if (SDL_RenderCopy(
+      renderer->handle,
+      texture->handle,
+      &srcRect->handle,
+      &dstRect->handle) != 0) {
+    runtimeError("SDL RenderCopy Failed: %s", SDL_GetError());
+    return UFALSE;
+  };
+  return UTRUE;
+}
+
+static TypePattern argsRendererCopy[] = {
+  { TYPE_PATTERN_NATIVE, &descriptorTexture },
+  { TYPE_PATTERN_NATIVE, &descriptorRect },
+  { TYPE_PATTERN_NATIVE, &descriptorRect },
+};
+
+static CFunction funcRendererCopy = {
+  implRendererCopy, "copy",
+  sizeof(argsRendererCopy)/sizeof(TypePattern), 0,
+  argsRendererCopy };
+
+/**********************************************************
  * -- the descriptor --
  *********************************************************/
 
@@ -120,6 +151,7 @@ static CFunction *rendererMethods[] = {
   &funcRendererFillRect,
   &funcRendererPresent,
   &funcRendererCreateTextureFromSurface,
+  &funcRendererCopy,
   NULL,
 };
 

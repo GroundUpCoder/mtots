@@ -2,8 +2,14 @@
 #define mtots_m_sdl_surf_h
 
 #include "mtots_m_sdl_common.h"
+#include "mtots_memory.h"
+
+void blackenSurface(ObjNative *n) {
+  ObjSurface *surface = (ObjSurface*)n;
+  markValue(surface->pixelData);
+}
 
 NativeObjectDescriptor descriptorSurface = {
-  nopBlacken, nopFree, NULL, NULL, NULL, sizeof(ObjSurface), "Surface"};
+  blackenSurface, nopFree, NULL, NULL, NULL, sizeof(ObjSurface), "Surface"};
 
 #endif/*mtots_m_sdl_surf_h*/

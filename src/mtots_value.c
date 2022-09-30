@@ -150,6 +150,7 @@ ubool typePatternMatch(TypePattern pattern, Value value) {
         AS_NATIVE(value)->descriptor == pattern.nativeTypeDescriptor);
     case TYPE_PATTERN_NUMBER: return IS_NUMBER(value);
     case TYPE_PATTERN_STRING: return IS_STRING(value);
+    case TYPE_PATTERN_BYTE_ARRAY: return IS_BYTE_ARRAY(value);
   }
   panic("Unrecognized TypePattern type %d", pattern.type);
   return UFALSE;
@@ -160,6 +161,7 @@ const char *getTypePatternName(TypePattern pattern) {
     case TYPE_PATTERN_ANY: return "any";
     case TYPE_PATTERN_NUMBER: return "number";
     case TYPE_PATTERN_STRING: return "string";
+    case TYPE_PATTERN_BYTE_ARRAY: return "ByteArray";
     case TYPE_PATTERN_NATIVE:
       return pattern.nativeTypeDescriptor ?
         ((NativeObjectDescriptor*) pattern.nativeTypeDescriptor)->name :

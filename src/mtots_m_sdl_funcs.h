@@ -116,6 +116,46 @@ static CFunction funcCreateRenderer = {
   sizeof(argsCreateRenderer)/sizeof(TypePattern), 0,
   argsCreateRenderer };
 
+static ubool implCreateRGBSurfaceFrom(i16 argCount, Value *args, Value *out) {
+  ObjByteArray *byteArray = AS_BYTE_ARRAY(args[0]);
+  int width = AS_NUMBER(args[1]);
+  int height = AS_NUMBER(args[2]);
+  int depth = AS_NUMBER(args[3]);
+  int pitch = AS_NUMBER(args[4]);
+  Uint32 rmask = AS_NUMBER(args[5]);
+  Uint32 gmask = AS_NUMBER(args[6]);
+  Uint32 bmask = AS_NUMBER(args[7]);
+  Uint32 amask = AS_NUMBER(args[8]);
+  ObjSurface *surface = NEW_NATIVE(ObjSurface, &descriptorSurface);
+  surface->pixelData = args[0];
+  surface->handle = SDL_CreateRGBSurfaceFrom(
+    byteArray->buffer,
+    width, height, depth, pitch, rmask, gmask, bmask, amask);
+  if (surface->handle == NULL) {
+    runtimeError("Failed to create SDL Surface: %s", SDL_GetError());
+    return UFALSE;
+  }
+  *out = OBJ_VAL(surface);
+  return UTRUE;
+}
+
+static TypePattern argsCreateRGBSurfaceFrom[] = {
+  { TYPE_PATTERN_BYTE_ARRAY },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+
+static CFunction funcCreateRGBSurfaceFrom = {
+  implCreateRGBSurfaceFrom, "createRGBSurfaceFrom",
+  sizeof(argsCreateRGBSurfaceFrom)/sizeof(TypePattern), 0,
+  argsCreateRGBSurfaceFrom };
+
 /**********************************************************
  * All the functions
  *********************************************************/
@@ -127,6 +167,7 @@ static CFunction *functions[] = {
   &funcPollEvent,
   &funcGetKeyboardState,
   &funcCreateRenderer,
+  &funcCreateRGBSurfaceFrom,
 };
 
 #endif/*mtots_m_sdl_funcs_h*/

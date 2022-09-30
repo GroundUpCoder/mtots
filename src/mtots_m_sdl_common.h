@@ -81,6 +81,7 @@ typedef struct ObjRenderer {
 typedef struct ObjSurface {
   ObjNative obj;
   SDL_Surface *handle;
+  Value pixelData; /* usually a ByteArray */
 } ObjSurface;
 
 typedef struct ObjTexture {
