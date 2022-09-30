@@ -476,6 +476,7 @@ static void binary(ubool canAssign) {
     case TOKEN_MINUS: emitByte(OP_SUBTRACT); break;
     case TOKEN_STAR: emitByte(OP_MULTIPLY); break;
     case TOKEN_SLASH: emitByte(OP_DIVIDE); break;
+    case TOKEN_SLASH_SLASH: emitByte(OP_FLOOR_DIVIDE); break;
     case TOKEN_PERCENT: emitByte(OP_MODULO); break;
     default:
       abort();
@@ -867,6 +868,7 @@ void initRules() {
   rules[TOKEN_GREATER_EQUAL] = newRule(NULL, binary, PREC_COMPARISON);
   rules[TOKEN_LESS] = newRule(NULL, binary, PREC_COMPARISON);
   rules[TOKEN_LESS_EQUAL] = newRule(NULL, binary, PREC_COMPARISON);
+  rules[TOKEN_SLASH_SLASH] = newRule(NULL, binary, PREC_FACTOR);
   rules[TOKEN_IDENTIFIER] = newRule(variable, NULL, PREC_NONE);
   rules[TOKEN_STRING] = newRule(string, NULL, PREC_NONE);
   rules[TOKEN_RAW_STRING] = newRule(rawString, NULL, PREC_NONE);

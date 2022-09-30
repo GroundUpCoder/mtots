@@ -44,7 +44,8 @@
         "mtots_m_sdl_render.h": "c",
         "mtots_m_sdl_event.h": "c",
         "mtots_m_sdl_rect.h": "c",
-        "mtots_m_sdl_common.h": "c"
+        "mtots_m_sdl_common.h": "c",
+        "math.h": "c"
     },
     "C_Cpp.default.defines": [
         "MTOTS_ENABLE_SDL=1"

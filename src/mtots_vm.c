@@ -771,6 +771,18 @@ InterpretResult run(i16 returnFrameCount) {
       case OP_SUBTRACT: BINARY_OP(NUMBER_VAL, -); break;
       case OP_MULTIPLY: BINARY_OP(NUMBER_VAL, *); break;
       case OP_DIVIDE: BINARY_OP(NUMBER_VAL, /); break;
+      case OP_FLOOR_DIVIDE: {
+        if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) {
+          runtimeError("Operands must be numbers");
+          return INTERPRET_RUNTIME_ERROR;
+        }
+        {
+          double b = AS_NUMBER(pop());
+          double a = AS_NUMBER(pop());
+          push(NUMBER_VAL(floor(a / b)));
+        }
+        break;
+      }
       case OP_MODULO:
         if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
           double b = AS_NUMBER(pop());
