@@ -23,6 +23,8 @@ typedef struct {
 
 static ObjString *string_type;
 static ObjString *string_key;
+static ObjString *string_button;
+static ObjString *string_timestamp;
 static ObjString *string_repeat;
 static ObjString *string_x;
 static ObjString *string_y;
@@ -34,6 +36,8 @@ static void mtots_m_SDL_initStrings(ObjInstance *module) {
   ObjList *list;
   RetainedString rstrs[] = {
     {&string_type, "type"},
+    {&string_button, "button"},
+    {&string_timestamp, "timestamp"},
     {&string_key, "key"},
     {&string_repeat, "repeat"},
     {&string_x, "x"},

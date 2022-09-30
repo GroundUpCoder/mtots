@@ -57,6 +57,13 @@ static ubool impl(i16 argCount, Value *args, Value *out) {
     tableSetN(&inst->fields, c.name, NUMBER_VAL(c.value));
   }
 
+  inst = newInstance(vm.tableClass);
+  tableSetN(&module->fields, "button", OBJ_VAL(inst));
+  for (i = 0; i < sizeof(buttonConstants)/sizeof(KeyConstant); i++) {
+    KeyConstant c = buttonConstants[i];
+    tableSetN(&inst->fields, c.name, NUMBER_VAL(c.value));
+  }
+
   for (i = 0; i < sizeof(numericConstants)/sizeof(NumericConstant); i++) {
     NumericConstant c = numericConstants[i];
     tableSetN(&module->fields, c.name, NUMBER_VAL(c.value));

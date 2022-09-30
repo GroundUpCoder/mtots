@@ -11,6 +11,14 @@ typedef struct {
   double value;
 } KeyConstant;
 
+static KeyConstant buttonConstants[] = {
+  { "LEFT", SDL_BUTTON_LEFT },
+  { "MIDDLE", SDL_BUTTON_MIDDLE },
+  { "RIGHT", SDL_BUTTON_RIGHT },
+  { "X1", SDL_BUTTON_X1 },
+  { "X2", SDL_BUTTON_X2 },
+};
+
 static KeyConstant keyConstants[] = {
   /* Key codes */
   {"UNKNOWN", SDLK_UNKNOWN},

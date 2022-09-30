@@ -75,11 +75,17 @@ def eventLoop():
         print('Key %r' % [chr(ord('A') + event.key - sdl.key.a)])
       elif event.type == sdl.KEYDOWN:
         print('KEY %r' % [sdl.key.rget(event.key)])
+      elif event.type == sdl.MOUSEBUTTONDOWN:
+        print('MOUSE DOWN %r %r %r' % [sdl.button.rget(event.button), event.timestamp,
+          [event.x, event.y]])
+      elif event.type == sdl.MOUSEBUTTONUP:
+        print('MOUSE UP %r %r %r' % [sdl.button.rget(event.button), event.timestamp,
+          [event.x, event.y]])
       else:
         # print('event.type = %s' % [event.type])
         pass
 
-    var state = sdl.getMouseState(point)
+    sdl.getMouseState(point)
     surfDst.x = point.x - surfDst.w / 2
     surfDst.y = point.y - surfDst.h / 2
 

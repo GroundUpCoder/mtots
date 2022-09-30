@@ -21,6 +21,18 @@ static ubool eventGetField(ObjNative *n, ObjString *key, Value *out) {
   } else if (key == string_repeat) {
     *out = BOOL_VAL(event->data.key.repeat != 0);
     return UTRUE;
+  } else if (key == string_x) {
+    *out = NUMBER_VAL(event->data.button.x);
+    return UTRUE;
+  } else if (key == string_y) {
+    *out = NUMBER_VAL(event->data.button.y);
+    return UTRUE;
+  } else if (key == string_button) {
+    *out = NUMBER_VAL(event->data.button.button);
+    return UTRUE;
+  } else if (key == string_timestamp) {
+    *out = NUMBER_VAL(event->data.button.timestamp);
+    return UTRUE;
   }
   return UFALSE;
 }
