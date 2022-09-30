@@ -63,20 +63,30 @@ typedef struct ObjEvent {
   SDL_Event data;
 } ObjEvent;
 
-typedef struct {
+typedef struct ObjKeyboardState {
   ObjNative obj;
   const Uint8 *state;
 } ObjKeyboardState;
 
-typedef struct {
+typedef struct ObjRect {
   ObjNative obj;
   SDL_Rect handle;
 } ObjRect;
 
-typedef struct {
+typedef struct ObjRenderer {
   ObjNative obj;
   SDL_Renderer *handle;
 } ObjRenderer;
+
+typedef struct ObjSurface {
+  ObjNative obj;
+  SDL_Surface *handle;
+} ObjSurface;
+
+typedef struct ObjTexture {
+  ObjNative obj;
+  SDL_Texture *handle;
+} ObjTexture;
 
 /**********************************************************
  * TYPES AND CLASSES : descriptors (SDL types/classes)
@@ -93,6 +103,8 @@ extern NativeObjectDescriptor descriptorEvent;
 extern NativeObjectDescriptor descriptorKeyboardState;
 extern NativeObjectDescriptor descriptorRect;
 extern NativeObjectDescriptor descriptorRenderer;
+extern NativeObjectDescriptor descriptorSurface;
+extern NativeObjectDescriptor descriptorTexture;
 
 static NativeObjectDescriptor *descriptors[] = {
   &descriptorWindow,
@@ -100,6 +112,8 @@ static NativeObjectDescriptor *descriptors[] = {
   &descriptorKeyboardState,
   &descriptorRect,
   &descriptorRenderer,
+  &descriptorSurface,
+  &descriptorTexture,
 };
 
 #endif/*mtots_m_sdl_common_h*/

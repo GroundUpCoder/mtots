@@ -80,17 +80,48 @@ static ubool implRendererPresent(i16 argCount, Value *args, Value *out) {
 
 static CFunction funcRendererPresent = { implRendererPresent, "present", 0 };
 
+/**********************************************************
+ * Renderer.createTextureFromSurface()
+ *********************************************************/
+
+static ubool implRendererCreateTextureFromSurface(
+    i16 argCount, Value *args, Value *out) {
+  ObjRenderer *renderer = (ObjRenderer*)AS_OBJ(args[-1]);
+  ObjSurface *surface = (ObjSurface*)AS_OBJ(args[0]);
+  ObjTexture *texture = NEW_NATIVE(ObjTexture, &descriptorTexture);
+  texture->handle = SDL_CreateTextureFromSurface(
+    renderer->handle, surface->handle);
+  if (texture->handle == NULL) {
+    runtimeError(
+      "Failed to create SDL texture from surface: %s",
+      SDL_GetError());
+    return UFALSE;
+  }
+  *out = OBJ_VAL(texture);
+  return UTRUE;
+}
+
+static TypePattern argsRendererCreateTextureFromSurface[] = {
+  { TYPE_PATTERN_NATIVE, &descriptorSurface },
+};
+
+static CFunction funcRendererCreateTextureFromSurface = {
+  implRendererCreateTextureFromSurface, "createTextureFromSurface",
+  sizeof(argsRendererCreateTextureFromSurface)/sizeof(TypePattern), 0,
+  argsRendererCreateTextureFromSurface };
+
+/**********************************************************
+ * -- the descriptor --
+ *********************************************************/
+
 static CFunction *rendererMethods[] = {
   &funcRendererSetDrawColor,
   &funcRendererClear,
   &funcRendererFillRect,
   &funcRendererPresent,
+  &funcRendererCreateTextureFromSurface,
   NULL,
 };
-
-/**********************************************************
- * -- the descriptor --
- *********************************************************/
 
 NativeObjectDescriptor descriptorRenderer = {
   nopBlacken, nopFree, NULL, NULL, NULL,
