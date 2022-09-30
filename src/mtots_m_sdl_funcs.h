@@ -52,6 +52,39 @@ static CFunction funcCreateWindow = { implCreateWindow, "createWindow",
   sizeof(argsCreateWindow)/sizeof(TypePattern), 0, argsCreateWindow };
 
 /**********************************************************
+ * functions: Timer
+ *********************************************************/
+
+static ubool implGetTicks(i16 argCount, Value *args, Value *out) {
+  /* This is a bit naughty, but since we're going to be returning a
+   * double anyway, I thnk it's worth just using GetPerformanceCounter()
+   * instead of GetTicks */
+
+  /* *out = NUMBER_VAL(SDL_GetTicks64()); */
+
+  *out = NUMBER_VAL(
+    SDL_GetPerformanceCounter()
+    / (double) SDL_GetPerformanceFrequency()
+    * 1000);
+
+  return UTRUE;
+}
+
+static CFunction funcGetTicks = { implGetTicks, "getTicks", 0 };
+
+static ubool implDelay(i16 argCount, Value *args, Value *out) {
+  SDL_Delay(AS_NUMBER(args[0]));
+  return UTRUE;
+}
+
+static TypePattern argsDelay[] = {
+  { TYPE_PATTERN_NUMBER },
+};
+
+static CFunction funcDelay = { implDelay, "delay",
+  sizeof(argsDelay)/sizeof(TypePattern), 0, argsDelay };
+
+/**********************************************************
  * functions: Input
  *********************************************************/
 
@@ -178,6 +211,8 @@ static CFunction *functions[] = {
   &funcInit,
   &funcQuit,
   &funcCreateWindow,
+  &funcGetTicks,
+  &funcDelay,
   &funcPollEvent,
   &funcGetMouseState,
   &funcGetKeyboardState,

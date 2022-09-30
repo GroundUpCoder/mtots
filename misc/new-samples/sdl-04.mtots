@@ -2,6 +2,8 @@ import sdl
 
 var SCREEN_WIDTH = 640
 var SCREEN_HEIGHT = 480
+final FPS = 60
+final TICKS_PER_FRAME = (1 / FPS) * 1000 # 1 tick <-> millis
 
 sdl.init()
 
@@ -57,6 +59,8 @@ var point = sdl.Point(0, 0)
 
 def eventLoop():
   while true:
+    final startTicks = sdl.getTicks()
+
     while sdl.pollEvent(event):
       if event.type == sdl.QUIT:
         print('Quit event received')
@@ -97,5 +101,11 @@ def eventLoop():
     r.fillRect(rect1)
     r.copy(texture, surfRect, surfDst)
     r.present()
+
+    final endTicks = sdl.getTicks()
+    final elapsedTicks = endTicks - startTicks
+    print('%s (%s)' % [elapsedTicks, TICKS_PER_FRAME])
+    if TICKS_PER_FRAME > elapsedTicks:
+      sdl.delay(TICKS_PER_FRAME - elapsedTicks)
 
 eventLoop()
