@@ -22,10 +22,22 @@ static ubool eventGetField(ObjNative *n, ObjString *key, Value *out) {
     *out = BOOL_VAL(event->data.key.repeat != 0);
     return UTRUE;
   } else if (key == string_x) {
-    *out = NUMBER_VAL(event->data.button.x);
+    switch (event->data.type) {
+      case SDL_MOUSEWHEEL:
+        *out = NUMBER_VAL(event->data.wheel.x);
+        break;
+      default:
+        *out = NUMBER_VAL(event->data.button.x);
+    }
     return UTRUE;
   } else if (key == string_y) {
-    *out = NUMBER_VAL(event->data.button.y);
+    switch (event->data.type) {
+      case SDL_MOUSEWHEEL:
+        *out = NUMBER_VAL(event->data.wheel.y);
+        break;
+      default:
+        *out = NUMBER_VAL(event->data.button.y);
+    }
     return UTRUE;
   } else if (key == string_button) {
     *out = NUMBER_VAL(event->data.button.button);

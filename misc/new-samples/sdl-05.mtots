@@ -106,8 +106,6 @@ def eventLoop():
 
     final endTicks = sdl.getTicks()
     final elapsedTicks = endTicks - startTicks
-    print('%s (%s, %s)' % [
-      elapsedTicks, TICKS_PER_FRAME, (TICKS_PER_FRAME - elapsedTicks) // 1])
     if TICKS_PER_FRAME > elapsedTicks:
       sdl.delay((TICKS_PER_FRAME - elapsedTicks) // 1)
 
