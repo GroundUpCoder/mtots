@@ -31,7 +31,7 @@ static ubool eventGetField(ObjNative *n, ObjString *key, Value *out) {
     *out = NUMBER_VAL(event->data.button.button);
     return UTRUE;
   } else if (key == string_timestamp) {
-    *out = NUMBER_VAL(event->data.button.timestamp);
+    *out = NUMBER_VAL(event->data.common.timestamp);
     return UTRUE;
   }
   return UFALSE;
