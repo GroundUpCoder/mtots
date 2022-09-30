@@ -11,6 +11,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* TODO: factor this out into a header somewhere
+ * instead of copying over from "mtots_vm.h" */
+NORETURN void panic(const char *format, ...);
+
 typedef struct {
   Token current;
   Token previous;
@@ -563,6 +567,40 @@ static void number(ubool canAssign) {
   emitConstant(NUMBER_VAL(value));
 }
 
+static void numberHex(ubool canAssign) {
+  double value = 0;
+  size_t i, len = parser.previous.length;
+  for (i = 2; i < len; i++) {
+    char ch = parser.previous.start[i];
+    value *= 16;
+    if ('0' <= ch && ch <= '9') {
+      value += ch - '0';
+    } else if ('A' <= ch && ch <= 'F') {
+      value += ch - 'A' + 10;
+    } else if ('a' <= ch && ch <= 'f') {
+      value += ch - 'a' + 10;
+    } else {
+      panic("Invalid hex digit %c", ch);
+    }
+  }
+  emitConstant(NUMBER_VAL(value));
+}
+
+static void numberBin(ubool canAssign) {
+  double value = 0;
+  size_t i, len = parser.previous.length;
+  for (i = 2; i < len; i++) {
+    char ch = parser.previous.start[i];
+    value *= 2;
+    if (ch == '1' || ch == '0') {
+      value += ch - '0';
+    } else {
+      panic("Invalid binary digit %c", ch);
+    }
+  }
+  emitConstant(NUMBER_VAL(value));
+}
+
 static void or_(ubool canAssign) {
   i32 elseJump = emitJump(OP_JUMP_IF_FALSE);
   i32 endJump = emitJump(OP_JUMP);
@@ -787,6 +825,8 @@ void initRules() {
   rules[TOKEN_STRING] = newRule(string, NULL, PREC_NONE);
   rules[TOKEN_RAW_STRING] = newRule(rawString, NULL, PREC_NONE);
   rules[TOKEN_NUMBER] = newRule(number, NULL, PREC_NONE);
+  rules[TOKEN_NUMBER_HEX] = newRule(numberHex, NULL, PREC_NONE);
+  rules[TOKEN_NUMBER_BIN] = newRule(numberBin, NULL, PREC_NONE);
   rules[TOKEN_AND] = newRule(NULL, and_, PREC_AND);
   rules[TOKEN_FALSE] = newRule(literal, NULL, PREC_NONE);
   rules[TOKEN_NIL] = newRule(literal, NULL, PREC_NONE);

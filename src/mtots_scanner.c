@@ -283,6 +283,25 @@ static Token identifier() {
 }
 
 static Token number() {
+  if (scanner.start[0] == '0') {
+    if (match('x')) {
+      /* hex number */
+      while (isDigit(peek()) ||
+          (peek() >= 'A' && peek() <= 'F') ||
+          (peek() >= 'a' && peek() <= 'f')) {
+        advance();
+      }
+      return makeToken(TOKEN_NUMBER_HEX);
+    }
+    if (match('b')) {
+      /* binary number */
+      while (peek() == '0' || peek() == '1') {
+        advance();
+      }
+      return makeToken(TOKEN_NUMBER_BIN);
+    }
+  }
+
   while (isDigit(peek())) {
     advance();
   }
