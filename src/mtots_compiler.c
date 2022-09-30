@@ -618,6 +618,23 @@ static void rawString(ubool canAssign) {
     parser.previous.length - 2)));
 }
 
+static ubool getHexDigit(char hex, int *out) {
+  if ('0' <= hex && hex <= '9') {
+    *out = hex - '0';
+    return UTRUE;
+  }
+  if ('A' <= hex && hex <= 'F') {
+    *out = hex - 'A' + 10;
+    return UTRUE;
+  }
+  if ('a' <= hex && hex <= 'f') {
+    *out = hex - 'a' + 10;
+    return UTRUE;
+  }
+  panic("Invalid hex digit %c", hex);
+  return UFALSE;
+}
+
 static void string(ubool canAssign) {
   size_t i, size = 0;
   const char *p = parser.previous.start + 1;
@@ -627,6 +644,10 @@ static void string(ubool canAssign) {
       case '\\':
         i++;
         switch (p[i]) {
+          case 'x':
+            i += 2;
+            size++;
+            break;
           case '\\':
           case 'n':
           case 't':
@@ -652,6 +673,28 @@ static void string(ubool canAssign) {
       case '\\':
         i++;
         switch (p[i]) {
+          case 'x': {
+            unsigned char value;
+            int digitval;
+            i++;
+            if (!getHexDigit(p[i], &digitval)) {
+              char buffer[32];
+              sprintf(buffer, "Invalid hex digit %c", p[i]);
+              error(buffer);
+              return;
+            }
+            i++;
+            value = 16 * digitval;
+            if (!getHexDigit(p[i], &digitval)) {
+              char buffer[32];
+              sprintf(buffer, "Invalid hex digit %c", p[i]);
+              error(buffer);
+              return;
+            }
+            value += digitval;
+            *sp++ = value;
+            break;
+          }
           case '\\': *sp++ = '\\'; break;
           case 'n': *sp++ = '\n'; break;
           case 't': *sp++ = '\t'; break;
