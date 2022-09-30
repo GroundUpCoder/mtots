@@ -194,6 +194,28 @@ ObjString *copyCString(const char *chars) {
   return copyString(chars, strlen(chars));
 }
 
+ObjByteArray *newByteArray(size_t size) {
+  unsigned char *newBuffer = ALLOCATE(unsigned char, size);
+  ObjByteArray *byteArray = ALLOCATE_OBJ(ObjByteArray, OBJ_BYTE_ARRAY);
+  memset(newBuffer, 0, size);
+  byteArray->buffer = newBuffer;
+  byteArray->size = size;
+  return byteArray;
+}
+
+ObjByteArray *takeByteArray(unsigned char *buffer, size_t size) {
+  ObjByteArray *byteArray = ALLOCATE_OBJ(ObjByteArray, OBJ_BYTE_ARRAY);
+  byteArray->buffer = buffer;
+  byteArray->size = size;
+  return byteArray;
+}
+
+ObjByteArray *copyByteArray(const unsigned char *buffer, size_t size) {
+  unsigned char *newBuffer = ALLOCATE(unsigned char, size);
+  memcpy(newBuffer, buffer, size);
+  return takeByteArray(newBuffer, size);
+}
+
 ObjList *newList(size_t size) {
   ObjList *list = ALLOCATE_OBJ(ObjList, OBJ_LIST);
   list->capacity = 0;
@@ -284,6 +306,7 @@ ObjClass *getClass(Value value) {
         case OBJ_NATIVE_CLOSURE: return vm.functionClass;
         case OBJ_INSTANCE: return AS_INSTANCE(value)->klass;
         case OBJ_STRING: return vm.stringClass;
+        case OBJ_BYTE_ARRAY: return vm.byteArrayClass;
         case OBJ_LIST: return vm.listClass;
         case OBJ_DICT: return vm.dictClass;
         case OBJ_FILE: return vm.fileClass;
@@ -330,6 +353,9 @@ void printObject(Value value) {
     case OBJ_STRING:
       printf("%s", AS_CSTRING(value));
       break;
+    case OBJ_BYTE_ARRAY:
+      printf("<byteArray %lu>", (unsigned long)AS_BYTE_ARRAY(value)->size);
+      break;
     case OBJ_LIST:
       printf("<list %lu items>", (unsigned long) AS_LIST(value)->length);
       break;
@@ -359,6 +385,7 @@ const char *getObjectTypeName(ObjType type) {
   case OBJ_NATIVE_CLOSURE: return "OBJ_NATIVE_CLOSURE";
   case OBJ_INSTANCE: return "OBJ_INSTANCE";
   case OBJ_STRING: return "OBJ_STRING";
+  case OBJ_BYTE_ARRAY: return "OBJ_BYTE_ARRAY";
   case OBJ_LIST: return "OBJ_LIST";
   case OBJ_DICT: return "OBJ_DICT";
   case OBJ_FILE: return "OBJ_FILE";

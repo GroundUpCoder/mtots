@@ -120,6 +120,7 @@ static void blackenObject(Obj *object) {
       markValue(((ObjUpvalue*)object)->closed);
       break;
     case OBJ_STRING:
+    case OBJ_BYTE_ARRAY:
       break;
     case OBJ_LIST: {
       ObjList *list = (ObjList*)object;
@@ -200,6 +201,12 @@ static void freeObject(Obj *object) {
       FREE(ObjString, object);
       break;
     }
+    case OBJ_BYTE_ARRAY: {
+      ObjByteArray *byteArray = (ObjByteArray*)object;
+      FREE_ARRAY(unsigned char, byteArray->buffer, byteArray->size);
+      FREE(ObjByteArray, object);
+      break;
+    }
     case OBJ_LIST: {
       ObjList *list = (ObjList*)object;
       FREE_ARRAY(Value, list->buffer, list->capacity);
@@ -264,6 +271,7 @@ static void markRoots() {
   markObject((Obj*)vm.boolClass);
   markObject((Obj*)vm.numberClass);
   markObject((Obj*)vm.stringClass);
+  markObject((Obj*)vm.byteArrayClass);
   markObject((Obj*)vm.listClass);
   markObject((Obj*)vm.dictClass);
   markObject((Obj*)vm.functionClass);

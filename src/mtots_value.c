@@ -129,6 +129,7 @@ const char *getKindName(Value value) {
       case OBJ_NATIVE_CLOSURE: return "native-closure";
       case OBJ_INSTANCE: return "instance";
       case OBJ_STRING: return "string";
+      case OBJ_BYTE_ARRAY: return "byteArray";
       case OBJ_LIST: return "list";
       case OBJ_DICT: return "dict";
       case OBJ_FILE: return "file";

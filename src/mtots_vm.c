@@ -9,6 +9,7 @@
 #include "mtots_class_str.h"
 #include "mtots_class_dict.h"
 #include "mtots_class_table.h"
+#include "mtots_class_ba.h"
 #include "mtots_import.h"
 #include "mtots_modules.h"
 
@@ -119,6 +120,7 @@ void initVM() {
   vm.boolClass = NULL;
   vm.numberClass = NULL;
   vm.stringClass = NULL;
+  vm.byteArrayClass = NULL;
   vm.listClass = NULL;
   vm.dictClass = NULL;
   vm.functionClass = NULL;
@@ -148,6 +150,7 @@ void initVM() {
   initNoMethodClass(&vm.boolClass, "Bool");
   initNoMethodClass(&vm.numberClass, "Number");
   initStringClass();
+  initByteArrayClass();
   initListClass();
   initDictClass();
   initNoMethodClass(&vm.functionClass, "Function");
@@ -322,6 +325,57 @@ ubool call(ObjClosure *closure, i16 argCount) {
   return UTRUE;
 }
 
+static ubool callByteArrayClass(i16 argCount) {
+  Value arg;
+  if (argCount != 1) {
+    runtimeError("ByteArray() requires exactly one argument");
+    return UFALSE;
+  }
+  arg = peek(0);
+  if (IS_NUMBER(arg)) {
+    size_t size = AS_NUMBER(arg);
+    ObjByteArray *ba = newByteArray(size);
+    pop(); /* arg */
+    pop(); /* ByeArray class */
+    push(OBJ_VAL(ba));
+    return UTRUE;
+  }
+  if (IS_STRING(arg)) {
+    ObjString *str = AS_STRING(arg);
+    ObjByteArray *ba = copyByteArray(
+      (const unsigned char*)str->chars, str->length);
+    pop(); /* arg */
+    pop(); /* ByeArray class */
+    push(OBJ_VAL(ba));
+    return UTRUE;
+  }
+  if (IS_LIST(arg)) {
+    ObjList *list = AS_LIST(arg);
+    size_t len = list->length, i;
+    unsigned char *buffer = ALLOCATE(unsigned char, len);
+    for (i = 0; i < len; i++) {
+      Value item = list->buffer[i];
+      unsigned char b;
+      if (!IS_NUMBER(item)) {
+        runtimeError(
+          "ByteArray() requires a list of numbers, "
+          "but got list item %s", getKindName(item));
+        return UFALSE;
+      }
+      b = AS_NUMBER(item);
+      buffer[i] = b;
+    }
+    pop(); /* arg */
+    pop(); /* ByeArray class */
+    push(OBJ_VAL(takeByteArray(buffer, len)));
+    return UTRUE;
+  }
+  runtimeError(
+    "ByteArray() expects a number, string or list argument "
+    "but got %s", getKindName(arg));
+  return UFALSE;
+}
+
 static ubool callClass(ObjClass *klass, i16 argCount) {
   Value initializer;
 
@@ -337,7 +391,11 @@ static ubool callClass(ObjClass *klass, i16 argCount) {
     }
   } else if (klass->isBuiltinClass) {
     /* builtin class */
-    runtimeError("Instantiating builtin classes is not allowed");
+    if (klass == vm.byteArrayClass) {
+      return callByteArrayClass(argCount);
+    }
+    runtimeError("Builtin class %s does not allow instantiation",
+      klass->name->chars);
     return UFALSE;
   } else if (klass->isModuleClass) {
     /* module */
@@ -372,6 +430,8 @@ static ubool callOperator(Operator operator, i16 argCount) {
           case OBJ_STRING:
             vm.stackTop[-1] = NUMBER_VAL(AS_STRING(receiver)->length);
             return UTRUE;
+          case OBJ_BYTE_ARRAY:
+            vm.stackTop[-1] = NUMBER_VAL(AS_BYTE_ARRAY(receiver)->size);
           case OBJ_LIST:
             vm.stackTop[-1] = NUMBER_VAL(AS_LIST(receiver)->length);
             return UTRUE;

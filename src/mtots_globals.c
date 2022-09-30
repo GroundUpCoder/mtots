@@ -154,44 +154,77 @@ ubool implRepr(i16 argCount, Value *args, Value *out) {
 
           /* account for characters that need to be escaped */
           for (i = 0; i < str->length; i++) {
-            switch (str->chars[i]) {
-              case '\\':
-              case '"':
-              case '\n':
-                charCount++;
+            char c = str->chars[i];
+            if ((c >= 1 && c <= 31) || c >= 127) {
+              charCount += 3; /* explicit hex escape */
+            } else {
+              switch (str->chars[i]) {
+                case '\\':
+                case '"':
+                case '\n':
+                case '\0':
+                  charCount++;
+              }
             }
           }
 
           charsTop = chars = ALLOCATE(char, charCount + 1);
           *charsTop++ = '"';
           for (i = 0; i < str->length; i++) {
-            switch (str->chars[i]) {
-              case '\\':
-                *charsTop++ = '\\';
-                *charsTop++ = '\\';
-                break;
-              case '"':
-                *charsTop++ = '\\';
-                *charsTop++ = '"';
-                break;
-              case '\n':
-                *charsTop++ = '\\';
-                *charsTop++ = 'n';
-                break;
-              default:
-                *charsTop++ = str->chars[i];
-                break;
+            char c = str->chars[i];
+            if ((c >= 1 && c <= 31) || c >= 127) {
+              u8 digit1 = c / 16, digit2 = c % 16;
+              *charsTop++ = '\\';
+              *charsTop++ = 'x';
+              *charsTop++ = '0' + digit1;
+              if (digit2 < 10) {
+                *charsTop++ = '0' + digit2;
+              } else {
+                *charsTop++ = 'A' + digit2 - 10;
+              }
+            } else {
+              switch (c) {
+                case '\\':
+                  *charsTop++ = '\\';
+                  *charsTop++ = '\\';
+                  break;
+                case '"':
+                  *charsTop++ = '\\';
+                  *charsTop++ = '"';
+                  break;
+                case '\n':
+                  *charsTop++ = '\\';
+                  *charsTop++ = 'n';
+                  break;
+                case '\0':
+                  *charsTop++ = '\\';
+                  *charsTop++ = '0';
+                  break;
+                default:
+                  *charsTop++ = c;
+                  break;
+              }
             }
           }
           *charsTop++ = '"';
           *charsTop++ = '\0';
 
           if (charsTop - chars != charCount + 1) {
-            runtimeError("Assertion failed in repr(str)");
+            runtimeError("Assertion failed in repr(str), %ld != %ld",
+              (long)(charsTop - chars),
+              (long)(charCount + 1));
             abort();
           }
 
           *out = OBJ_VAL(takeString(chars, charCount));
+          break;
+        }
+        case OBJ_BYTE_ARRAY: {
+          char buffer[128];
+          ObjByteArray *byteArray = AS_BYTE_ARRAY(args[0]);
+          snprintf(buffer, 128,
+            "<ByteArray (%lu)>", (unsigned long)byteArray->size);
+          *out = OBJ_VAL(copyCString(buffer));
           break;
         }
         case OBJ_LIST: {
@@ -201,8 +234,7 @@ ubool implRepr(i16 argCount, Value *args, Value *out) {
           char *chars, *charsTop;
 
           /* stringify all entries in the list and push them on the stack
-           * (for GC reasons)
-           */
+           * (for GC reasons) */
           for (i = 0; i < list->length; i++) {
             Value strval;
             if (!implRepr(1, list->buffer + i, &strval)) {
@@ -246,15 +278,13 @@ ubool implRepr(i16 argCount, Value *args, Value *out) {
           break;
         }
         case OBJ_DICT: {
-          /* TODO */
           ObjDict *dict = AS_DICT(*args);
           size_t i, j, charCount = 0;
           Value *stackStart = vm.stackTop, *stackptr = vm.stackTop;
           char *chars, *charsTop;
 
           /* stringify all entries in the dict and push them on the stack
-           * (for GC reasons)
-           */
+           * (for GC reasons) */
           for (i = j = 0; i < dict->dict.capacity; i++) {
             Value strkey, strval;
             DictEntry *entry = &dict->dict.entries[i];
@@ -376,6 +406,11 @@ static CFunction cfunctionRepr = { implRepr, "repr", 1 };
 ubool implStr(i16 argCount, Value *args, Value *out) {
   if (IS_STRING(*args)) {
     *out = *args;
+    return UTRUE;
+  }
+  if (IS_BYTE_ARRAY(*args)) {
+    ObjByteArray *ba = AS_BYTE_ARRAY(*args);
+    *out = OBJ_VAL(copyString((const char*)ba->buffer, ba->size));
     return UTRUE;
   }
   return implRepr(argCount, args, out);
@@ -565,6 +600,7 @@ void defineDefaultGlobals() {
   defineGlobal("StopIteration", STOP_ITERATION_VAL());
 
   defineGlobal("Table", OBJ_VAL(vm.tableClass));
+  defineGlobal("ByteArray", OBJ_VAL(vm.byteArrayClass));
 
   defineStandardIOGlobals();
 }

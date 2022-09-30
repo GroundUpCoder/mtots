@@ -2,6 +2,7 @@
 #include "mtots_object.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 ubool valuesIs(Value a, Value b) {
   if (a.type != b.type) {
@@ -38,6 +39,13 @@ ubool valuesEqual(Value a, Value b) {
         return UFALSE;
       }
       switch (objA->type) {
+        case OBJ_BYTE_ARRAY: {
+          ObjByteArray *aa = (ObjByteArray*)objA, *ab = (ObjByteArray*)objB;
+          if (aa->size != ab->size) {
+            return UFALSE;
+          }
+          return memcmp(aa->buffer, ab->buffer, aa->size) == 0;
+        }
         case OBJ_LIST: {
           ObjList *listA = (ObjList*)objA, *listB = (ObjList*)objB;
           size_t i;
@@ -50,6 +58,10 @@ ubool valuesEqual(Value a, Value b) {
             }
           }
           return UTRUE;
+        }
+        case OBJ_DICT: {
+          /* TODO */
+          return objA == objB;
         }
         default: return objA == objB;
       }

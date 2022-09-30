@@ -39,6 +39,7 @@ typedef struct {
   ObjClass *boolClass;
   ObjClass *numberClass;
   ObjClass *stringClass;
+  ObjClass *byteArrayClass;
   ObjClass *listClass;
   ObjClass *dictClass;
   ObjClass *functionClass;

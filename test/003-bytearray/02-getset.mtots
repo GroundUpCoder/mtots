@@ -1,0 +1,15 @@
+
+
+var ba = ByteArray(10)
+
+for i in range(10):
+  ba[i] = i * i
+
+print(repr(str(ba)))
+
+var items = []
+
+for i in range(10):
+  items.append(ba[i])
+
+print(items)

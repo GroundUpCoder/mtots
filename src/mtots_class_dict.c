@@ -25,7 +25,7 @@ static ubool implDictSetItem(i16 argCount, Value *args, Value *out) {
   Value receiver = args[-1];
   ObjDict *dict;
   if (!IS_DICT(receiver)) {
-    runtimeError("Expected dict as receiver to Dict.__getitem__()");
+    runtimeError("Expected dict as receiver to Dict.__setitem__()");
     return UFALSE;
   }
   dict = AS_DICT(receiver);
@@ -53,7 +53,7 @@ static ubool implDictContains(i16 argCount, Value *args, Value *out) {
   Value receiver = args[-1], dummy;
   ObjDict *dict;
   if (!IS_DICT(receiver)) {
-    runtimeError("Expected dict as receiver to Dict.__getitem__()");
+    runtimeError("Expected dict as receiver to Dict.__contains__()");
     return UFALSE;
   }
   dict = AS_DICT(receiver);
