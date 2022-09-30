@@ -11,6 +11,7 @@
 #include "mtots_m_sdl_win.h"
 #include "mtots_m_sdl_event.h"
 #include "mtots_m_sdl_rect.h"
+#include "mtots_m_sdl_point.h"
 #include "mtots_m_sdl_surf.h"
 #include "mtots_m_sdl_texture.h"
 #include "mtots_m_sdl_funcs.h"

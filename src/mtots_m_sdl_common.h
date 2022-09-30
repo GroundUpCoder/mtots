@@ -73,6 +73,11 @@ typedef struct ObjRect {
   SDL_Rect handle;
 } ObjRect;
 
+typedef struct ObjPoint {
+  ObjNative obj;
+  SDL_Point handle;
+} ObjPoint;
+
 typedef struct ObjRenderer {
   ObjNative obj;
   SDL_Renderer *handle;
@@ -103,6 +108,7 @@ extern NativeObjectDescriptor descriptorWindow;
 extern NativeObjectDescriptor descriptorEvent;
 extern NativeObjectDescriptor descriptorKeyboardState;
 extern NativeObjectDescriptor descriptorRect;
+extern NativeObjectDescriptor descriptorPoint;
 extern NativeObjectDescriptor descriptorRenderer;
 extern NativeObjectDescriptor descriptorSurface;
 extern NativeObjectDescriptor descriptorTexture;
@@ -112,6 +118,7 @@ static NativeObjectDescriptor *descriptors[] = {
   &descriptorEvent,
   &descriptorKeyboardState,
   &descriptorRect,
+  &descriptorPoint,
   &descriptorRenderer,
   &descriptorSurface,
   &descriptorTexture,

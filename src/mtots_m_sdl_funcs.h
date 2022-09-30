@@ -80,6 +80,20 @@ static ubool implGetKeyboardState(i16 argCount, Value *args, Value *out) {
 static CFunction funcGetKeyboardState = {
   implGetKeyboardState, "getKeyboardState", 0 };
 
+static ubool implGetMouseState(i16 argCount, Value *args, Value *out) {
+  ObjPoint *point = (ObjPoint*)AS_OBJ(args[0]);
+  Uint32 state = SDL_GetMouseState(&point->handle.x, &point->handle.y);
+  *out = NUMBER_VAL(state);
+  return UTRUE;
+}
+
+static TypePattern argsGetMouseState[] = {
+  { TYPE_PATTERN_NATIVE, &descriptorPoint },
+};
+
+static CFunction funcGetMouseState = { implGetMouseState, "getMouseState",
+  sizeof(argsGetMouseState)/sizeof(TypePattern), 0, argsGetMouseState };
+
 /**********************************************************
  * functions: Video
  *********************************************************/
@@ -165,6 +179,7 @@ static CFunction *functions[] = {
   &funcQuit,
   &funcCreateWindow,
   &funcPollEvent,
+  &funcGetMouseState,
   &funcGetKeyboardState,
   &funcCreateRenderer,
   &funcCreateRGBSurfaceFrom,
