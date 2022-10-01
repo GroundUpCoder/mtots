@@ -143,7 +143,7 @@ static ObjString *allocateString(char *chars, int length, u32 hash) {
   string->chars = chars;
   string->hash = hash;
 
-  push(OBJ_VAL( string));
+  push(OBJ_VAL(string));
   tableSet(&vm.strings, string, NIL_VAL());
   pop();
 
@@ -264,7 +264,7 @@ ObjFile *openFile(const char *filename, FileMode mode) {
   FILE *f;
   ObjFile *file;
   ObjString *name = copyCString(filename);
-  push(OBJ_VAL( name));               /* GC: keep 'name' alive */
+  push(OBJ_VAL(name));               /* GC: keep 'name' alive */
   fileModeToString(mode, modestr);
   f = fopen(filename, modestr);
   file = newFile(f, UTRUE, name, mode);

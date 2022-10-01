@@ -67,7 +67,7 @@ void runtimeError(const char *format, ...) {
 }
 
 void defineGlobal(const char *name, Value value) {
-  push(OBJ_VAL( copyString(name, strlen(name))));
+  push(OBJ_VAL(copyString(name, strlen(name))));
   push(value);
   tableSet(&vm.globals, AS_STRING(vm.stack[0]), vm.stack[1]);
   pop();
@@ -560,7 +560,7 @@ static void concatenate() {
   result = takeString(chars, length);
   pop();
   pop();
-  push(OBJ_VAL( result));
+  push(OBJ_VAL(result));
 }
 
 InterpretResult run(i16 returnFrameCount) {
@@ -879,7 +879,7 @@ InterpretResult run(i16 returnFrameCount) {
         ObjFunction *function = AS_FUNCTION(READ_CONSTANT());
         ObjClosure *closure = newClosure(function, frame->closure->module);
         i16 i;
-        push(OBJ_VAL( closure));
+        push(OBJ_VAL(closure));
         for (i = 0; i < closure->upvalueCount; i++) {
           u8 isLocal = READ_BYTE();
           u8 index = READ_BYTE();
@@ -983,10 +983,10 @@ InterpretResult interpret(const char *source, ObjInstance *module) {
     return INTERPRET_COMPILE_ERROR;
   }
 
-  push(OBJ_VAL( function));
+  push(OBJ_VAL(function));
   closure = newClosure(function, module);
   pop();
-  push(OBJ_VAL( closure));
+  push(OBJ_VAL(closure));
   call(closure, 0);
 
   return run(0);

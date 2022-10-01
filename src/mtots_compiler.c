@@ -288,7 +288,7 @@ static ParseRule *getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
 
 static u8 identifierConstant(Token *name) {
-  return makeConstant(OBJ_VAL( copyString(name->start, name->length)));
+  return makeConstant(OBJ_VAL(copyString(name->start, name->length)));
 }
 
 static ubool identifiersEqual(Token *a, Token *b) {
@@ -617,7 +617,7 @@ static void or_(ubool canAssign) {
 }
 
 static void rawString(ubool canAssign) {
-  emitConstant(OBJ_VAL( copyString(
+  emitConstant(OBJ_VAL(copyString(
     parser.previous.start + 1,
     parser.previous.length - 2)));
 }
@@ -715,7 +715,7 @@ static void string(ubool canAssign) {
     abort(); /* size calculations were invalid */
   }
   *sp = '\0';
-  emitConstant(OBJ_VAL( takeString(s, size)));
+  emitConstant(OBJ_VAL(takeString(s, size)));
 }
 
 static void namedVariable(Token name, ubool canAssign) {
@@ -969,7 +969,7 @@ static void function(FunctionType type) {
   block(UFALSE);
 
   function = endCompiler();
-  emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL( function)));
+  emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(function)));
 
   for (i = 0; i < function->upvalueCount; i++) {
     emitByte(compiler.upvalues[i].isLocal ? 1 : 0);
