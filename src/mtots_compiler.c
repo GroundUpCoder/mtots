@@ -1065,26 +1065,34 @@ static void consumeStatementDelimiter(const char *message) {
 static void decoratedFunDeclaration() {
   u8 global;
   size_t wrapCount = 0, i;
+  ubool named = UFALSE;
 
   do {
     expression();
     consumeStatementDelimiter(
       "Expected statement delimiter after decorator expression");
     wrapCount++;
-  } while (match('@'));
+  } while (match(TOKEN_AT));
 
   consume(
     TOKEN_DEF,
     "Expect 'def' to start function after decorator expression");
-  global = parseVariable("Expect function name");
-  markInitialized();
+  if (check(TOKEN_IDENTIFIER)) {
+    named = UTRUE;
+    global = parseVariable("Expect function name");
+    markInitialized();
+  }
   function(TYPE_FUNCTION);
 
   for (i = 0; i < wrapCount; i++) {
     emitBytes(OP_CALL, 1);
   }
 
-  defineVariable(global);
+  if (named) {
+    defineVariable(global);
+  } else {
+    emitByte(OP_POP);
+  }
 }
 
 static void varDeclaration() {

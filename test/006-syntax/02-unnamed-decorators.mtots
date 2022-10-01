@@ -1,0 +1,9 @@
+
+def decorator(f):
+  print("BEFORE")
+  f('some data')
+  print("AFTER")
+
+@decorator
+def(arg):
+  print("Hi, I'm someFunc: %r" % [arg])

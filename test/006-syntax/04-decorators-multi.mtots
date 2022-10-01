@@ -1,0 +1,82 @@
+
+def inner1():
+
+  def decorator1(f):
+    def wrap(arg):
+      print("BEFORE 1")
+      final value = f(arg)
+      print("AFTER 1")
+      return value + ' d1'
+    return wrap
+
+  def decorator2(f):
+    def wrap(arg):
+      print("BEFORE 2")
+      final value = f(arg)
+      print("AFTER 2")
+      return value + ' d2'
+    return wrap
+
+  def decorator3(f):
+    def wrap(arg):
+      print("BEFORE 3")
+      final value = f(arg)
+      print("AFTER 3")
+      return value + ' d3'
+    return wrap
+
+  @decorator3
+  @decorator3
+  @decorator2
+  @decorator1
+  def func(arg):
+    print("Hi, I'm someFunc: %r" % [arg])
+    return 'here'
+
+  print(func('123'))
+
+  # Hacky way to test stack integrity
+  # Making sure that newly declared local variables
+  # can be looked up properly is a makeshift way
+  # to test that values on the stack are where
+  # we expect them to be
+  var foo = 'foo value'
+  var bar = 'bar value'
+  print([foo, bar])
+
+inner1()
+
+def inner2():
+
+  def decorator1(f):
+    print("AT 1 (prep)")
+    final value = f('inside')
+    print("AT 1")
+    return value + ' d1'
+
+  def decorator2(value):
+    print("AT 2")
+    return value + ' d2'
+
+  def decorator3(value):
+    print("AT 3")
+    return value + ' d3'
+
+  @decorator3
+  @decorator3
+  @decorator2
+  @decorator1
+  def(arg):
+    print("Hi, I'm someFunc: %r" % [arg])
+    return 'here'
+
+  # Hacky way to test stack integrity
+  # Making sure that newly declared local variables
+  # can be looked up properly is a makeshift way
+  # to test that values on the stack are where
+  # we expect them to be
+  var foo = 'foo value'
+  var bar = 'bar value'
+  print([foo, bar])
+
+inner2()

@@ -1,0 +1,4 @@
+BEFORE 1
+Hi, I'm someFunc: "some data"
+AFTER 2
+foo value

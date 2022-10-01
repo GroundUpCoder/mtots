@@ -1,0 +1,18 @@
+BEFORE 3
+BEFORE 3
+BEFORE 2
+BEFORE 1
+Hi, I'm someFunc: "123"
+AFTER 1
+AFTER 2
+AFTER 3
+AFTER 3
+here d1 d2 d3 d3
+["foo value", "bar value"]
+AT 1 (prep)
+Hi, I'm someFunc: "inside"
+AT 1
+AT 2
+AT 3
+AT 3
+["foo value", "bar value"]
