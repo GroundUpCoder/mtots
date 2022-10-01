@@ -1,0 +1,3 @@
+BEFORE
+Hi, I'm someFunc
+AFTER

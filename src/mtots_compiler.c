@@ -1062,6 +1062,31 @@ static void consumeStatementDelimiter(const char *message) {
   }
 }
 
+static void decoratedFunDeclaration() {
+  u8 global;
+  size_t wrapCount = 0, i;
+
+  do {
+    expression();
+    consumeStatementDelimiter(
+      "Expected statement delimiter after decorator expression");
+    wrapCount++;
+  } while (match('@'));
+
+  consume(
+    TOKEN_DEF,
+    "Expect 'def' to start function after decorator expression");
+  global = parseVariable("Expect function name");
+  markInitialized();
+  function(TYPE_FUNCTION);
+
+  for (i = 0; i < wrapCount; i++) {
+    emitBytes(OP_CALL, 1);
+  }
+
+  defineVariable(global);
+}
+
 static void varDeclaration() {
   u8 global = parseVariable("Expect variable name");
 
@@ -1305,6 +1330,8 @@ static void declaration() {
     funDeclaration();
   } else if (match(TOKEN_VAR) || match(TOKEN_FINAL)) {
     varDeclaration();
+  } else if (match(TOKEN_AT)) {
+    decoratedFunDeclaration();
   } else {
     statement();
   }
