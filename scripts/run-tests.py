@@ -26,6 +26,7 @@ for testSet in dirnames:
 
     scriptPath = os.path.join(testSetDir, sfn)
 
+    expectNonzeroExit = False
     expectExit = 0
     expectExitFn = os.path.join(testSetDir, f'{base}.exit.txt')
     if os.path.exists(expectExitFn):
@@ -33,6 +34,9 @@ for testSet in dirnames:
         expectExitStr = f.read().strip()
         if expectExitStr.lower() == 'any':
           expectExit = None
+        elif expectExitStr.lower() == 'nonzero':
+          expectExit = None
+          expectNonzeroExit = True
         else:
           expectExit = int(expectExitStr)
 
@@ -59,6 +63,16 @@ for testSet in dirnames:
       print('FAILED (exit code)')
       print('##### Expected #####')
       print(expectExit)
+      print('##### TO EQUAL #####')
+      print(proc.returncode)
+      print(f'##### STDOUT: #####')
+      print(proc.stdout)
+      print(f'##### STDERR: #####')
+      print(proc.stderr)
+    elif expectNonzeroExit and proc.returncode == 0:
+      print('FAILED (exit code)')
+      print('##### Expected #####')
+      print('(nonzero)')
       print('##### TO EQUAL #####')
       print(proc.returncode)
       print(f'##### STDOUT: #####')

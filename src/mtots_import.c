@@ -2,6 +2,7 @@
 #include "mtots_object.h"
 #include "mtots_vm.h"
 #include "mtots_compiler.h"
+#include "mtots_env.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -120,9 +121,11 @@ static ubool importModuleNoCache(ObjString *moduleName) {
     return UTRUE;
   } else {
     /* Otherwise, we're working with a script */
-    char path[MAX_PATH_LENGTH];
-    strcpy(path, moduleName->chars);
-    strcpy(path + strlen(path), MTOTS_FILE_EXTENSION);
+    const char *path = findModulePath(moduleName->chars);
+    if (path == NULL) {
+      runtimeError("Could not find module %s", moduleName->chars);
+      return UFALSE;
+    }
     return importModuleWithPath(moduleName, path);
   }
 }

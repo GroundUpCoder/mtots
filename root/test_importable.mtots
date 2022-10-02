@@ -1,3 +1,4 @@
+# Module here purely for testing purposes
 
 var x = 5
 
@@ -5,4 +6,4 @@ def foo():
   print('(from foo) x = ' + str(x))
   return 'foo result'
 
-print("### foo is defined")
+print("foo is defined")
