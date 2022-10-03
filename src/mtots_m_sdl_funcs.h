@@ -8,15 +8,26 @@
  *********************************************************/
 
 static ubool implInit(i16 argCount, Value *args, Value *out) {
+  Uint32 flags = SDL_INIT_VIDEO;
+  if (argCount > 0) {
+    flags = (Uint32) AS_NUMBER(args[0]);
+  }
   SDL_SetMainReady();
-  if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+  if (SDL_Init(flags) < 0) {
     runtimeError("Failed to init SDL video: %s", SDL_GetError());
     return UFALSE;
   }
   return UTRUE;
 }
 
-static CFunction funcInit = { implInit, "init", 0 };
+static TypePattern argsInit[] = {
+  { TYPE_PATTERN_NUMBER },
+};
+
+static CFunction funcInit = {
+  implInit, "init",
+  0, sizeof(argsInit)/sizeof(TypePattern),
+  argsInit };
 
 static ubool implQuit(i16 argCount, Value *args, Value *out) {
   SDL_Quit();
@@ -30,11 +41,11 @@ static ubool implCreateWindow(i16 argCount, Value *args, Value *out) {
   window = NEW_NATIVE(ObjWindow, &descriptorWindow);
   window->handle = SDL_CreateWindow(
     AS_STRING(args[0])->chars,
-    (int) (u32) AS_NUMBER(args[1]),
-    (int) (u32) AS_NUMBER(args[2]),
-    (int) (u32) AS_NUMBER(args[3]),
-    (int) (u32) AS_NUMBER(args[4]),
-    (u32) AS_NUMBER(args[5]));
+    (int) AS_U32(args[1]),
+    (int) AS_U32(args[2]),
+    (int) AS_U32(args[3]),
+    (int) AS_U32(args[4]),
+    AS_U32(args[5]));
   *out = OBJ_VAL(window);
   return UTRUE;
 }
@@ -204,6 +215,44 @@ static CFunction funcCreateRGBSurfaceFrom = {
   argsCreateRGBSurfaceFrom };
 
 /**********************************************************
+ * functions: Audio
+ *********************************************************/
+
+static ubool implOpenAudioDevice(i16 argCount, Value *args, Value *out) {
+  const char *device = IS_NIL(args[0]) ? NULL : AS_STRING(args[0])->chars;
+  int isCapture = AS_I32(args[1]);
+  const SDL_AudioSpec *want = &((ObjAudioSpec*)AS_OBJ(args[2]))->data;
+  SDL_AudioSpec *have =
+    IS_NIL(args[3]) ? NULL : &((ObjAudioSpec*)AS_OBJ(args[3]))->data;
+  int allowedChanges = AS_I32(args[4]);
+  SDL_AudioDeviceID handle = SDL_OpenAudioDevice(
+    device, isCapture, want, have, allowedChanges);
+  ObjAudioDevice *ad;
+  if (handle == 0) {
+    runtimeError("Could not open SDL Audio Device: %s", SDL_GetError());
+    return UFALSE;
+  }
+  ad = NEW_NATIVE(ObjAudioDevice, &descriptorAudioDevice);
+  ad->handle = handle;
+  *out = OBJ_VAL(ad);
+  return UTRUE;
+}
+
+static TypePattern argsOpenAudioDevice[] = {
+  { TYPE_PATTERN_STRING_OR_NIL },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NATIVE, &descriptorAudioSpec },
+  { TYPE_PATTERN_NATIVE_OR_NIL, &descriptorAudioSpec },
+  { TYPE_PATTERN_NUMBER },
+};
+
+static CFunction funcOpenAudioDevice = {
+  implOpenAudioDevice, "openAudioDevice",
+  sizeof(argsOpenAudioDevice)/sizeof(TypePattern), 0,
+  argsOpenAudioDevice,
+};
+
+/**********************************************************
  * All the functions
  *********************************************************/
 
@@ -218,6 +267,7 @@ static CFunction *functions[] = {
   &funcGetKeyboardState,
   &funcCreateRenderer,
   &funcCreateRGBSurfaceFrom,
+  &funcOpenAudioDevice,
 };
 
 #endif/*mtots_m_sdl_funcs_h*/

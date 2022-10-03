@@ -30,6 +30,10 @@ static ObjString *string_x;
 static ObjString *string_y;
 static ObjString *string_w;
 static ObjString *string_h;
+static ObjString *string_freq;
+static ObjString *string_format;
+static ObjString *string_channels;
+static ObjString *string_samples;
 
 static void mtots_m_SDL_initStrings(ObjInstance *module) {
   size_t i;
@@ -44,6 +48,10 @@ static void mtots_m_SDL_initStrings(ObjInstance *module) {
     {&string_y, "y"},
     {&string_w, "w"},
     {&string_h, "h"},
+    {&string_freq, "freq"},
+    {&string_format, "format"},
+    {&string_channels, "channels"},
+    {&string_samples, "samples"},
   };
   list = newList(sizeof(rstrs)/sizeof(RetainedString));
   tableSetN(&module->fields, "__retain__", OBJ_VAL(list));
@@ -74,7 +82,7 @@ typedef struct ObjKeyboardState {
 
 typedef struct ObjRect {
   ObjNative obj;
-  SDL_Rect handle;
+  SDL_Rect data;
 } ObjRect;
 
 typedef struct ObjPoint {
@@ -98,6 +106,16 @@ typedef struct ObjTexture {
   SDL_Texture *handle;
 } ObjTexture;
 
+typedef struct ObjAudioSpec {
+  ObjNative obj;
+  SDL_AudioSpec data;
+} ObjAudioSpec;
+
+typedef struct ObjAudioDevice {
+  ObjNative obj;
+  SDL_AudioDeviceID handle;
+} ObjAudioDevice;
+
 /**********************************************************
  * TYPES AND CLASSES : descriptors (SDL types/classes)
  *
@@ -116,6 +134,8 @@ extern NativeObjectDescriptor descriptorPoint;
 extern NativeObjectDescriptor descriptorRenderer;
 extern NativeObjectDescriptor descriptorSurface;
 extern NativeObjectDescriptor descriptorTexture;
+extern NativeObjectDescriptor descriptorAudioSpec;
+extern NativeObjectDescriptor descriptorAudioDevice;
 
 static NativeObjectDescriptor *descriptors[] = {
   &descriptorWindow,
@@ -126,6 +146,8 @@ static NativeObjectDescriptor *descriptors[] = {
   &descriptorRenderer,
   &descriptorSurface,
   &descriptorTexture,
+  &descriptorAudioSpec,
+  &descriptorAudioDevice,
 };
 
 #endif/*mtots_m_sdl_common_h*/

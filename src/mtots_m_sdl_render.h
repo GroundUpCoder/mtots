@@ -52,7 +52,7 @@ static CFunction funcRendererClear = { implRendererClear, "clear", 0 };
 static ubool implRendererFillRect(i16 argCount, Value *args, Value *out) {
   ObjRenderer *renderer = (ObjRenderer*)AS_OBJ(args[-1]);
   ObjRect *rect = (ObjRect*)AS_OBJ(args[0]);
-  if (SDL_RenderFillRect(renderer->handle, &rect->handle) != 0) {
+  if (SDL_RenderFillRect(renderer->handle, &rect->data) != 0) {
     runtimeError("SDL error: %s", SDL_GetError());
     return UFALSE;
   }
@@ -122,8 +122,8 @@ static ubool implRendererCopy(i16 argCount, Value *args, Value *out) {
   if (SDL_RenderCopy(
       renderer->handle,
       texture->handle,
-      &srcRect->handle,
-      &dstRect->handle) != 0) {
+      &srcRect->data,
+      &dstRect->data) != 0) {
     runtimeError("SDL RenderCopy Failed: %s", SDL_GetError());
     return UFALSE;
   };

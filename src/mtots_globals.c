@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 
 static ubool implClock(i16 argCount, Value *args, Value *out) {
   *out = NUMBER_VAL((double) clock() / CLOCKS_PER_SEC);
@@ -562,6 +563,55 @@ static ubool implOpen(i16 argCount, Value *args, Value *out) {
 
 static CFunction cfunctionOpen = { implOpen, "open", 1, 2 };
 
+static ubool implSin(i16 argCount, Value *args, Value *out) {
+  *out = NUMBER_VAL(sin(AS_NUMBER(args[0])));
+  return UTRUE;
+}
+
+static TypePattern argsSin[] = {
+  { TYPE_PATTERN_NUMBER },
+};
+
+static CFunction funcSin = {
+  implSin, "sin", sizeof(argsSin)/sizeof(TypePattern), 0, argsSin };
+
+static ubool implCos(i16 argCount, Value *args, Value *out) {
+  *out = NUMBER_VAL(cos(AS_NUMBER(args[0])));
+  return UTRUE;
+}
+
+static TypePattern argsCos[] = {
+  { TYPE_PATTERN_NUMBER },
+};
+
+static CFunction funcCos = {
+  implCos, "cos", sizeof(argsCos)/sizeof(TypePattern), 0, argsCos };
+
+static ubool implTan(i16 argCount, Value *args, Value *out) {
+  *out = NUMBER_VAL(tan(AS_NUMBER(args[0])));
+  return UTRUE;
+}
+
+static TypePattern argsTan[] = {
+  { TYPE_PATTERN_NUMBER },
+};
+
+static CFunction funcTan = {
+  implTan, "tan", sizeof(argsTan)/sizeof(TypePattern), 0, argsTan };
+
+static ubool implAbs(i16 argCount, Value *args, Value *out) {
+  double value = AS_NUMBER(args[0]);
+  *out = NUMBER_VAL(value < 0 ? -value : value);
+  return UTRUE;
+}
+
+static TypePattern argsAbs[] = {
+  { TYPE_PATTERN_NUMBER },
+};
+
+static CFunction funcAbs = {
+  implAbs, "abs", sizeof(argsAbs)/sizeof(TypePattern), 0, argsAbs };
+
 static void defineStandardIOGlobals() {
   ObjString *name;
 
@@ -585,6 +635,8 @@ static void defineStandardIOGlobals() {
 }
 
 void defineDefaultGlobals() {
+  defineGlobal("PI", NUMBER_VAL(M_PI));
+
   defineGlobal("len", OPERATOR_VAL(OperatorLen));
 
   defineGlobal("clock", CFUNCTION_VAL(&cfunctionClock));
@@ -597,6 +649,10 @@ void defineDefaultGlobals() {
   defineGlobal("print", CFUNCTION_VAL(&cfunctionPrint));
   defineGlobal("range", CFUNCTION_VAL(&cfunctionRange));
   defineGlobal("open", CFUNCTION_VAL(&cfunctionOpen));
+  defineGlobal("sin", CFUNCTION_VAL(&funcSin));
+  defineGlobal("cos", CFUNCTION_VAL(&funcCos));
+  defineGlobal("tan", CFUNCTION_VAL(&funcTan));
+  defineGlobal("abs", CFUNCTION_VAL(&funcAbs));
   defineGlobal("StopIteration", STOP_ITERATION_VAL());
 
   defineGlobal("Table", OBJ_VAL(vm.tableClass));

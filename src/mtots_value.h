@@ -32,7 +32,7 @@ typedef struct Value {
     ubool boolean;
     double number;
     CFunction *cfunction;
-    Operator operator;
+    Operator op;
     Sentinel sentinel;
     Obj *obj;
   } as;
@@ -40,9 +40,11 @@ typedef struct Value {
 
 typedef enum TypePatternType {
   TYPE_PATTERN_ANY = 0,
+  TYPE_PATTERN_STRING_OR_NIL,
   TYPE_PATTERN_STRING,
   TYPE_PATTERN_BYTE_ARRAY,
   TYPE_PATTERN_NUMBER,
+  TYPE_PATTERN_NATIVE_OR_NIL,
   TYPE_PATTERN_NATIVE
 } TypePatternType;
 
@@ -77,10 +79,11 @@ typedef struct ValueArray {
 #define AS_BOOL(value) ((value).as.boolean)
 #define AS_NUMBER(value) ((value).as.number)
 #define AS_CFUNCTION(value) ((value).as.cfunction)
-#define AS_OPERATOR(value) ((value).as.operator)
+#define AS_OPERATOR(value) ((value).as.op)
 #define AS_SENTINEL(value) ((value).as.sentinel)
 
 /* should-be-inline */ u32 AS_U32(Value value);
+/* should-be-inline */ i32 AS_I32(Value value);
 
 #define OBJ_VAL(object) (OBJ_VAL_EXPLICIT((Obj*)(object)))
 
@@ -88,7 +91,7 @@ STATIC_INLINE Value BOOL_VAL(ubool value);
 STATIC_INLINE Value NIL_VAL();
 STATIC_INLINE Value NUMBER_VAL(double value);
 STATIC_INLINE Value CFUNCTION_VAL(CFunction *func);
-STATIC_INLINE Value OPERATOR_VAL(Operator operator);
+STATIC_INLINE Value OPERATOR_VAL(Operator op);
 STATIC_INLINE Value SENTINEL_VAL(Sentinel sentinel);
 STATIC_INLINE Value OBJ_VAL_EXPLICIT(Obj *object);
 

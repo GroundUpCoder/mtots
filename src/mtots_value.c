@@ -13,6 +13,10 @@
   return x < 0 ? ((u32) (i32) x) : (u32) x;
 }
 
+/* should-be-inline */ i32 AS_I32(Value value) {
+  return (i32) AS_NUMBER(value);
+}
+
 STATIC_INLINE Value BOOL_VAL(ubool value) {
   Value v = {VAL_BOOL};
   v.as.boolean = value;
@@ -32,9 +36,9 @@ STATIC_INLINE Value CFUNCTION_VAL(CFunction *func) {
   v.as.cfunction = func;
   return v;
 }
-STATIC_INLINE Value OPERATOR_VAL(Operator operator) {
+STATIC_INLINE Value OPERATOR_VAL(Operator op) {
   Value v = {VAL_OPERATOR};
-  v.as.operator = operator;
+  v.as.op = op;
   return v;
 }
 STATIC_INLINE Value SENTINEL_VAL(Sentinel sentinel) {
@@ -87,11 +91,11 @@ void printValue(Value value) {
       return;
     }
     case VAL_OPERATOR: {
-      Operator operator = AS_OPERATOR(value);
-      switch (operator) {
+      Operator op = AS_OPERATOR(value);
+      switch (op) {
         case OperatorLen: printf("<operator len>"); return;
       }
-      printf("<operator unknown(%d)>", operator);
+      printf("<operator unknown(%d)>", op);
       return;
     }
     case VAL_SENTINEL: printf("<sentinel %d>", AS_SENTINEL(value)); return;
@@ -149,13 +153,23 @@ const char *getKindName(Value value) {
 ubool typePatternMatch(TypePattern pattern, Value value) {
   switch (pattern.type) {
     case TYPE_PATTERN_ANY: return UTRUE;
+    case TYPE_PATTERN_STRING_OR_NIL:
+      if (IS_NIL(value)) {
+        return UTRUE;
+      }
+      /* fallthrough */
+    case TYPE_PATTERN_STRING: return IS_STRING(value);
+    case TYPE_PATTERN_BYTE_ARRAY: return IS_BYTE_ARRAY(value);
+    case TYPE_PATTERN_NUMBER: return IS_NUMBER(value);
+    case TYPE_PATTERN_NATIVE_OR_NIL:
+      if (IS_NIL(value)) {
+        return UTRUE;
+      }
+      /* fallthrough */
     case TYPE_PATTERN_NATIVE:
       return IS_NATIVE(value) && (
         pattern.nativeTypeDescriptor == NULL ||
         AS_NATIVE(value)->descriptor == pattern.nativeTypeDescriptor);
-    case TYPE_PATTERN_NUMBER: return IS_NUMBER(value);
-    case TYPE_PATTERN_STRING: return IS_STRING(value);
-    case TYPE_PATTERN_BYTE_ARRAY: return IS_BYTE_ARRAY(value);
   }
   panic("Unrecognized TypePattern type %d", pattern.type);
   return UFALSE;
@@ -165,12 +179,17 @@ const char *getTypePatternName(TypePattern pattern) {
   switch (pattern.type) {
     case TYPE_PATTERN_ANY: return "any";
     case TYPE_PATTERN_NUMBER: return "number";
+    case TYPE_PATTERN_STRING_OR_NIL: return "(string|nil)";
     case TYPE_PATTERN_STRING: return "string";
     case TYPE_PATTERN_BYTE_ARRAY: return "ByteArray";
     case TYPE_PATTERN_NATIVE:
       return pattern.nativeTypeDescriptor ?
         ((NativeObjectDescriptor*) pattern.nativeTypeDescriptor)->name :
         "native";
+    case TYPE_PATTERN_NATIVE_OR_NIL:
+      return pattern.nativeTypeDescriptor ?
+        ((NativeObjectDescriptor*) pattern.nativeTypeDescriptor)->name :
+        "(native|nil)";
   }
   panic("Unrecognized TypePattern type %d", pattern.type);
   return UFALSE;

@@ -1,0 +1,31 @@
+import sdl
+
+final AMPLITUDE = 63
+final SAMPLE_RATE = 44100
+
+sdl.init(sdl.INIT_AUDIO)
+
+final spec = sdl.AudioSpec()
+spec.freq = SAMPLE_RATE
+spec.format = sdl.AUDIO_S8
+spec.channels = 1
+spec.samples = 4096
+
+final buffer1 = ByteArray(SAMPLE_RATE // 2)
+for i in range(len(buffer1)):
+  final t = i / SAMPLE_RATE
+  buffer1[i] = AMPLITUDE * sin(2.0 * PI * 441 * t)
+
+final buffer2 = ByteArray(SAMPLE_RATE // 2)
+for i in range(len(buffer2)):
+  final t = i / SAMPLE_RATE
+  buffer2[i] = AMPLITUDE * sin(2.0 * PI * 882 * t)
+
+final adev = sdl.openAudioDevice(nil, 0, spec, nil, 0)
+
+adev.queue(buffer1)
+adev.queue(buffer2)
+adev.queue(buffer1)
+adev.pause(0)
+
+sdl.delay(1500)

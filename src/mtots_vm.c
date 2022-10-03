@@ -414,8 +414,8 @@ static ubool callClass(ObjClass *klass, i16 argCount) {
   }
 }
 
-static ubool callOperator(Operator operator, i16 argCount) {
-  switch (operator) {
+static ubool callOperator(Operator op, i16 argCount) {
+  switch (op) {
     case OperatorLen: {
       Value receiver = vm.stackTop[-1];
       if (argCount != 1) {
@@ -449,7 +449,7 @@ static ubool callOperator(Operator operator, i16 argCount) {
       return UFALSE;
     }
   }
-  runtimeError("Unrecognized operator %d", operator);
+  runtimeError("Unrecognized operator %d", op);
   return UFALSE;
 }
 

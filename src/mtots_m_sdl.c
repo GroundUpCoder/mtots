@@ -14,6 +14,8 @@
 #include "mtots_m_sdl_point.h"
 #include "mtots_m_sdl_surf.h"
 #include "mtots_m_sdl_texture.h"
+#include "mtots_m_sdl_adev.h"
+#include "mtots_m_sdl_aspec.h"
 #include "mtots_m_sdl_funcs.h"
 
 static ubool impl(i16 argCount, Value *args, Value *out) {

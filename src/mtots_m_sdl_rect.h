@@ -5,10 +5,10 @@
 
 static ObjRect *newRect(int x, int y, int w, int h) {
   ObjRect *rect = NEW_NATIVE(ObjRect, &descriptorRect);
-  rect->handle.x = x;
-  rect->handle.y = y;
-  rect->handle.w = w;
-  rect->handle.h = h;
+  rect->data.x = x;
+  rect->data.y = y;
+  rect->data.w = w;
+  rect->data.h = h;
   return rect;
 }
 
@@ -34,16 +34,16 @@ static CFunction funcRect = { implRect, "Rect",
 static ubool rectGetField(ObjNative *n, ObjString *key, Value *out) {
   ObjRect *rect = (ObjRect*)n;
   if (key == string_x) {
-    *out = NUMBER_VAL(rect->handle.x);
+    *out = NUMBER_VAL(rect->data.x);
     return UTRUE;
   } else if (key == string_y) {
-    *out = NUMBER_VAL(rect->handle.y);
+    *out = NUMBER_VAL(rect->data.y);
     return UTRUE;
   } else if (key == string_w) {
-    *out = NUMBER_VAL(rect->handle.w);
+    *out = NUMBER_VAL(rect->data.w);
     return UTRUE;
   } else if (key == string_h) {
-    *out = NUMBER_VAL(rect->handle.h);
+    *out = NUMBER_VAL(rect->data.h);
     return UTRUE;
   }
   return UFALSE;
@@ -57,16 +57,16 @@ static ubool rectSetField(ObjNative *n, ObjString *key, Value out) {
     return UFALSE;
   }
   if (key == string_x) {
-    rect->handle.x = AS_NUMBER(out);
+    rect->data.x = AS_NUMBER(out);
     return UTRUE;
   } else if (key == string_y) {
-    rect->handle.y = AS_NUMBER(out);
+    rect->data.y = AS_NUMBER(out);
     return UTRUE;
   } else if (key == string_w) {
-    rect->handle.w = AS_NUMBER(out);
+    rect->data.w = AS_NUMBER(out);
     return UTRUE;
   } else if (key == string_h) {
-    rect->handle.h = AS_NUMBER(out);
+    rect->data.h = AS_NUMBER(out);
     return UTRUE;
   }
   return UFALSE;
