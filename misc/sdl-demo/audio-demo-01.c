@@ -17,6 +17,8 @@ void callback(void *userData, Uint8 *rawBuffer, int len) {
   AudioData *ad = (AudioData*)userData;
   size_t i;
 
+  printf("STARTING CALLBACK (len = %d)\n", len);
+
   for (i = 0; i < len; i++, ad->sampleIndex++) {
     double time = ad->sampleIndex / (double) SAMPLE_RATE;
     buffer[i] = (Sint8) (AMPLITUDE * sin(
