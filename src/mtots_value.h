@@ -80,6 +80,8 @@ typedef struct ValueArray {
 #define AS_OPERATOR(value) ((value).as.operator)
 #define AS_SENTINEL(value) ((value).as.sentinel)
 
+/* should-be-inline */ u32 AS_U32(Value value);
+
 #define OBJ_VAL(object) (OBJ_VAL_EXPLICIT((Obj*)(object)))
 
 STATIC_INLINE Value BOOL_VAL(ubool value);

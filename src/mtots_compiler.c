@@ -29,9 +29,13 @@ typedef enum {
   PREC_AND,         /* and */
   PREC_EQUALITY,    /* == != */
   PREC_COMPARISON,  /* < > <= >= */
+  PREC_SHIFT,      /* << >> */
+  PREC_BITWISE_AND, /* & */
+  PREC_BITWISE_XOR, /* ^ */
+  PREC_BITWISE_OR,  /* | */
   PREC_TERM,        /* + - */
   PREC_FACTOR,      /* * / */
-  PREC_UNARY,       /* ! - */
+  PREC_UNARY,       /* ! - ~ */
   PREC_CALL,        /* . () [] */
   PREC_PRIMARY
 } Precedence;
@@ -478,6 +482,11 @@ static void binary(ubool canAssign) {
     case TOKEN_SLASH: emitByte(OP_DIVIDE); break;
     case TOKEN_SLASH_SLASH: emitByte(OP_FLOOR_DIVIDE); break;
     case TOKEN_PERCENT: emitByte(OP_MODULO); break;
+    case TOKEN_SHIFT_LEFT: emitByte(OP_SHIFT_LEFT); break;
+    case TOKEN_SHIFT_RIGHT: emitByte(OP_SHIFT_RIGHT); break;
+    case TOKEN_PIPE: emitByte(OP_BITWISE_OR); break;
+    case TOKEN_AMPERSAND: emitByte(OP_BITWISE_AND); break;
+    case TOKEN_CARET: emitByte(OP_BITWISE_XOR); break;
     default:
       abort();
       return; /* unreachable */
@@ -828,6 +837,7 @@ static void unary(ubool canAssign) {
 
   /* Emit the operator instruction */
   switch (operatorType) {
+    case TOKEN_TILDE: emitByte(OP_BITWISE_NOT); break;
     case TOKEN_BANG: emitByte(OP_NOT); break;
     case TOKEN_MINUS: emitByte(OP_NEGATE); break;
     default:
@@ -861,6 +871,12 @@ void initRules() {
   rules[TOKEN_PLUS] = newRule(NULL, binary, PREC_TERM);
   rules[TOKEN_SLASH] = newRule(NULL, binary, PREC_FACTOR);
   rules[TOKEN_STAR] = newRule(NULL, binary, PREC_FACTOR);
+  rules[TOKEN_PIPE] = newRule(NULL, binary, PREC_BITWISE_OR);
+  rules[TOKEN_AMPERSAND] = newRule(NULL, binary, PREC_BITWISE_AND);
+  rules[TOKEN_CARET] = newRule(NULL, binary, PREC_BITWISE_XOR);
+  rules[TOKEN_TILDE] = newRule(unary, NULL, PREC_NONE);
+  rules[TOKEN_SHIFT_LEFT] = newRule(NULL, binary, PREC_SHIFT);
+  rules[TOKEN_SHIFT_RIGHT] = newRule(NULL, binary, PREC_SHIFT);
   rules[TOKEN_BANG] = newRule(unary, NULL, PREC_NONE);
   rules[TOKEN_BANG_EQUAL] = newRule(NULL, binary, PREC_EQUALITY);
   rules[TOKEN_EQUAL_EQUAL] = newRule(NULL, binary, PREC_EQUALITY);

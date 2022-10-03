@@ -390,6 +390,10 @@ Token scanToken() {
     case '%': return makeToken(TOKEN_PERCENT);
     case '*': return makeToken(TOKEN_STAR);
     case '@': return makeToken(TOKEN_AT);
+    case '|': return makeToken(TOKEN_PIPE);
+    case '&': return makeToken(TOKEN_AMPERSAND);
+    case '^': return makeToken(TOKEN_CARET);
+    case '~': return makeToken(TOKEN_TILDE);
     case '!':
       return makeToken(
         match('=') ? TOKEN_BANG_EQUAL : TOKEN_BANG);
@@ -398,9 +402,11 @@ Token scanToken() {
         match('=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);
     case '<':
       return makeToken(
+        match('<') ? TOKEN_SHIFT_LEFT :
         match('=') ? TOKEN_LESS_EQUAL : TOKEN_LESS);
     case '>':
       return makeToken(
+        match('>') ? TOKEN_SHIFT_RIGHT :
         match('=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
     case '"': return string('"', TOKEN_STRING);
     case '\'': return string('\'', TOKEN_STRING);

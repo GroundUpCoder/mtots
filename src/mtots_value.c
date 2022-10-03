@@ -8,6 +8,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* should-be-inline */ u32 AS_U32(Value value) {
+  double x = AS_NUMBER(value);
+  return x < 0 ? ((u32) (i32) x) : (u32) x;
+}
+
 STATIC_INLINE Value BOOL_VAL(ubool value) {
   Value v = {VAL_BOOL};
   v.as.boolean = value;

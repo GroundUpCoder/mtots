@@ -61,3 +61,8 @@ to actually be final (e.g. as in Java).
 Further, at some point, it should be possible to replace uses of
 final variables assigned to an immutable value with the actual
 values themselves like constants.
+
+### Bitwise Operators
+
+All bitwise operators `<<`, `>>`, `&`, `|`, `^`, `~` are done by first
+converting the number to an unsigned 32 bit integer.

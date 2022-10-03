@@ -584,6 +584,18 @@ InterpretResult run(i16 returnFrameCount) {
       push(valueType(a op b)); \
     } \
   } while (0)
+#define BINARY_BITWISE_OP(op) \
+  do { \
+    if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) { \
+      runtimeError("Operands must be numbers"); \
+      return INTERPRET_RUNTIME_ERROR; \
+    } \
+    { \
+      u32 b = AS_U32(pop()); \
+      u32 a = AS_U32(pop()); \
+      push(NUMBER_VAL(a op b)); \
+    } \
+  } while (0)
 
   for(;;) {
     u8 instruction;
@@ -795,6 +807,21 @@ InterpretResult run(i16 returnFrameCount) {
           frame = &vm.frames[vm.frameCount - 1];
         }
         break;
+      case OP_SHIFT_LEFT: BINARY_BITWISE_OP(<<); break;
+      case OP_SHIFT_RIGHT: BINARY_BITWISE_OP(>>); break;
+      case OP_BITWISE_OR: BINARY_BITWISE_OP(|); break;
+      case OP_BITWISE_AND: BINARY_BITWISE_OP(&); break;
+      case OP_BITWISE_XOR: BINARY_BITWISE_OP(^); break;
+      case OP_BITWISE_NOT: {
+        u32 x;
+        if (!IS_NUMBER(peek(0))) {
+          runtimeError("Operand must be a number");
+          return INTERPRET_RUNTIME_ERROR;
+        }
+        x = AS_U32(pop());
+        push(NUMBER_VAL(~x));
+        break;
+      }
       case OP_NOT:
         push(BOOL_VAL(isFalsey(pop())));
         break;
