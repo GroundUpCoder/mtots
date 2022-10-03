@@ -12,6 +12,14 @@
 static void nopBlacken(ObjNative *n) {}
 static void nopFree(ObjNative *n) {}
 
+typedef enum WaveForm {
+  WAVE_FORM_SINE,
+  WAVE_FORM_SAWTOOTH,
+  WAVE_FORM_SQUARE,
+  WAVE_FORM_TRIANGLE,
+  WAVE_FORM_COUNT
+} WaveForm;
+
 /**********************************************************
  * strings
  *********************************************************/

@@ -57,17 +57,17 @@ def eventLoop():
       sdl.setCallbackSpec(0, 0, 0, 1)
 
     if kstate[sdl.scancode.F]:
-      sdl.setCallbackSpec(1, 523.25, 0.25, 1) # C5
+      sdl.setCallbackSpec(1, 440, 0.25, 1) # C5
     else:
       sdl.setCallbackSpec(1, 0, 0, 1)
 
     if kstate[sdl.scancode.J]:
-      sdl.setCallbackSpec(2, 659.25, 0.25, 2) # E5
+      sdl.setCallbackSpec(2, 440, 0.25, 2) # E5
     else:
       sdl.setCallbackSpec(2, 0, 0, 1)
 
     if kstate[sdl.scancode.K]:
-      sdl.setCallbackSpec(3, 783.99, 0.25, 3) # G5
+      sdl.setCallbackSpec(3, 440, 0.25, 3) # G5
     else:
       sdl.setCallbackSpec(3, 0, 0, 1)
 

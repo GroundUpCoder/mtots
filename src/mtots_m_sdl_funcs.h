@@ -4,6 +4,8 @@
 #include "mtots_m_sdl_common.h"
 #include "mtots_m_sdl_acb.h"
 
+#include <stdio.h>
+
 /**********************************************************
  * functions: Initialization and Startup
  *********************************************************/
@@ -258,15 +260,20 @@ static ubool implSetCallbackSpec(i16 argCount, Value *args, Value *out) {
   u32 i = AS_U32(args[0]);
   double frequency = AS_NUMBER(args[1]);
   double amplitude = AS_NUMBER(args[2]);
-  if (i < 0) {
-    i = 0;
-  } else if (i >= AUDIO_CALLBACK_ENTRY_COUNT) {
-    i = AUDIO_CALLBACK_ENTRY_COUNT - 1;
+  u32 waveForm = AS_U32(args[3]);
+  if (waveForm >= WAVE_FORM_COUNT) {
+    runtimeError("Invalid wave form %lu", waveForm);
+    return UFALSE;
+  }
+  if (i >= AUDIO_CALLBACK_ENTRY_COUNT) {
+    runtimeError("Invalid audio callback entry index");
+    return UFALSE;
   }
   if (SDL_LockMutex(audioCallbackMutex) == 0) {
     spec = audioCallbackSpec;
     spec.entries[i].frequency = frequency;
     spec.entries[i].amplitude = amplitude;
+    spec.entries[i].waveForm = waveForm;
     audioCallbackSpec = spec;
     SDL_UnlockMutex(audioCallbackMutex);
   } else {
@@ -276,6 +283,7 @@ static ubool implSetCallbackSpec(i16 argCount, Value *args, Value *out) {
 }
 
 static TypePattern argsSetCallbackSpec[] = {
+  { TYPE_PATTERN_NUMBER },
   { TYPE_PATTERN_NUMBER },
   { TYPE_PATTERN_NUMBER },
   { TYPE_PATTERN_NUMBER },

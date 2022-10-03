@@ -48,6 +48,12 @@ static NumericConstant numericConstants[] = {
   { "AUDIO_F32", AUDIO_F32 },
   { "AUDIO_F32LSB", AUDIO_F32LSB },
 
+  /* Wave Forms */
+  { "WAVE_FORM_SINE", WAVE_FORM_SINE },
+  { "WAVE_FORM_SAWTOOTH", WAVE_FORM_SAWTOOTH },
+  { "WAVE_FORM_SQUARE", WAVE_FORM_SQUARE },
+  { "WAVE_FORM_TRIANGLE", WAVE_FORM_TRIANGLE },
+
   /* Event types */
   {"FINGERMOTION", SDL_FINGERMOTION},
   {"FINGERDOWN", SDL_FINGERDOWN},

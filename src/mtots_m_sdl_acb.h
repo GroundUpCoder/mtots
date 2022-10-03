@@ -10,11 +10,12 @@
 
 #define SAMPLE_RATE                44100
 #define MAX_I8_AMP                    64     /* arbitrary, picked at roughly 1/2 max */
-#define AUDIO_CALLBACK_ENTRY_COUNT     4
+#define AUDIO_CALLBACK_ENTRY_COUNT     8
 
 typedef struct AudioCallbackSpecEntry {
-  double frequency; /* in Hz */
-  double amplitude; /* between 0 and 1 */
+  double frequency;   /* in Hz */
+  double amplitude;   /* between 0 and 1 */
+  WaveForm waveForm;
 } AudioCallbackSpecEntry;
 
 typedef struct AudioCallbackSpec {
@@ -60,8 +61,25 @@ static void audioCallback(void *userdata, Uint8 *rawBuffer, int streamLen) {
     double sum = 0;
     for (j = 0; j < AUDIO_CALLBACK_ENTRY_COUNT; j++) {
       AudioCallbackSpecEntry *e = &spec.entries[j];
+      double ratio = fmod(t * e->frequency, 1);
       if (e->amplitude != 0 && e->frequency != 0) {
-        sum += e->amplitude * sin(2 * M_PI * t * e->frequency);
+        switch (e->waveForm) {
+          case WAVE_FORM_SINE:
+            sum += e->amplitude * sin(2 * M_PI * ratio);
+            break;
+          case WAVE_FORM_SAWTOOTH:
+            sum += e->amplitude * (ratio * 2 - 1);
+            break;
+          case WAVE_FORM_SQUARE:
+            sum += e->amplitude * (ratio < 0.5 ? -1 : 1);
+            break;
+          case WAVE_FORM_TRIANGLE:
+            sum += e->amplitude * (
+              ratio < 0.5 ? (ratio * 4 - 1) : ((1 - ratio) * 4 - 1));
+            break;
+          case WAVE_FORM_COUNT:
+            panic("WAVE_FORM_COUNT");
+        }
       }
     }
     if (sum < -1) {
