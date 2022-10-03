@@ -2,6 +2,7 @@
 #define mtots_m_sdl_aspec_h
 
 #include "mtots_m_sdl_common.h"
+#include "mtots_m_sdl_acb.h"
 
 #include <string.h>
 
@@ -61,6 +62,14 @@ static ubool audioSpecSetField(ObjNative *n, ObjString *key, Value in) {
   }
   if (key == string_samples) {
     audioSpec->data.samples = AS_NUMBER(in);
+    return UTRUE;
+  }
+  if (key == string_callback) {
+    if (AS_NUMBER(in)) {
+      audioSpec->data.callback = audioCallback;
+    } else {
+      audioSpec->data.callback = NULL;
+    }
     return UTRUE;
   }
   return UFALSE;

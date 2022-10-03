@@ -34,6 +34,7 @@ static ObjString *string_freq;
 static ObjString *string_format;
 static ObjString *string_channels;
 static ObjString *string_samples;
+static ObjString *string_callback;
 
 static void mtots_m_SDL_initStrings(ObjInstance *module) {
   size_t i;
@@ -52,6 +53,7 @@ static void mtots_m_SDL_initStrings(ObjInstance *module) {
     {&string_format, "format"},
     {&string_channels, "channels"},
     {&string_samples, "samples"},
+    {&string_callback, "callback"},
   };
   list = newList(sizeof(rstrs)/sizeof(RetainedString));
   tableSetN(&module->fields, "__retain__", OBJ_VAL(list));

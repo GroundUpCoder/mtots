@@ -2,6 +2,7 @@
 #define mtots_m_sdl_funcs_h
 
 #include "mtots_m_sdl_common.h"
+#include "mtots_m_sdl_acb.h"
 
 /**********************************************************
  * functions: Initialization and Startup
@@ -252,6 +253,40 @@ static CFunction funcOpenAudioDevice = {
   argsOpenAudioDevice,
 };
 
+static ubool implSetCallbackSpec(i16 argCount, Value *args, Value *out) {
+  AudioCallbackSpec spec;
+  u32 i = AS_U32(args[0]);
+  double frequency = AS_NUMBER(args[1]);
+  double amplitude = AS_NUMBER(args[2]);
+  if (i < 0) {
+    i = 0;
+  } else if (i >= AUDIO_CALLBACK_ENTRY_COUNT) {
+    i = AUDIO_CALLBACK_ENTRY_COUNT - 1;
+  }
+  if (SDL_LockMutex(audioCallbackMutex) == 0) {
+    spec = audioCallbackSpec;
+    spec.entries[i].frequency = frequency;
+    spec.entries[i].amplitude = amplitude;
+    audioCallbackSpec = spec;
+    SDL_UnlockMutex(audioCallbackMutex);
+  } else {
+    panic("Failed to lock audioCallbackMutex");
+  }
+  return UTRUE;
+}
+
+static TypePattern argsSetCallbackSpec[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+
+static CFunction funcSetCallbackSpec = {
+  implSetCallbackSpec, "setCallbackSpec",
+  sizeof(argsSetCallbackSpec)/sizeof(TypePattern), 0,
+  argsSetCallbackSpec,
+};
+
 /**********************************************************
  * All the functions
  *********************************************************/
@@ -268,6 +303,7 @@ static CFunction *functions[] = {
   &funcCreateRenderer,
   &funcCreateRGBSurfaceFrom,
   &funcOpenAudioDevice,
+  &funcSetCallbackSpec,
 };
 
 #endif/*mtots_m_sdl_funcs_h*/

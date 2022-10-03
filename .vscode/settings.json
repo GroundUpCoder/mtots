@@ -45,9 +45,11 @@
         "mtots_m_sdl_event.h": "c",
         "mtots_m_sdl_rect.h": "c",
         "mtots_m_sdl_common.h": "c",
-        "math.h": "c"
+        "math.h": "c",
+        "mtots_m_sdl_acb.h": "c"
     },
     "C_Cpp.default.defines": [
         "MTOTS_ENABLE_SDL=1"
-    ]
+    ],
+    "cmake.configureOnOpen": false
 }
