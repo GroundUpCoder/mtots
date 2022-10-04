@@ -265,7 +265,7 @@ static ubool implSetCallbackSpec(i16 argCount, Value *args, Value *out) {
     runtimeError("Invalid wave form %lu", waveForm);
     return UFALSE;
   }
-  if (i >= AUDIO_CALLBACK_ENTRY_COUNT) {
+  if (i >= AUDIO_CALLBACK_TRACK_COUNT) {
     runtimeError("Invalid audio callback entry index");
     return UFALSE;
   }

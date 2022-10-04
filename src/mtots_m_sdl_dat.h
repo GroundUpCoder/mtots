@@ -6,6 +6,8 @@
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 
+#include "mtots_m_sdl_acb.h"
+
 typedef struct {
   const char *name;
   double value;
@@ -23,6 +25,9 @@ static NumericConstant numericConstants[] = {
   { "INIT_GAMECONTROLLER", SDL_INIT_GAMECONTROLLER}, /* auto-init JOYSTICK */
   { "INIT_EVENTS", SDL_INIT_EVENTS},
   { "INIT_EVERYTHING", SDL_INIT_EVERYTHING},
+
+  /* Other audio constants */
+  { "AUDIO_CALLBACK_TRACK_COUNT", AUDIO_CALLBACK_TRACK_COUNT },
 
   /* audio sample formats */
   { "AUDIO_S8", AUDIO_S8 },

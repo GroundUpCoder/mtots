@@ -10,7 +10,7 @@
 
 #define SAMPLE_RATE                44100
 #define MAX_I8_AMP                    64     /* arbitrary, picked at roughly 1/2 max */
-#define AUDIO_CALLBACK_ENTRY_COUNT     8
+#define AUDIO_CALLBACK_TRACK_COUNT     8
 
 typedef struct AudioCallbackSpecEntry {
   double frequency;   /* in Hz */
@@ -19,7 +19,7 @@ typedef struct AudioCallbackSpecEntry {
 } AudioCallbackSpecEntry;
 
 typedef struct AudioCallbackSpec {
-  AudioCallbackSpecEntry entries[AUDIO_CALLBACK_ENTRY_COUNT];
+  AudioCallbackSpecEntry entries[AUDIO_CALLBACK_TRACK_COUNT];
 } AudioCallbackSpec;
 
 static SDL_mutex *audioCallbackMutex;
@@ -38,7 +38,7 @@ static void audioCallback(void *userdata, Uint8 *rawBuffer, int streamLen) {
     panic("FAILED TO LOCK audioCallbackMutex");
   }
 
-  for (i = 0; i < AUDIO_CALLBACK_ENTRY_COUNT; i++) {
+  for (i = 0; i < AUDIO_CALLBACK_TRACK_COUNT; i++) {
     printf("RUNNING audioCallback %d freq=%f, amp=%f\n",
       (int) i, spec.entries[i].frequency, spec.entries[i].amplitude);
     if (spec.entries[i].frequency < 0) {
@@ -59,7 +59,7 @@ static void audioCallback(void *userdata, Uint8 *rawBuffer, int streamLen) {
   for (i = 0; i < streamLen; i++, k++) {
     double t = k / (double) SAMPLE_RATE;
     double sum = 0;
-    for (j = 0; j < AUDIO_CALLBACK_ENTRY_COUNT; j++) {
+    for (j = 0; j < AUDIO_CALLBACK_TRACK_COUNT; j++) {
       AudioCallbackSpecEntry *e = &spec.entries[j];
       double ratio = fmod(t * e->frequency, 1);
       if (e->amplitude != 0 && e->frequency != 0) {

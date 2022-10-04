@@ -20,6 +20,25 @@ spec.samples = 512
 spec.callback = 1
 final adev = sdl.openAudioDevice(nil, 0, spec, nil, 0)
 adev.pause(0)
+final keyToTrackMap = {}
+final trackToKeyMap = {}
+final notes = {
+  sdl.scancode.A:          261.63, # C4
+  sdl.scancode.S:          293.66, # D4
+  sdl.scancode.D:          329.64, # E4
+  sdl.scancode.F:          349.23, # F4
+  sdl.scancode.G:          392.00, # G4
+  sdl.scancode.H:          440.00, # A4
+  sdl.scancode.J:          493.88, # B4
+  sdl.scancode.K:          523.25, # C5
+  sdl.scancode.L:          587.33, # D5
+  sdl.scancode.SEMICOLON:  659.25, # E5
+}
+
+def getOpenTrack():
+  for t in range(sdl.AUDIO_CALLBACK_TRACK_COUNT):
+    if t not in trackToKeyMap:
+      return t
 
 ################################################################
 # Initialize Video
@@ -44,32 +63,26 @@ def eventLoop():
       elif event.type == sdl.KEYDOWN and event.repeat:
         pass # ignore repeats
 
+    for key in notes:
+      final note = notes[key]
+      if key in keyToTrackMap and !kstate[key]:
+        final track = keyToTrackMap[key]
+        keyToTrackMap.delete(key)
+        trackToKeyMap.delete(track)
+        sdl.setCallbackSpec(track, 0, 0, 0)
+      elif key not in keyToTrackMap and kstate[key]:
+        final track = getOpenTrack()
+        if track is not nil:
+          trackToKeyMap[track] = key
+          keyToTrackMap[key] = track
+          sdl.setCallbackSpec(track, note, 0.20, 0)
+
     if kstate[sdl.scancode.F]:
       r.setDrawColor(0, 100, 200, 255)
     elif kstate[sdl.scancode.J]:
       r.setDrawColor(0, 100, 100, 20)
     else:
       r.setDrawColor(255, 160, 255, 255)
-
-    if kstate[sdl.scancode.D]:
-      sdl.setCallbackSpec(0, 440, 0.25, 0) # A4
-    else:
-      sdl.setCallbackSpec(0, 0, 0, 1)
-
-    if kstate[sdl.scancode.F]:
-      sdl.setCallbackSpec(1, 440, 0.25, 1) # C5
-    else:
-      sdl.setCallbackSpec(1, 0, 0, 1)
-
-    if kstate[sdl.scancode.J]:
-      sdl.setCallbackSpec(2, 440, 0.25, 2) # E5
-    else:
-      sdl.setCallbackSpec(2, 0, 0, 1)
-
-    if kstate[sdl.scancode.K]:
-      sdl.setCallbackSpec(3, 440, 0.25, 3) # G5
-    else:
-      sdl.setCallbackSpec(3, 0, 0, 1)
 
     r.clear()
     r.present()
