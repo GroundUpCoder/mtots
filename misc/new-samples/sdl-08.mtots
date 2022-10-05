@@ -12,8 +12,34 @@ sdl.init(sdl.INIT_AUDIO | sdl.INIT_VIDEO)
 ################################################################
 # Initialize Audio
 ################################################################
-final adev = sdl.openAudioDevice()
+final adev = sdl.openAudioDevice(nil)
 adev.pause(0)
+final keyToTrackMap = {}
+final trackToKeyMap = {}
+final notes = {
+  sdl.scancode.A:          261.63, # C4
+  sdl.scancode.S:          293.66, # D4
+  sdl.scancode.D:          329.64, # E4
+  sdl.scancode.F:          349.23, # F4
+  sdl.scancode.G:          392.00, # G4
+  sdl.scancode.H:          440.00, # A4
+  sdl.scancode.J:          493.88, # B4
+  sdl.scancode.K:          523.25, # C5
+  sdl.scancode.L:          587.33, # D5
+  sdl.scancode.SEMICOLON:  659.25, # E5
+}
+final waveforms = [
+  sdl.WAVE_FORM_SINE,
+  sdl.WAVE_FORM_SAWTOOTH,
+  sdl.WAVE_FORM_SQUARE,
+  sdl.WAVE_FORM_TRIANGLE,
+]
+var waveformIndex = 0
+
+def getOpenTrack():
+  for t in range(sdl.AUDIO_TRACK_COUNT):
+    if t not in trackToKeyMap:
+      return t
 
 ################################################################
 # Initialize Video
@@ -37,6 +63,23 @@ def eventLoop():
         return 0
       elif event.type == sdl.KEYDOWN and event.repeat:
         pass # ignore repeats
+      elif event.type == sdl.KEYDOWN:
+        if event.key == sdl.key.SPACE:
+          waveformIndex = (waveformIndex + 1) % len(waveforms)
+
+    for key in notes:
+      final note = notes[key]
+      if key in keyToTrackMap and !kstate[key]:
+        final track = keyToTrackMap[key]
+        keyToTrackMap.delete(key)
+        trackToKeyMap.delete(track)
+        sdl.setAudioTrack(track, 0, 0, 0)
+      elif key not in keyToTrackMap and kstate[key]:
+        final track = getOpenTrack()
+        if track is not nil:
+          trackToKeyMap[track] = key
+          keyToTrackMap[key] = track
+          sdl.setAudioTrack(track, note, 0.12, waveforms[waveformIndex])
 
     if kstate[sdl.scancode.F]:
       r.setDrawColor(0, 100, 200, 255)
@@ -44,26 +87,6 @@ def eventLoop():
       r.setDrawColor(0, 100, 100, 20)
     else:
       r.setDrawColor(255, 160, 255, 255)
-
-    if kstate[sdl.scancode.D]:
-      sdl.setAudioTrack(0, 440, 0.25, 0) # A4
-    else:
-      sdl.setAudioTrack(0, 0, 0, 1)
-
-    if kstate[sdl.scancode.F]:
-      sdl.setAudioTrack(1, 523.25, 0.25, 1) # C5
-    else:
-      sdl.setAudioTrack(1, 0, 0, 1)
-
-    if kstate[sdl.scancode.J]:
-      sdl.setAudioTrack(2, 659.25, 0.25, 2) # E5
-    else:
-      sdl.setAudioTrack(2, 0, 0, 1)
-
-    if kstate[sdl.scancode.K]:
-      sdl.setAudioTrack(3, 783.99, 0.25, 3) # G5
-    else:
-      sdl.setAudioTrack(3, 0, 0, 1)
 
     r.clear()
     r.present()
