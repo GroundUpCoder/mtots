@@ -1,0 +1,156 @@
+import sdl
+
+final AMPLITUDE = 63
+final SAMPLE_RATE = 44100
+final SCREEN_WIDTH = 640
+final SCREEN_HEIGHT = 480
+final FPS = 60
+final TICKS_PER_FRAME = (1 / FPS) * 1000 # 1 tick <-> millis
+
+sdl.init(sdl.INIT_AUDIO | sdl.INIT_VIDEO)
+
+################################################################
+# Initialize Audio
+################################################################
+final adev = sdl.openAudioDevice(nil)
+adev.pause(0)
+final keyToTrackMap = {}
+final trackToKeyMap = {}
+final notes = {
+  # Bottom Row
+  sdl.scancode.Z:          155.56, # D#3
+  sdl.scancode.X:          164.81, # E3
+  sdl.scancode.C:          174.61, # F3
+  sdl.scancode.V:          185.00, # F#3
+  sdl.scancode.B:          196.00, # G3
+  sdl.scancode.N:          207.65, # G#3
+  sdl.scancode.M:          220.00, # A3
+  sdl.scancode.COMMA:      233.08, # A#3
+  sdl.scancode.PERIOD:     246.94, # B3
+
+  # Home Row
+  sdl.scancode.A:          261.63, # C4
+  sdl.scancode.S:          277.18, # C#4
+  sdl.scancode.D:          293.66, # D4
+  sdl.scancode.F:          311.13, # D#4
+  sdl.scancode.G:          329.63, # E4
+  sdl.scancode.H:          349.23, # F4
+  sdl.scancode.J:          369.99, # F#4
+  sdl.scancode.K:          392.00, # G4
+  sdl.scancode.L:          415.30, # G#4
+  sdl.scancode.SEMICOLON:  440.00, # A4
+
+  # Qwerty Row
+  sdl.scancode.Q:          466.16, # A#4
+  sdl.scancode.W:          493.88, # B4
+  sdl.scancode.E:          523.25, # C5
+  sdl.scancode.R:          554.37, # C#5
+  sdl.scancode.T:          587.33, # D5
+  sdl.scancode.Y:          622.25, # D#5
+  sdl.scancode.U:          659.25, # E5
+  sdl.scancode.I:          698.46, # F5
+  sdl.scancode.O:          739.99, # F#5
+  sdl.scancode.P:          783.99, # G5
+
+  # Number Row
+  sdl.scancode.K1:         830.61, # G#5
+  sdl.scancode.K2:         880.00, # A5
+  sdl.scancode.K3:         932.33, # A#5
+  sdl.scancode.K4:         987.77, # B5
+  sdl.scancode.K5:        1046.50, # C6
+  sdl.scancode.K6:        1108.73, # C#6
+  sdl.scancode.K7:        1174.66, # D6
+  sdl.scancode.K8:        1244.51, # D#6
+  sdl.scancode.K9:        1318.51, # E6
+  sdl.scancode.K0:        1396.91, # F6
+}
+final waveforms = [
+  sdl.WAVE_FORM_SINE,
+  sdl.WAVE_FORM_SAWTOOTH,
+  sdl.WAVE_FORM_SQUARE,
+  sdl.WAVE_FORM_TRIANGLE,
+]
+var waveformIndex = 0
+
+def getOpenTrack():
+  for t in range(sdl.AUDIO_TRACK_COUNT):
+    if t not in trackToKeyMap:
+      return t
+
+################################################################
+# Initialize Video
+################################################################
+var window = sdl.createWindow(
+  "my window",
+  sdl.WINDOWPOS_CENTERED, sdl.WINDOWPOS_CENTERED,
+  SCREEN_WIDTH, SCREEN_HEIGHT, 0)
+var r = sdl.createRenderer(window, -1, 0)
+var kstate = sdl.getKeyboardState()
+final colorStack = [
+  [255, 160, 255, 255],
+]
+final colors = {
+  sdl.scancode.A:          [ 125,  55,  10, 255],
+  sdl.scancode.S:          [ 123,  93, 136, 255],
+  sdl.scancode.D:          [ 238, 165,  13, 255],
+  sdl.scancode.F:          [ 171, 199, 124, 255],
+  sdl.scancode.G:          [ 156,  19, 144, 255],
+  sdl.scancode.H:          [  56, 166,   7, 255],
+  sdl.scancode.J:          [ 145,   4,  53, 255],
+  sdl.scancode.K:          [ 156,   7, 186, 255],
+  sdl.scancode.L:          [ 130,  16, 191, 255],
+  sdl.scancode.SEMICOLON:  [  41, 252, 175, 255],
+}
+
+def eventLoop():
+  final event = sdl.Event()
+  while true:
+    final startTicks = sdl.getTicks()
+
+    while sdl.pollEvent(event):
+      if event.type == sdl.QUIT:
+        print('Quit event received')
+        sdl.quit()
+        return 0
+      elif event.type == sdl.KEYDOWN and event.repeat:
+        pass # ignore repeats
+      elif event.type == sdl.KEYDOWN:
+        if event.key == sdl.key.SPACE:
+          waveformIndex = (waveformIndex + 1) % len(waveforms)
+
+    for key in notes:
+      final note = notes[key]
+      if key in keyToTrackMap and !kstate[key]:
+        final track = keyToTrackMap[key]
+        keyToTrackMap.delete(key)
+        trackToKeyMap.delete(track)
+        sdl.setAudioTrack(track, 0, 0, 0)
+        if key in colors:
+          colorStack.pop()
+      elif key not in keyToTrackMap and kstate[key]:
+        final track = getOpenTrack()
+        if track is not nil:
+          trackToKeyMap[track] = key
+          keyToTrackMap[key] = track
+          sdl.setAudioTrack(track, note, 0.12, waveforms[waveformIndex])
+          if key in colors:
+            colorStack.append(colors[key])
+
+    if kstate[sdl.scancode.F]:
+      r.setDrawColor(0, 100, 200, 255)
+    elif kstate[sdl.scancode.J]:
+      r.setDrawColor(0, 100, 100, 20)
+    else:
+      r.setDrawColor(255, 160, 255, 255)
+
+    final color = colorStack[-1]
+    r.setDrawColor(color[0], color[1], color[2], color[3])
+    r.clear()
+    r.present()
+
+    final endTicks = sdl.getTicks()
+    final elapsedTicks = endTicks - startTicks
+    if TICKS_PER_FRAME > elapsedTicks:
+      sdl.delay((TICKS_PER_FRAME - elapsedTicks) // 1)
+
+eventLoop()
