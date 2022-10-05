@@ -9,6 +9,10 @@
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 
+#define AUDIO_SAMPLE_RATE          44100
+#define AUDIO_SAMPLES_BUFFER_SIZE    512
+#define AUDIO_TRACK_COUNT              8
+
 static void nopBlacken(ObjNative *n) {}
 static void nopFree(ObjNative *n) {}
 
@@ -42,7 +46,6 @@ static ObjString *string_freq;
 static ObjString *string_format;
 static ObjString *string_channels;
 static ObjString *string_samples;
-static ObjString *string_callback;
 
 static void mtots_m_SDL_initStrings(ObjInstance *module) {
   size_t i;
@@ -61,7 +64,6 @@ static void mtots_m_SDL_initStrings(ObjInstance *module) {
     {&string_format, "format"},
     {&string_channels, "channels"},
     {&string_samples, "samples"},
-    {&string_callback, "callback"},
   };
   list = newList(sizeof(rstrs)/sizeof(RetainedString));
   tableSetN(&module->fields, "__retain__", OBJ_VAL(list));
@@ -116,11 +118,6 @@ typedef struct ObjTexture {
   SDL_Texture *handle;
 } ObjTexture;
 
-typedef struct ObjAudioSpec {
-  ObjNative obj;
-  SDL_AudioSpec data;
-} ObjAudioSpec;
-
 typedef struct ObjAudioDevice {
   ObjNative obj;
   SDL_AudioDeviceID handle;
@@ -144,7 +141,6 @@ extern NativeObjectDescriptor descriptorPoint;
 extern NativeObjectDescriptor descriptorRenderer;
 extern NativeObjectDescriptor descriptorSurface;
 extern NativeObjectDescriptor descriptorTexture;
-extern NativeObjectDescriptor descriptorAudioSpec;
 extern NativeObjectDescriptor descriptorAudioDevice;
 
 static NativeObjectDescriptor *descriptors[] = {
@@ -156,7 +152,6 @@ static NativeObjectDescriptor *descriptors[] = {
   &descriptorRenderer,
   &descriptorSurface,
   &descriptorTexture,
-  &descriptorAudioSpec,
   &descriptorAudioDevice,
 };
 

@@ -27,7 +27,7 @@ static NumericConstant numericConstants[] = {
   { "INIT_EVERYTHING", SDL_INIT_EVERYTHING},
 
   /* Other audio constants */
-  { "AUDIO_CALLBACK_TRACK_COUNT", AUDIO_CALLBACK_TRACK_COUNT },
+  { "AUDIO_TRACK_COUNT", AUDIO_TRACK_COUNT },
 
   /* audio sample formats */
   { "AUDIO_S8", AUDIO_S8 },

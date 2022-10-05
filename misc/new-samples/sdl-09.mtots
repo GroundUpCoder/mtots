@@ -12,13 +12,7 @@ sdl.init(sdl.INIT_AUDIO | sdl.INIT_VIDEO)
 ################################################################
 # Initialize Audio
 ################################################################
-final spec = sdl.AudioSpec()
-spec.freq = SAMPLE_RATE
-spec.format = sdl.AUDIO_S8
-spec.channels = 1
-spec.samples = 512
-spec.callback = 1
-final adev = sdl.openAudioDevice(nil, 0, spec, nil, 0)
+final adev = sdl.openAudioDevice(nil)
 adev.pause(0)
 final keyToTrackMap = {}
 final trackToKeyMap = {}
@@ -34,9 +28,16 @@ final notes = {
   sdl.scancode.L:          587.33, # D5
   sdl.scancode.SEMICOLON:  659.25, # E5
 }
+final waveforms = [
+  sdl.WAVE_FORM_SINE,
+  sdl.WAVE_FORM_SAWTOOTH,
+  sdl.WAVE_FORM_SQUARE,
+  sdl.WAVE_FORM_TRIANGLE,
+]
+var waveformIndex = 0
 
 def getOpenTrack():
-  for t in range(sdl.AUDIO_CALLBACK_TRACK_COUNT):
+  for t in range(sdl.AUDIO_TRACK_COUNT):
     if t not in trackToKeyMap:
       return t
 
@@ -62,6 +63,9 @@ def eventLoop():
         return 0
       elif event.type == sdl.KEYDOWN and event.repeat:
         pass # ignore repeats
+      elif event.type == sdl.KEYDOWN:
+        if event.key == sdl.key.SPACE:
+          waveformIndex = (waveformIndex + 1) % len(waveforms)
 
     for key in notes:
       final note = notes[key]
@@ -69,13 +73,13 @@ def eventLoop():
         final track = keyToTrackMap[key]
         keyToTrackMap.delete(key)
         trackToKeyMap.delete(track)
-        sdl.setCallbackSpec(track, 0, 0, 0)
+        sdl.setAudioTrack(track, 0, 0, 0)
       elif key not in keyToTrackMap and kstate[key]:
         final track = getOpenTrack()
         if track is not nil:
           trackToKeyMap[track] = key
           keyToTrackMap[key] = track
-          sdl.setCallbackSpec(track, note, 0.20, 0)
+          sdl.setAudioTrack(track, note, 0.12, waveforms[waveformIndex])
 
     if kstate[sdl.scancode.F]:
       r.setDrawColor(0, 100, 200, 255)

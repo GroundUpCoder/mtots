@@ -47,7 +47,8 @@
         "mtots_m_sdl_common.h": "c",
         "math.h": "c",
         "mtots_m_sdl_acb.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "mtots_m_sdl_aspec.h": "c"
     },
     "C_Cpp.default.defines": [
         "MTOTS_ENABLE_SDL=1"

@@ -12,13 +12,7 @@ sdl.init(sdl.INIT_AUDIO | sdl.INIT_VIDEO)
 ################################################################
 # Initialize Audio
 ################################################################
-final spec = sdl.AudioSpec()
-spec.freq = SAMPLE_RATE
-spec.format = sdl.AUDIO_S8
-spec.channels = 1
-spec.samples = 512
-spec.callback = 1
-final adev = sdl.openAudioDevice(nil, 0, spec, nil, 0)
+final adev = sdl.openAudioDevice()
 adev.pause(0)
 
 ################################################################
@@ -52,24 +46,24 @@ def eventLoop():
       r.setDrawColor(255, 160, 255, 255)
 
     if kstate[sdl.scancode.D]:
-      sdl.setCallbackSpec(0, 440, 0.25, 0) # A4
+      sdl.setAudioTrack(0, 440, 0.25, 0) # A4
     else:
-      sdl.setCallbackSpec(0, 0, 0, 1)
+      sdl.setAudioTrack(0, 0, 0, 1)
 
     if kstate[sdl.scancode.F]:
-      sdl.setCallbackSpec(1, 523.25, 0.25, 1) # C5
+      sdl.setAudioTrack(1, 523.25, 0.25, 1) # C5
     else:
-      sdl.setCallbackSpec(1, 0, 0, 1)
+      sdl.setAudioTrack(1, 0, 0, 1)
 
     if kstate[sdl.scancode.J]:
-      sdl.setCallbackSpec(2, 659.25, 0.25, 2) # E5
+      sdl.setAudioTrack(2, 659.25, 0.25, 2) # E5
     else:
-      sdl.setCallbackSpec(2, 0, 0, 1)
+      sdl.setAudioTrack(2, 0, 0, 1)
 
     if kstate[sdl.scancode.K]:
-      sdl.setCallbackSpec(3, 783.99, 0.25, 3) # G5
+      sdl.setAudioTrack(3, 783.99, 0.25, 3) # G5
     else:
-      sdl.setCallbackSpec(3, 0, 0, 1)
+      sdl.setAudioTrack(3, 0, 0, 1)
 
     r.clear()
     r.present()

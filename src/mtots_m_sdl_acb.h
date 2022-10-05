@@ -8,60 +8,55 @@
 #include <string.h>
 #include <math.h>
 
-#define SAMPLE_RATE                44100
-#define MAX_I8_AMP                    64     /* arbitrary, picked at roughly 1/2 max */
-#define AUDIO_CALLBACK_TRACK_COUNT     8
-
-typedef struct AudioCallbackSpecEntry {
+typedef struct AudioTrack {
   double frequency;   /* in Hz */
   double amplitude;   /* between 0 and 1 */
   WaveForm waveForm;
-} AudioCallbackSpecEntry;
+} AudioTrack;
 
-typedef struct AudioCallbackSpec {
-  AudioCallbackSpecEntry entries[AUDIO_CALLBACK_TRACK_COUNT];
-} AudioCallbackSpec;
+typedef struct AudioTrackSet {
+  AudioTrack tracks[AUDIO_TRACK_COUNT];
+} AudioTrackSet;
 
-static SDL_mutex *audioCallbackMutex;
-static AudioCallbackSpec audioCallbackSpec;
+static SDL_mutex *audioTracksetMutex;
+static AudioTrackSet audioTrackSet;
 
 static void audioCallback(void *userdata, Uint8 *rawBuffer, int streamLen) {
-  static size_t k = 0;
-  size_t i, j;
-  AudioCallbackSpec spec;
+  static size_t ticks = 0;
+  size_t i;
+  AudioTrackSet tset;
   Sint8 *buffer = (Sint8*)rawBuffer;
 
-  if (SDL_LockMutex(audioCallbackMutex) == 0) {
-    spec = audioCallbackSpec;
-    SDL_UnlockMutex(audioCallbackMutex);
+  if (SDL_LockMutex(audioTracksetMutex) == 0) {
+    tset = audioTrackSet;
+    SDL_UnlockMutex(audioTracksetMutex);
   } else {
-    panic("FAILED TO LOCK audioCallbackMutex");
+    panic("FAILED TO LOCK audioTracksetMutex");
   }
 
-  for (i = 0; i < AUDIO_CALLBACK_TRACK_COUNT; i++) {
+  for (i = 0; i < AUDIO_TRACK_COUNT; i++) {
     printf("RUNNING audioCallback %d freq=%f, amp=%f\n",
-      (int) i, spec.entries[i].frequency, spec.entries[i].amplitude);
-    if (spec.entries[i].frequency < 0) {
-      spec.entries[i].frequency = 0;
-    } else if (spec.entries[i].frequency > 20000) {
-      spec.entries[i].frequency = 44100 / 2;
+      (int) i, tset.tracks[i].frequency, tset.tracks[i].amplitude);
+    if (tset.tracks[i].frequency < 0) {
+      tset.tracks[i].frequency = 0;
+    } else if (tset.tracks[i].frequency > 20000) {
+      tset.tracks[i].frequency = 44100 / 2;
     }
 
-    if (spec.entries[i].amplitude < 0) {
-      spec.entries[i].amplitude = 0;
-    } else if (spec.entries[i].amplitude > 1) {
-      spec.entries[i].amplitude = 1;
+    if (tset.tracks[i].amplitude < 0) {
+      tset.tracks[i].amplitude = 0;
+    } else if (tset.tracks[i].amplitude > 1) {
+      tset.tracks[i].amplitude = 1;
     }
   }
 
-  memset(buffer, 0, streamLen);
-
-  for (i = 0; i < streamLen; i++, k++) {
-    double t = k / (double) SAMPLE_RATE;
+  for (i = 0; i < streamLen; i++, ticks++) {
+    double timeInSec = ticks / (double) AUDIO_SAMPLE_RATE;
     double sum = 0;
-    for (j = 0; j < AUDIO_CALLBACK_TRACK_COUNT; j++) {
-      AudioCallbackSpecEntry *e = &spec.entries[j];
-      double ratio = fmod(t * e->frequency, 1);
+    size_t j;
+    for (j = 0; j < AUDIO_TRACK_COUNT; j++) {
+      AudioTrack *e = &tset.tracks[j];
+      double ratio = fmod(timeInSec * e->frequency, 1);
       if (e->amplitude != 0 && e->frequency != 0) {
         switch (e->waveForm) {
           case WAVE_FORM_SINE:
@@ -82,12 +77,8 @@ static void audioCallback(void *userdata, Uint8 *rawBuffer, int streamLen) {
         }
       }
     }
-    if (sum < -1) {
-      sum = -1;
-    } else if (sum > 1) {
-      sum = 1;
-    }
-    buffer[i] = (Sint8) (MAX_I8_AMP * sum);
+    sum = sum < -1 ? -1 : sum > 1 ? 1 : sum;
+    buffer[i] = (Sint8) (INT8_MAX * sum);
   }
 }
 

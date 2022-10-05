@@ -222,19 +222,27 @@ static CFunction funcCreateRGBSurfaceFrom = {
  *********************************************************/
 
 static ubool implOpenAudioDevice(i16 argCount, Value *args, Value *out) {
-  const char *device = IS_NIL(args[0]) ? NULL : AS_STRING(args[0])->chars;
-  int isCapture = AS_I32(args[1]);
-  const SDL_AudioSpec *want = &((ObjAudioSpec*)AS_OBJ(args[2]))->data;
-  SDL_AudioSpec *have =
-    IS_NIL(args[3]) ? NULL : &((ObjAudioSpec*)AS_OBJ(args[3]))->data;
-  int allowedChanges = AS_I32(args[4]);
-  SDL_AudioDeviceID handle = SDL_OpenAudioDevice(
-    device, isCapture, want, have, allowedChanges);
+  const char *device = NULL;
+  SDL_AudioSpec spec;
+  SDL_AudioDeviceID handle;
   ObjAudioDevice *ad;
+
+  if (argCount > 0) {
+    device = IS_NIL(args[0]) ? NULL : AS_STRING(args[0])->chars;
+  }
+  memset(&spec, 0, sizeof(spec));
+  spec.freq = AUDIO_SAMPLE_RATE;
+  spec.format = AUDIO_S8;
+  spec.channels = 1;
+  spec.samples = AUDIO_SAMPLES_BUFFER_SIZE;
+  spec.callback = audioCallback;
+
+  handle = SDL_OpenAudioDevice(device, 0, &spec, NULL, 0);
   if (handle == 0) {
     runtimeError("Could not open SDL Audio Device: %s", SDL_GetError());
     return UFALSE;
   }
+
   ad = NEW_NATIVE(ObjAudioDevice, &descriptorAudioDevice);
   ad->handle = handle;
   *out = OBJ_VAL(ad);
@@ -243,21 +251,17 @@ static ubool implOpenAudioDevice(i16 argCount, Value *args, Value *out) {
 
 static TypePattern argsOpenAudioDevice[] = {
   { TYPE_PATTERN_STRING_OR_NIL },
-  { TYPE_PATTERN_NUMBER },
-  { TYPE_PATTERN_NATIVE, &descriptorAudioSpec },
-  { TYPE_PATTERN_NATIVE_OR_NIL, &descriptorAudioSpec },
-  { TYPE_PATTERN_NUMBER },
 };
 
 static CFunction funcOpenAudioDevice = {
   implOpenAudioDevice, "openAudioDevice",
-  sizeof(argsOpenAudioDevice)/sizeof(TypePattern), 0,
+  0, sizeof(argsOpenAudioDevice)/sizeof(TypePattern),
   argsOpenAudioDevice,
 };
 
-static ubool implSetCallbackSpec(i16 argCount, Value *args, Value *out) {
-  AudioCallbackSpec spec;
-  u32 i = AS_U32(args[0]);
+static ubool implSetAudioTrack(i16 argCount, Value *args, Value *out) {
+  AudioTrackSet tset;
+  u32 trackID = AS_U32(args[0]);
   double frequency = AS_NUMBER(args[1]);
   double amplitude = AS_NUMBER(args[2]);
   u32 waveForm = AS_U32(args[3]);
@@ -265,34 +269,34 @@ static ubool implSetCallbackSpec(i16 argCount, Value *args, Value *out) {
     runtimeError("Invalid wave form %lu", waveForm);
     return UFALSE;
   }
-  if (i >= AUDIO_CALLBACK_TRACK_COUNT) {
+  if (trackID >= AUDIO_TRACK_COUNT) {
     runtimeError("Invalid audio callback entry index");
     return UFALSE;
   }
-  if (SDL_LockMutex(audioCallbackMutex) == 0) {
-    spec = audioCallbackSpec;
-    spec.entries[i].frequency = frequency;
-    spec.entries[i].amplitude = amplitude;
-    spec.entries[i].waveForm = waveForm;
-    audioCallbackSpec = spec;
-    SDL_UnlockMutex(audioCallbackMutex);
+  if (SDL_LockMutex(audioTracksetMutex) == 0) {
+    tset = audioTrackSet;
+    tset.tracks[trackID].frequency = frequency;
+    tset.tracks[trackID].amplitude = amplitude;
+    tset.tracks[trackID].waveForm = waveForm;
+    audioTrackSet = tset;
+    SDL_UnlockMutex(audioTracksetMutex);
   } else {
-    panic("Failed to lock audioCallbackMutex");
+    panic("Failed to lock audioTracksetMutex");
   }
   return UTRUE;
 }
 
-static TypePattern argsSetCallbackSpec[] = {
+static TypePattern argsSetAudioTrack[] = {
   { TYPE_PATTERN_NUMBER },
   { TYPE_PATTERN_NUMBER },
   { TYPE_PATTERN_NUMBER },
   { TYPE_PATTERN_NUMBER },
 };
 
-static CFunction funcSetCallbackSpec = {
-  implSetCallbackSpec, "setCallbackSpec",
-  sizeof(argsSetCallbackSpec)/sizeof(TypePattern), 0,
-  argsSetCallbackSpec,
+static CFunction funcSetAudioTrack = {
+  implSetAudioTrack, "setAudioTrack",
+  sizeof(argsSetAudioTrack)/sizeof(TypePattern), 0,
+  argsSetAudioTrack,
 };
 
 /**********************************************************
@@ -311,7 +315,7 @@ static CFunction *functions[] = {
   &funcCreateRenderer,
   &funcCreateRGBSurfaceFrom,
   &funcOpenAudioDevice,
-  &funcSetCallbackSpec,
+  &funcSetAudioTrack,
 };
 
 #endif/*mtots_m_sdl_funcs_h*/

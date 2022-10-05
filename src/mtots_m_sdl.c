@@ -15,7 +15,6 @@
 #include "mtots_m_sdl_surf.h"
 #include "mtots_m_sdl_texture.h"
 #include "mtots_m_sdl_adev.h"
-#include "mtots_m_sdl_aspec.h"
 #include "mtots_m_sdl_funcs.h"
 #include "mtots_m_sdl_acb.h"
 
@@ -24,7 +23,7 @@ static ubool impl(i16 argCount, Value *args, Value *out) {
   size_t i;
   ObjInstance *inst;
 
-  audioCallbackMutex = SDL_CreateMutex();
+  audioTracksetMutex = SDL_CreateMutex();
 
   /* initialize all strings retained in this module */
   mtots_m_SDL_initStrings(module);
