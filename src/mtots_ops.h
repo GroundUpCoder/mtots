@@ -5,5 +5,6 @@
 
 ubool valuesIs(Value a, Value b);
 ubool valuesEqual(Value a, Value b);
+ubool valueLessThan(Value a, Value b);
 
 #endif/*mtots_ops_h*/

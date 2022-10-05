@@ -765,8 +765,20 @@ InterpretResult run(i16 returnFrameCount) {
         push(BOOL_VAL(valuesEqual(a, b)));
         break;
       }
-      case OP_GREATER: BINARY_OP(BOOL_VAL, >); break;
-      case OP_LESS: BINARY_OP(BOOL_VAL, <); break;
+      case OP_GREATER: {
+        ubool result = valueLessThan(peek(0), peek(1));
+        pop();
+        pop();
+        push(BOOL_VAL(result));
+        break;
+      }
+      case OP_LESS: {
+        ubool result = valueLessThan(peek(1), peek(0));
+        pop();
+        pop();
+        push(BOOL_VAL(result));
+        break;
+      }
       case OP_ADD: {
         if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
           concatenate();
