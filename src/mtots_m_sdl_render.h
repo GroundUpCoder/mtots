@@ -69,6 +69,29 @@ static CFunction funcRendererFillRect = {
   argsRendererFillRect };
 
 /**********************************************************
+ * Renderer.drawRect()
+ *********************************************************/
+
+static ubool implRendererDrawRect(i16 argCount, Value *args, Value *out) {
+  ObjRenderer *renderer = (ObjRenderer*)AS_OBJ(args[-1]);
+  ObjRect *rect = (ObjRect*)AS_OBJ(args[0]);
+  if (SDL_RenderDrawRect(renderer->handle, &rect->data) != 0) {
+    runtimeError("SDL_RenderDrawRect Failed: %s", SDL_GetError());
+    return UFALSE;
+  }
+  return UTRUE;
+}
+
+static TypePattern argsRendererDrawRect[] = {
+  { TYPE_PATTERN_NATIVE, &descriptorRect },
+};
+
+static CFunction funcRendererDrawRect = {
+  implRendererDrawRect, "drawRect",
+  sizeof(argsRendererDrawRect)/sizeof(TypePattern), 0,
+  argsRendererDrawRect };
+
+/**********************************************************
  * Renderer.present()
  *********************************************************/
 
@@ -149,6 +172,7 @@ static CFunction *rendererMethods[] = {
   &funcRendererSetDrawColor,
   &funcRendererClear,
   &funcRendererFillRect,
+  &funcRendererDrawRect,
   &funcRendererPresent,
   &funcRendererCreateTextureFromSurface,
   &funcRendererCopy,
