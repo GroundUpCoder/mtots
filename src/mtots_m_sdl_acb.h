@@ -35,8 +35,6 @@ static void audioCallback(void *userdata, Uint8 *rawBuffer, int streamLen) {
   }
 
   for (i = 0; i < AUDIO_TRACK_COUNT; i++) {
-    printf("RUNNING audioCallback %d freq=%f, amp=%f\n",
-      (int) i, tset.tracks[i].frequency, tset.tracks[i].amplitude);
     if (tset.tracks[i].frequency < 0) {
       tset.tracks[i].frequency = 0;
     } else if (tset.tracks[i].frequency > 20000) {
