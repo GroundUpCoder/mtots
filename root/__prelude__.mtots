@@ -6,6 +6,13 @@
 #   * it is currently not possible to iterate over arbitrary iterables from C
 
 
+def list(iterable):
+  final items = []
+  for item in iterable:
+    items.append(item)
+  return items
+
+
 def sorted(iterable):
   final items = []
   for item in iterable:

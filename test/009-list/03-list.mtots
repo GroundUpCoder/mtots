@@ -1,0 +1,6 @@
+
+
+print(list([1, 2, 3]))
+print(list({1, 2, 3}))
+print(list({3, 2, 1}))
+print(list({"a": 1, "b": 2, "c"}))

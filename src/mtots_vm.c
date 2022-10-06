@@ -1070,7 +1070,8 @@ static void prepPrelude() {
     for (i = 0; i < prelude->fields.capacity; i++) {
       Entry *entry = prelude->fields.entries + i;
       if (entry->key != NULL) {
-        if (strcmp(entry->key->chars, "sorted") == 0) {
+        if (strcmp(entry->key->chars, "sorted") == 0 ||
+            strcmp(entry->key->chars, "list") == 0) {
           tableSet(&vm.globals, entry->key, entry->value);
         } else if (strcmp(entry->key->chars, "__List__") == 0) {
           ObjClass *mixinListClass;
