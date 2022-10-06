@@ -1,0 +1,258 @@
+import sdl
+
+final AMPLITUDE = 63
+final SAMPLE_RATE = 44100
+final SCREEN_WIDTH = 640
+final SCREEN_HEIGHT = 480
+final FPS = 60
+final TICKS_PER_FRAME = (1 / FPS) * 1000 # 1 tick <-> millis
+
+final STAFF_DISTANCE = 25 # 25 pixels between adjacent pairs of staff lines
+final STAFF_THICKNESS = 2 # thickness of each staff line
+
+sdl.init(sdl.INIT_AUDIO | sdl.INIT_VIDEO)
+
+################################################################
+# Initialize Audio
+################################################################
+final adev = sdl.openAudioDevice(nil)
+adev.pause(0)
+final keyToTrackMap = {}
+final trackToKeyMap = [nil] * sdl.AUDIO_TRACK_COUNT
+final keyToNoteID = {
+
+  # Number Row (sharp and flats for the QWERTY row)
+  sdl.scancode.K1:             "E5",
+  sdl.scancode.K2:             "F#5",
+  sdl.scancode.K3:             "G#5",
+  sdl.scancode.K4:             "A#5",
+  sdl.scancode.K5:             "C6",
+  sdl.scancode.K6:             "C#6",
+  sdl.scancode.K7:             "D#6",
+  sdl.scancode.K8:             "F6",
+  sdl.scancode.K9:             "F#6",
+  sdl.scancode.K0:             "G#6",
+  sdl.scancode.MINUS:          "A#6",
+
+  # QWERTY Row (upper natural notes)
+  sdl.scancode.Q:              "F5",
+  sdl.scancode.W:              "G5",
+  sdl.scancode.E:              "A5",
+  sdl.scancode.R:              "B5",
+  sdl.scancode.T:              "C6",
+  sdl.scancode.Y:              "D6",
+  sdl.scancode.U:              "E6",
+  sdl.scancode.I:              "F6",
+  sdl.scancode.O:              "G6",
+  sdl.scancode.P:              "A6",
+  sdl.scancode.LEFTBRACKET:    "B6",
+  sdl.scancode.RIGHTBRACKET:   "C7",
+
+  # Home Row (lower natural notes)
+  sdl.scancode.A:              "C4",
+  sdl.scancode.S:              "D4",
+  sdl.scancode.D:              "E4",
+  sdl.scancode.F:              "F4",
+  sdl.scancode.G:              "G4",
+  sdl.scancode.H:              "A4",
+  sdl.scancode.J:              "B4",
+  sdl.scancode.K:              "C5",
+  sdl.scancode.L:              "D5",
+  sdl.scancode.SEMICOLON:      "E5",
+
+  # Bottom Row (sharps and flats for the home row)
+  sdl.scancode.Z:              "C#4",
+  sdl.scancode.X:              "D#4",
+  sdl.scancode.C:              "F4",
+  sdl.scancode.V:              "F#4",
+  sdl.scancode.B:              "G#4",
+  sdl.scancode.N:              "A#4",
+  sdl.scancode.M:              "C5",
+  sdl.scancode.COMMA:          "C#5",
+  sdl.scancode.PERIOD:         "D#5",
+  sdl.scancode.SLASH:          "F5",
+}
+final noteIDToFreq = {
+  # note frequencies from:
+  # https://pages.mtu.edu/~suits/notefreqs.html
+  "C4":              261.63,
+  "C#4":             277.18,
+  "D4":              293.66,
+  "D#4":             311.13,
+  "E4":              329.63,
+  "F4":              349.23,
+  "F#4":             369.99,
+  "G4":              392.00,
+  "G#4":             415.30,
+  "A4":              440.00,
+  "A#4":             466.16,
+  "B4":              493.88,
+  "C5":              523.25,
+  "C#5":             554.37,
+  "D5":              587.33,
+  "D#5":             622.25,
+  "E5":              659.25,
+  "F5":              698.46,
+  "F#5":             739.99,
+  "G5":              783.99,
+  "G#5":             830.61,
+  "A5":              880.00,
+  "A#5":             932.33,
+  "B5":              987.77,
+  "C6":             1046.50,
+  "C#6":            1108.73,
+  "D6":             1174.66,
+  "D#6":            1244.51,
+  "E6":             1318.51,
+  "F6":             1396.91,
+  "F#6":            1479.98,
+  "G6":             1567.98,
+  "G#6":            1661.22,
+  "A6":             1760.00,
+  "A#6":            1864.66,
+  "B6":             1975.53,
+  "C7":             2093.00,
+}
+final waveforms = [
+  sdl.WAVE_FORM_SINE,
+  sdl.WAVE_FORM_SAWTOOTH,
+  sdl.WAVE_FORM_SQUARE,
+  sdl.WAVE_FORM_TRIANGLE,
+]
+var waveformIndex = 0
+
+def computeNoteIndex(noteID):
+  # The note index is useful in determining the position
+  # of where the note should be drawn on the staff
+  var letter = noteID[0]
+  var octave = int(noteID[-1])
+  if letter == 'A':
+    letter = 'H'
+  elif letter == 'B':
+    letter = 'I'
+  return (ord(letter) - ord('C')) + 7 * octave
+
+for noteID in noteIDToFreq:
+  print('%s -> %s' % [noteID, computeNoteIndex(noteID)])
+
+def getOpenTrack():
+  for t in range(sdl.AUDIO_TRACK_COUNT):
+    if trackToKeyMap[t] == nil:
+      return t
+
+################################################################
+# Initialize Video
+################################################################
+var window = sdl.createWindow(
+  "my window",
+  sdl.WINDOWPOS_CENTERED, sdl.WINDOWPOS_CENTERED,
+  SCREEN_WIDTH, SCREEN_HEIGHT, 0)
+var r = sdl.createRenderer(window, -1, 0)
+var kstate = sdl.getKeyboardState()
+final colorStack = [
+  [255, 160, 255, 255],
+]
+final colors = {
+  sdl.scancode.A:          [ 125,  55,  10, 255 ],
+  sdl.scancode.S:          [ 123,  93, 136, 255 ],
+  sdl.scancode.D:          [ 238, 165,  13, 255 ],
+  sdl.scancode.F:          [ 171, 199, 124, 255 ],
+  sdl.scancode.G:          [ 156,  19, 144, 255 ],
+  sdl.scancode.H:          [  56, 166,   7, 255 ],
+  sdl.scancode.J:          [ 145,   4,  53, 255 ],
+  sdl.scancode.K:          [ 156,   7, 186, 255 ],
+  sdl.scancode.L:          [ 130,  16, 191, 255 ],
+  sdl.scancode.SEMICOLON:  [  41, 252, 175, 255 ],
+}
+
+def eventLoop():
+  final event = sdl.Event()
+  final rect1 = sdl.Rect(0, 0, 0, 0)
+  final rect2 = sdl.Rect(0, 0, 0, 0)
+  final STAFF_START_Y = 2 * SCREEN_HEIGHT // 5
+  final A4_INDEX = computeNoteIndex('A4')
+  final A4_YPOS = STAFF_START_Y + 2 * STAFF_DISTANCE
+
+  while true:
+    final startTicks = sdl.getTicks()
+
+    while sdl.pollEvent(event):
+      if event.type == sdl.QUIT:
+        print('Quit event received')
+        sdl.quit()
+        return 0
+      elif event.type == sdl.KEYDOWN and event.repeat:
+        pass # ignore repeats
+      elif event.type == sdl.KEYDOWN:
+        if event.key == sdl.key.SPACE:
+          waveformIndex = (waveformIndex + 1) % len(waveforms)
+
+    for key in keyToNoteID:
+      final noteID = keyToNoteID[key]
+      final freq = noteIDToFreq[noteID]
+      if key in keyToTrackMap and !kstate[key]:
+        final track = keyToTrackMap[key]
+        keyToTrackMap.delete(key)
+        trackToKeyMap[track] = nil
+        sdl.setAudioTrack(track, 0, 0, 0)
+        if key in colors:
+          colorStack.pop()
+      elif key not in keyToTrackMap and kstate[key]:
+        final track = getOpenTrack()
+        if track is not nil:
+          trackToKeyMap[track] = key
+          keyToTrackMap[key] = track
+          sdl.setAudioTrack(track, freq, 0.12, waveforms[waveformIndex])
+          if key in colors:
+            colorStack.append(colors[key])
+
+    if kstate[sdl.scancode.F]:
+      r.setDrawColor(0, 100, 200, 255)
+    elif kstate[sdl.scancode.J]:
+      r.setDrawColor(0, 100, 100, 20)
+    else:
+      r.setDrawColor(255, 160, 255, 255)
+
+    final color = colorStack[-1]
+    r.setDrawColor(255, 160, 255, 255)
+    r.clear()
+
+    # Draw the staff lines
+    r.setDrawColor(0, 0, 0, 255)
+    rect1.w = SCREEN_WIDTH // 2
+    rect1.h = STAFF_THICKNESS
+    rect1.x = SCREEN_WIDTH // 4
+    rect1.y = STAFF_START_Y
+    for _ in range(5):
+      r.fillRect(rect1)
+      rect1.y = rect1.y + STAFF_DISTANCE
+
+    # Draw the notes
+    r.setDrawColor(0, 100, 0, 255)
+    rect1.w = rect1.h = STAFF_DISTANCE
+    rect1.x = SCREEN_WIDTH // 2 - STAFF_DISTANCE
+    rect2.w = rect2.h = 2 * STAFF_DISTANCE // 5
+    rect2.x = rect1.x + 4 * STAFF_DISTANCE // 5
+    for trackID in range(len(trackToKeyMap)):
+      if trackToKeyMap[trackID] != nil:
+        final noteID = keyToNoteID[trackToKeyMap[trackID]]
+        final noteIndex = computeNoteIndex(noteID)
+        final indexOffset = noteIndex - A4_INDEX
+        rect1.x = SCREEN_WIDTH // 3 + trackID * STAFF_DISTANCE
+        rect1.y = A4_YPOS - indexOffset * STAFF_DISTANCE / 2
+        r.fillRect(rect1)
+        if noteID[1] == '#':
+          r.setDrawColor(0, 40, 40, 255)
+          rect2.x = rect1.x + 4 * STAFF_DISTANCE // 5
+          rect2.y = rect1.y
+          r.fillRect(rect2)
+          r.setDrawColor(0, 100, 0, 255)
+
+    r.present()
+
+    final endTicks = sdl.getTicks()
+    final elapsedTicks = endTicks - startTicks
+    if TICKS_PER_FRAME > elapsedTicks:
+      sdl.delay((TICKS_PER_FRAME - elapsedTicks) // 1)
+
+eventLoop()
