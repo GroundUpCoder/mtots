@@ -563,6 +563,89 @@ static ubool implOpen(i16 argCount, Value *args, Value *out) {
 
 static CFunction cfunctionOpen = { implOpen, "open", 1, 2 };
 
+static ubool implFloat(i16 argCount, Value *args, Value *out) {
+  Value arg = args[0];
+  if (IS_NUMBER(arg)) {
+    *out = arg;
+    return UTRUE;
+  }
+  if (IS_STRING(arg)) {
+    ObjString *str = AS_STRING(arg);
+    const char *ptr = str->chars;
+    ubool decimalPoint = UFALSE;
+    if (*ptr == '-' || *ptr == '+') {
+      ptr++;
+    }
+    if (*ptr == '.') {
+      ptr++;
+      decimalPoint = UTRUE;
+    }
+    if ('0' <= *ptr && *ptr <= '9') {
+      ptr++;
+      while ('0' <= *ptr && *ptr <= '9') {
+        ptr++;
+      }
+      if (!decimalPoint && *ptr == '.') {
+        decimalPoint = UTRUE;
+        ptr++;
+        while ('0' <= *ptr && *ptr <= '9') {
+          ptr++;
+        }
+      }
+      if (*ptr == 'e' || *ptr == 'E') {
+        ptr++;
+        if (*ptr == '-' || *ptr == '+') {
+          ptr++;
+        }
+        while ('0' <= *ptr && *ptr <= '9') {
+          ptr++;
+        }
+      }
+      if (*ptr == '\0') {
+        *out = NUMBER_VAL(strtod(str->chars, NULL));
+        return UTRUE;
+      }
+    }
+    runtimeError("Could not convert string to float: %s", str->chars);
+    return UFALSE;
+  }
+  runtimeError("%s is not convertible to float", getKindName(arg));
+  return UFALSE;
+}
+
+static CFunction funcFloat = { implFloat, "float", 1 };
+
+static ubool implInt(i16 argCount, Value *args, Value *out) {
+  Value arg = args[0];
+  if (IS_NUMBER(arg)) {
+    *out = NUMBER_VAL(floor(AS_NUMBER(arg)));
+    return UTRUE;
+  }
+  if (IS_STRING(arg)) {
+    ObjString *str = AS_STRING(arg);
+    const char *ptr = str->chars;
+    if (*ptr == '-' || *ptr == '+') {
+      ptr++;
+    }
+    if ('0' <= *ptr && *ptr <= '9') {
+      ptr++;
+      while ('0' <= *ptr && *ptr <= '9') {
+        ptr++;
+      }
+      if (*ptr == '\0') {
+        *out = NUMBER_VAL(strtod(str->chars, NULL));
+        return UTRUE;
+      }
+    }
+    runtimeError("Could not convert string to int: %s", str->chars);
+    return UFALSE;
+  }
+  runtimeError("%s is not convertible to int", getKindName(arg));
+  return UFALSE;
+}
+
+static CFunction funcInt = { implInt, "int", 1 };
+
 static ubool implSin(i16 argCount, Value *args, Value *out) {
   *out = NUMBER_VAL(sin(AS_NUMBER(args[0])));
   return UTRUE;
@@ -649,6 +732,8 @@ void defineDefaultGlobals() {
   defineGlobal("print", CFUNCTION_VAL(&cfunctionPrint));
   defineGlobal("range", CFUNCTION_VAL(&cfunctionRange));
   defineGlobal("open", CFUNCTION_VAL(&cfunctionOpen));
+  defineGlobal("float", CFUNCTION_VAL(&funcFloat));
+  defineGlobal("int", CFUNCTION_VAL(&funcInt));
   defineGlobal("sin", CFUNCTION_VAL(&funcSin));
   defineGlobal("cos", CFUNCTION_VAL(&funcCos));
   defineGlobal("tan", CFUNCTION_VAL(&funcTan));
