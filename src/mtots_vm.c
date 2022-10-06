@@ -111,6 +111,7 @@ void initVM() {
   vm.initString = NULL;
   vm.iterString = NULL;
   vm.lenString = NULL;
+  vm.mulString = NULL;
   vm.modString = NULL;
   vm.nilString = NULL;
   vm.trueString = NULL;
@@ -140,6 +141,7 @@ void initVM() {
   vm.initString = copyCString("__init__");
   vm.iterString = copyCString("__iter__");
   vm.lenString = copyCString("__len__");
+  vm.mulString = copyCString("__mul__");
   vm.modString = copyCString("__mod__");
   vm.nilString = copyCString("nil");
   vm.trueString = copyCString("true");
@@ -169,6 +171,7 @@ void freeVM() {
   vm.initString = NULL;
   vm.iterString = NULL;
   vm.lenString = NULL;
+  vm.mulString = NULL;
   vm.modString = NULL;
   vm.nilString = NULL;
   vm.trueString = NULL;
@@ -793,7 +796,19 @@ InterpretResult run(i16 returnFrameCount) {
         break;
       }
       case OP_SUBTRACT: BINARY_OP(NUMBER_VAL, -); break;
-      case OP_MULTIPLY: BINARY_OP(NUMBER_VAL, *); break;
+      case OP_MULTIPLY: {
+        if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
+          double b = AS_NUMBER(pop());
+          double a = AS_NUMBER(pop());
+          push(NUMBER_VAL(a * b));
+        } else {
+          if (!invoke(vm.mulString, 1)) {
+            return INTERPRET_RUNTIME_ERROR;
+          }
+          frame = &vm.frames[vm.frameCount - 1];
+        }
+        break;
+      }
       case OP_DIVIDE: BINARY_OP(NUMBER_VAL, /); break;
       case OP_FLOOR_DIVIDE: {
         if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) {

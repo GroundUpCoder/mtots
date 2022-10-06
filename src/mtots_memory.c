@@ -262,6 +262,7 @@ static void markRoots() {
   markObject((Obj*)vm.initString);
   markObject((Obj*)vm.iterString);
   markObject((Obj*)vm.lenString);
+  markObject((Obj*)vm.mulString);
   markObject((Obj*)vm.modString);
   markObject((Obj*)vm.nilString);
   markObject((Obj*)vm.trueString);

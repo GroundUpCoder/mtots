@@ -45,6 +45,33 @@ static ubool implListPop(i16 argCount, Value *args, Value *out) {
 
 static CFunction funcListPop = { implListPop, "pop", 0 };
 
+static ubool implListMul(i16 argCount, Value *args, Value *out) {
+  Value receiver = args[-1];
+  ObjList *list, *result;
+  size_t r, rep = AS_U32(args[0]);
+  if (!IS_LIST(receiver)) {
+    runtimeError("Expected list as receiver to List.append()");
+    return UFALSE;
+  }
+  list = AS_LIST(receiver);
+  result = newList(list->length * rep);
+  for (r = 0; r < rep; r++) {
+    size_t i;
+    for (i = 0; i < list->length; i++) {
+      result->buffer[r * list->length + i] = list->buffer[i];
+    }
+  }
+  *out = OBJ_VAL(result);
+  return UTRUE;
+}
+
+static TypePattern argsListMul[] = {
+  { TYPE_PATTERN_NUMBER },
+};
+
+static CFunction funcListMul = { implListMul, "__mul__",
+  sizeof(argsListMul)/sizeof(TypePattern), 0, argsListMul };
+
 static ubool implListGetItem(i16 argCount, Value *args, Value *out) {
   Value receiver = args[-1];
   ObjList *list;
@@ -149,6 +176,7 @@ void initListClass() {
   CFunction *methods[] = {
     &funcListAppend,
     &funcListPop,
+    &funcListMul,
     &funcListGetItem,
     &funcListSetItem,
     &funcListIter,

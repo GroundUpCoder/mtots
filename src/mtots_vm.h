@@ -29,6 +29,7 @@ typedef struct {
   ObjString *initString;
   ObjString *iterString;
   ObjString *lenString;
+  ObjString *mulString;
   ObjString *modString;
   ObjString *nilString;
   ObjString *trueString;
