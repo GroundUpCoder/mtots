@@ -26,6 +26,7 @@ typedef struct {
   Table modules;            /* all preloaded modules */
   Table nativeModuleThunks; /* Table of CFunctions */
 
+  ObjString *preludeString;
   ObjString *initString;
   ObjString *iterString;
   ObjString *lenString;

@@ -23,6 +23,7 @@
 VM vm;
 
 static ubool invoke(ObjString *name, i16 argCount);
+static void prepPrelude();
 
 static void resetStack() {
   vm.stackTop = vm.stack;
@@ -108,6 +109,7 @@ void initVM() {
   vm.grayCapacity = 0;
   vm.grayStack = NULL;
 
+  vm.preludeString = NULL;
   vm.initString = NULL;
   vm.iterString = NULL;
   vm.lenString = NULL;
@@ -138,6 +140,7 @@ void initVM() {
   initTable(&vm.modules);
   initTable(&vm.nativeModuleThunks);
 
+  vm.preludeString = copyCString("__prelude__");
   vm.initString = copyCString("__init__");
   vm.iterString = copyCString("__iter__");
   vm.lenString = copyCString("__len__");
@@ -163,11 +166,14 @@ void initVM() {
 
   defineDefaultGlobals();
   addNativeModules();
+
+  prepPrelude();
 }
 
 void freeVM() {
   freeTable(&vm.globals);
   freeTable(&vm.strings);
+  vm.preludeString = NULL;
   vm.initString = NULL;
   vm.iterString = NULL;
   vm.lenString = NULL;
@@ -1044,4 +1050,44 @@ InterpretResult interpret(const char *source, ObjInstance *module) {
   call(closure, 0);
 
   return run(0);
+}
+
+static void prepPrelude() {
+  /* Import __prelude__ */
+  if (!importModule(vm.preludeString)) {
+    panic("Faield to load prelude");
+  }
+  if (!IS_MODULE(peek(0)) ||
+      strcmp(AS_INSTANCE(peek(0))->klass->name->chars, "__prelude__") != 0) {
+    panic("Unexpected stack state after loading prelude");
+  }
+
+  /* Copy over values from __prelude__ into global */
+  {
+    ObjInstance *prelude = AS_INSTANCE(peek(0));
+    size_t i, j;
+
+    for (i = 0; i < prelude->fields.capacity; i++) {
+      Entry *entry = prelude->fields.entries + i;
+      if (entry->key != NULL) {
+        if (strcmp(entry->key->chars, "sorted") == 0) {
+          tableSet(&vm.globals, entry->key, entry->value);
+        } else if (strcmp(entry->key->chars, "__List__") == 0) {
+          ObjClass *mixinListClass;
+          if (!IS_CLASS(entry->value)) {
+            panic("__prelude__.__List__ is not a class");
+          }
+          mixinListClass = AS_CLASS(entry->value);
+          for (j = 0; j < mixinListClass->methods.capacity; j++) {
+            Entry *e = mixinListClass->methods.entries + j;
+            if (e->key != NULL) {
+              if (strcmp(e->key->chars, "sort") == 0) {
+                tableSet(&vm.listClass->methods, e->key, e->value);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }

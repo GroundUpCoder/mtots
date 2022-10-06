@@ -695,6 +695,21 @@ static TypePattern argsAbs[] = {
 static CFunction funcAbs = {
   implAbs, "abs", sizeof(argsAbs)/sizeof(TypePattern), 0, argsAbs };
 
+static ubool implSort(i16 argCount, Value *args, Value *out) {
+  ObjList *list = AS_LIST(args[0]);
+  ObjList *keys =
+    argCount < 2 ?
+      NULL :
+      IS_NIL(args[1]) ?
+        NULL :
+        AS_LIST(args[1]);
+  sortList(list, keys);
+  return UTRUE;
+}
+
+static CFunction cfunctionSort = {
+  implSort, "__sort__", 1, 2 };
+
 static void defineStandardIOGlobals() {
   ObjString *name;
 
@@ -739,6 +754,8 @@ void defineDefaultGlobals() {
   defineGlobal("tan", CFUNCTION_VAL(&funcTan));
   defineGlobal("abs", CFUNCTION_VAL(&funcAbs));
   defineGlobal("StopIteration", STOP_ITERATION_VAL());
+
+  defineGlobal("__sort__", CFUNCTION_VAL(&cfunctionSort));
 
   defineGlobal("Table", OBJ_VAL(vm.tableClass));
   defineGlobal("ByteArray", OBJ_VAL(vm.byteArrayClass));

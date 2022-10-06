@@ -259,6 +259,7 @@ static void markRoots() {
   markTable(&vm.modules);
   markTable(&vm.nativeModuleThunks);
   markCompilerRoots();
+  markObject((Obj*)vm.preludeString);
   markObject((Obj*)vm.initString);
   markObject((Obj*)vm.iterString);
   markObject((Obj*)vm.lenString);

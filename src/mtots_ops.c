@@ -140,3 +140,66 @@ ubool valueLessThan(Value a, Value b) {
   panic("%s does not support '<'", getKindName(a));
   return UFALSE;
 }
+
+typedef struct SortEntry {
+  Value key;
+  Value value;
+} SortEntry;
+
+/* Basic mergesort.
+ * TODO: Consider using timsort instead */
+void sortList(ObjList *list, ObjList *keys) {
+  SortEntry *buffer, *src, *dst;
+  size_t i, len = list->length, width;
+  /* TODO: this check is untested - come back and
+    * actually think this through when there is more bandwidth */
+  if (len >= ((size_t)(-1)) / 4) {
+    panic("sortList(): list too long (%lu)", (long) len);
+  }
+  if (keys != NULL && len != keys->length) {
+    panic(
+      "sortList(): item list and key list lengths do not match: "
+      "%lu, %lu",
+      (unsigned long) list->length, (unsigned long) keys->length);
+  }
+  /* TODO: Consider falling back to an in-place sorting algorithm
+   * if we run do not have enough memory for the buffer (maybe qsort?) */
+  /* NOTE: We call malloc directly instead of ALLOCATE because
+   * I don't want to potentially trigger a GC call here.
+   * And besides, none of the memory we allocate in this call should
+   * outlive this call */
+  buffer = malloc(sizeof(SortEntry) * 2 * len);
+  src = buffer;
+  dst = buffer + len;
+  for (i = 0; i < len; i++) {
+    src[i].key = keys == NULL ? list->buffer[i] : keys->buffer[i];
+    src[i].value = list->buffer[i];
+  }
+
+  /* bottom up merge sort */
+  for (width = 1; width < len; width *= 2) {
+    for (i = 0; i < len; i += 2 * width) {
+      size_t low  = i;
+      size_t mid  = i +     width < len ? i +     width : len;
+      size_t high = i + 2 * width < len ? i + 2 * width : len;
+      size_t a = low, b = mid, j;
+      for (j = low; j < high; j++) {
+        dst[j] =
+          b < high && (a >= mid || valueLessThan(src[b].key, src[a].key)) ?
+            src[b++] : src[a++];
+      }
+    }
+    {
+      SortEntry *tmp = src;
+      src = dst;
+      dst = tmp;
+    }
+  }
+
+  /* copy contents back into the list */
+  for (i = 0; i < len; i++) {
+    list->buffer[i] = src[i].value;
+  }
+
+  free(buffer);
+}

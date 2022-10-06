@@ -1,0 +1,19 @@
+# A bit of a hack mechanism for defining globals
+# that are easier to define in mtots itself rather than purely in C.
+#
+# The main issues currently are:
+#   * it is currently not possible to call mtots functions from C
+#   * it is currently not possible to iterate over arbitrary iterables from C
+
+
+def sorted(iterable):
+  final items = []
+  for item in iterable:
+    items.append(item)
+  __sort__(items)
+  return items
+
+
+class __List__:
+  def sort():
+    __sort__(this)
