@@ -784,8 +784,20 @@ void defineDefaultGlobals() {
   defineGlobal("__sort__", CFUNCTION_VAL(&cfunctionSort));
   defineGlobal("__tuple__", CFUNCTION_VAL(&cfunctionTuple));
 
-  defineGlobal("Table", OBJ_VAL(vm.tableClass));
-  defineGlobal("ByteArray", OBJ_VAL(vm.byteArrayClass));
+  tableSet(&vm.globals, vm.sentinelClass->name, OBJ_VAL(vm.sentinelClass));
+  tableSet(&vm.globals, vm.nilClass->name, OBJ_VAL(vm.nilClass));
+  tableSet(&vm.globals, vm.boolClass->name, OBJ_VAL(vm.boolClass));
+  tableSet(&vm.globals, vm.numberClass->name, OBJ_VAL(vm.numberClass));
+  tableSet(&vm.globals, vm.stringClass->name, OBJ_VAL(vm.stringClass));
+  tableSet(&vm.globals, vm.byteArrayClass->name, OBJ_VAL(vm.byteArrayClass));
+  tableSet(&vm.globals, vm.listClass->name, OBJ_VAL(vm.listClass));
+  tableSet(&vm.globals, vm.tupleClass->name, OBJ_VAL(vm.tupleClass));
+  tableSet(&vm.globals, vm.dictClass->name, OBJ_VAL(vm.dictClass));
+  tableSet(&vm.globals, vm.functionClass->name, OBJ_VAL(vm.functionClass));
+  tableSet(&vm.globals, vm.operatorClass->name, OBJ_VAL(vm.operatorClass));
+  tableSet(&vm.globals, vm.classClass->name, OBJ_VAL(vm.classClass));
+  tableSet(&vm.globals, vm.fileClass->name, OBJ_VAL(vm.fileClass));
+  tableSet(&vm.globals, vm.tableClass->name, OBJ_VAL(vm.tableClass));
 
   defineStandardIOGlobals();
 }

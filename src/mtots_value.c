@@ -168,6 +168,7 @@ ubool typePatternMatch(TypePattern pattern, Value value) {
       }
       /* fallthrough */
     case TYPE_PATTERN_LIST: return IS_LIST(value);
+    case TYPE_PATTERN_CLASS: return IS_CLASS(value);
     case TYPE_PATTERN_NATIVE_OR_NIL:
       if (IS_NIL(value)) {
         return UTRUE;
@@ -191,6 +192,7 @@ const char *getTypePatternName(TypePattern pattern) {
     case TYPE_PATTERN_NUMBER: return "number";
     case TYPE_PATTERN_LIST_OR_NIL: return "(list|nil)";
     case TYPE_PATTERN_LIST: return "list";
+    case TYPE_PATTERN_CLASS: return "class";
     case TYPE_PATTERN_NATIVE_OR_NIL:
       return pattern.nativeTypeDescriptor ?
         ((NativeObjectDescriptor*) pattern.nativeTypeDescriptor)->name :

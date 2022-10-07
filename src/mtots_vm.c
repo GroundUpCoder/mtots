@@ -10,6 +10,7 @@
 #include "mtots_class_dict.h"
 #include "mtots_class_table.h"
 #include "mtots_class_ba.h"
+#include "mtots_class_class.h"
 #include "mtots_import.h"
 #include "mtots_modules.h"
 
@@ -163,7 +164,7 @@ void initVM() {
   initDictClass();
   initNoMethodClass(&vm.functionClass, "Function");
   initNoMethodClass(&vm.operatorClass, "Operator");
-  initNoMethodClass(&vm.classClass, "Class");
+  initClassClass();
   initFileClass();
   initTableClass();
 

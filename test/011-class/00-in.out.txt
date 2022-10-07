@@ -1,0 +1,3 @@
+5 in Number = true
+'hi' in Number = false
+'hi' in String = true
