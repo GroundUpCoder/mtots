@@ -13,14 +13,28 @@ def list(iterable):
   return items
 
 
-def sorted(iterable):
+def sorted(iterable, key=nil):
   final items = []
   for item in iterable:
     items.append(item)
-  __sort__(items)
+
+  if key:
+    final keys = []
+    for item in items:
+      keys.append(key(item))
+    __sort__(items, keys)
+  else:
+    __sort__(items)
+
   return items
 
 
 class __List__:
-  def sort():
-    __sort__(this)
+  def sort(key=nil):
+    if key:
+      final keys = []
+      for item in this:
+        keys.append(key(item))
+      __sort__(this, keys)
+    else:
+      __sort__(this)
