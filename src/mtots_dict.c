@@ -22,7 +22,7 @@ void freeDict(Dict *dict) {
   initDict(dict);
 }
 
-static u32 hashval(Value value) {
+u32 hashval(Value value) {
   switch (value.type) {
     /* hash values for bool taken from Java */
     case VAL_BOOL: return AS_BOOL(value) ? 1231 : 1237;
@@ -39,6 +39,7 @@ static u32 hashval(Value value) {
     case VAL_SENTINEL: return (u32) AS_SENTINEL(value);
     case VAL_OBJ: switch (AS_OBJ(value)->type) {
       case OBJ_STRING: return AS_STRING(value)->hash;
+      case OBJ_TUPLE: return AS_TUPLE(value)->hash;
       default: break;
     }
   }
@@ -160,11 +161,64 @@ ubool dictDelete(Dict *dict, Value key) {
   return UTRUE;
 }
 
+ObjTuple *dictFindTuple(
+    Dict *dict,
+    Value *buffer,
+    size_t length,
+    u32 hash) {
+  u32 index;
+  if (dict->count == 0) {
+    return NULL;
+  }
+  /* OPT: hash % dict->capacity */
+  index = hash & (dict->capacity - 1);
+  for (;;) {
+    DictEntry *entry = &dict->entries[index];
+    if (IS_EMPTY_KEY(entry->key)) {
+      /* Stop if we find an empty non-tombstone entry */
+      if (IS_NIL(entry->value)) {
+        return NULL;
+      }
+    } else if (IS_TUPLE(entry->key)) {
+      ObjTuple *key = AS_TUPLE(entry->key);
+      if (key->length == length && key->hash == hash) {
+        size_t i;
+        ubool equal = UTRUE;
+        for (i = 0; i < length; i++) {
+          if (!valuesEqual(key->buffer[i], buffer[i])) {
+            equal = UFALSE;
+            break;
+          }
+        }
+        if (equal) {
+          return key; /* We found it */
+        }
+      }
+    }
+    /* OPT: (index + 1) % dict->capacity */
+    index = (index + 1) & (dict->capacity - 1);
+  }
+}
+
+void dictRemoveWhite(Dict *dict) {
+  size_t i;
+  for (i = 0; i < dict->capacity; i++) {
+    DictEntry *entry = &dict->entries[i];
+    if (!IS_EMPTY_KEY(entry->key) &&
+        IS_OBJ(entry->key) &&
+        !AS_OBJ(entry->key)->isMarked) {
+      dictDelete(dict, entry->key);
+    }
+  }
+}
+
 void markDict(Dict *dict) {
   size_t i;
   for (i = 0; i < dict->capacity; i++) {
     DictEntry *entry = &dict->entries[i];
-    markValue(entry->key);
-    markValue(entry->value);
+    if (!IS_EMPTY_KEY(entry->key)) {
+      markValue(entry->key);
+      markValue(entry->value);
+    }
   }
 }

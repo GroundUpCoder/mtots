@@ -13,6 +13,13 @@ def list(iterable):
   return items
 
 
+def tuple(iterable):
+  var items = []
+  for item in iterable:
+    items.append(item)
+  return __tuple__(items)
+
+
 def sorted(iterable, key=nil):
   final items = []
   for item in iterable:

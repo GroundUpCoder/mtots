@@ -163,6 +163,24 @@ static u32 hashString(const char *key, size_t length) {
   return hash;
 }
 
+static u32 hashTuple(Value *buffer, size_t length) {
+  /* FNV-1a as presented in the Crafting Interpreters book */
+  size_t i;
+  u32 hash = 2166136261u;
+  for (i = 0; i < length; i++) {
+    u32 itemhash = hashval(buffer[i]);
+    hash ^= (u8) (itemhash);
+    hash *= 16777619;
+    hash ^= (u8) (itemhash >> 8);
+    hash *= 16777619;
+    hash ^= (u8) (itemhash >> 16);
+    hash *= 16777619;
+    hash ^= (u8) (itemhash >> 24);
+    hash *= 16777619;
+  }
+  return hash;
+}
+
 /* NOTE: this function should be used with care.
  * This function computes a hash of the string the moment when it is called
  * to see if there is an interned version of this string.
@@ -243,6 +261,31 @@ ObjList *newList(size_t size) {
   return list;
 }
 
+static ObjTuple *allocateTuple(Value *buffer, int length, u32 hash) {
+  ObjTuple *tuple = ALLOCATE_OBJ(ObjTuple, OBJ_TUPLE);
+  tuple->length = length;
+  tuple->buffer = buffer;
+  tuple->hash = hash;
+
+  push(OBJ_VAL(tuple));
+  dictSet(&vm.tuples, OBJ_VAL(tuple), NIL_VAL());
+  pop();
+
+  return tuple;
+}
+
+ObjTuple *copyTuple(Value *buffer, size_t length) {
+  u32 hash = hashTuple(buffer, length);
+  ObjTuple *interned = dictFindTuple(&vm.tuples, buffer, length, hash);
+  Value *newBuffer;
+  if (interned != NULL) {
+    return interned;
+  }
+  newBuffer = ALLOCATE(Value, length);
+  memcpy(newBuffer, buffer, sizeof(Value) * length);
+  return allocateTuple(newBuffer, length, hash);
+}
+
 ObjDict *newDict() {
   ObjDict *dict = ALLOCATE_OBJ(ObjDict, OBJ_DICT);
   initDict(&dict->dict);
@@ -310,6 +353,7 @@ ObjClass *getClass(Value value) {
         case OBJ_STRING: return vm.stringClass;
         case OBJ_BYTE_ARRAY: return vm.byteArrayClass;
         case OBJ_LIST: return vm.listClass;
+        case OBJ_TUPLE: return vm.tupleClass;
         case OBJ_DICT: return vm.dictClass;
         case OBJ_FILE: return vm.fileClass;
         case OBJ_NATIVE: return AS_NATIVE(value)->descriptor->klass;
@@ -361,6 +405,9 @@ void printObject(Value value) {
     case OBJ_LIST:
       printf("<list %lu items>", (unsigned long) AS_LIST(value)->length);
       break;
+    case OBJ_TUPLE:
+      printf("<tuple %lu items>", (unsigned long) AS_TUPLE(value)->length);
+      break;
     case OBJ_DICT:
       printf("<dict>");
       break;
@@ -389,6 +436,7 @@ const char *getObjectTypeName(ObjType type) {
   case OBJ_STRING: return "OBJ_STRING";
   case OBJ_BYTE_ARRAY: return "OBJ_BYTE_ARRAY";
   case OBJ_LIST: return "OBJ_LIST";
+  case OBJ_TUPLE: return "OBJ_TUPLE";
   case OBJ_DICT: return "OBJ_DICT";
   case OBJ_FILE: return "OBJ_FILE";
   case OBJ_NATIVE: return "OBJ_NATIVE";

@@ -140,6 +140,7 @@ const char *getKindName(Value value) {
       case OBJ_STRING: return "string";
       case OBJ_BYTE_ARRAY: return "byteArray";
       case OBJ_LIST: return "list";
+      case OBJ_TUPLE: return "tuple";
       case OBJ_DICT: return "dict";
       case OBJ_FILE: return "file";
       case OBJ_NATIVE: return AS_NATIVE(value)->descriptor->name;

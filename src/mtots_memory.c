@@ -134,6 +134,14 @@ static void blackenObject(Obj *object) {
       }
       break;
     }
+    case OBJ_TUPLE: {
+      ObjTuple *tuple = (ObjTuple*)object;
+      size_t i;
+      for (i = 0; i < tuple->length; i++) {
+        markValue(tuple->buffer[i]);
+      }
+      break;
+    }
     case OBJ_DICT: {
       ObjDict *dict = (ObjDict*)object;
       markDict(&dict->dict);
@@ -218,6 +226,12 @@ static void freeObject(Obj *object) {
       FREE(ObjList, object);
       break;
     }
+    case OBJ_TUPLE: {
+      ObjTuple *tuple = (ObjTuple*)object;
+      FREE_ARRAY(Value, tuple->buffer, tuple->length);
+      FREE(ObjTuple, object);
+      break;
+    }
     case OBJ_DICT: {
       ObjDict *dict = (ObjDict*)object;
       freeDict(&dict->dict);
@@ -280,6 +294,7 @@ static void markRoots() {
   markObject((Obj*)vm.stringClass);
   markObject((Obj*)vm.byteArrayClass);
   markObject((Obj*)vm.listClass);
+  markObject((Obj*)vm.tupleClass);
   markObject((Obj*)vm.dictClass);
   markObject((Obj*)vm.functionClass);
   markObject((Obj*)vm.operatorClass);
@@ -339,6 +354,7 @@ void collectGarbage() {
   markRoots();
   traceReferences();
   tableRemoveWhite(&vm.strings);
+  dictRemoveWhite(&vm.tuples);
   sweep();
 
   vm.nextGC = vm.bytesAllocated * GC_HEAP_GROW_FACTOR;

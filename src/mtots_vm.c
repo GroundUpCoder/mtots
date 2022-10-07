@@ -125,6 +125,7 @@ void initVM() {
   vm.stringClass = NULL;
   vm.byteArrayClass = NULL;
   vm.listClass = NULL;
+  vm.tupleClass = NULL;
   vm.dictClass = NULL;
   vm.functionClass = NULL;
   vm.operatorClass = NULL;
@@ -139,6 +140,7 @@ void initVM() {
   initTable(&vm.strings);
   initTable(&vm.modules);
   initTable(&vm.nativeModuleThunks);
+  initDict(&vm.tuples);
 
   vm.preludeString = copyCString("__prelude__");
   vm.initString = copyCString("__init__");
@@ -157,6 +159,7 @@ void initVM() {
   initStringClass();
   initByteArrayClass();
   initListClass();
+  initNoMethodClass(&vm.tupleClass, "Tuple");
   initDictClass();
   initNoMethodClass(&vm.functionClass, "Function");
   initNoMethodClass(&vm.operatorClass, "Operator");
@@ -173,6 +176,9 @@ void initVM() {
 void freeVM() {
   freeTable(&vm.globals);
   freeTable(&vm.strings);
+  freeTable(&vm.modules);
+  freeTable(&vm.nativeModuleThunks);
+  freeDict(&vm.tuples);
   vm.preludeString = NULL;
   vm.initString = NULL;
   vm.iterString = NULL;
@@ -454,6 +460,9 @@ static ubool callOperator(Operator op, i16 argCount) {
             vm.stackTop[-1] = NUMBER_VAL(AS_BYTE_ARRAY(receiver)->size);
           case OBJ_LIST:
             vm.stackTop[-1] = NUMBER_VAL(AS_LIST(receiver)->length);
+            return UTRUE;
+          case OBJ_TUPLE:
+            vm.stackTop[-1] = NUMBER_VAL(AS_TUPLE(receiver)->length);
             return UTRUE;
           case OBJ_DICT:
             vm.stackTop[-1] = NUMBER_VAL(AS_DICT(receiver)->dict.size);
@@ -1082,7 +1091,8 @@ static void prepPrelude() {
       Entry *entry = prelude->fields.entries + i;
       if (entry->key != NULL) {
         if (strcmp(entry->key->chars, "sorted") == 0 ||
-            strcmp(entry->key->chars, "list") == 0) {
+            strcmp(entry->key->chars, "list") == 0 ||
+            strcmp(entry->key->chars, "tuple") == 0) {
           tableSet(&vm.globals, entry->key, entry->value);
         } else if (strcmp(entry->key->chars, "__List__") == 0) {
           ObjClass *mixinListClass;

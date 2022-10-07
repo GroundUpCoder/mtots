@@ -60,6 +60,20 @@ ubool valuesEqual(Value a, Value b) {
           }
           return UTRUE;
         }
+        case OBJ_TUPLE: {
+          ObjTuple *tupleA = (ObjTuple*)objA, *tupleB = (ObjTuple*)objB;
+          size_t i;
+          if (tupleA->length != tupleB->length ||
+              tupleA->hash != tupleB->hash) {
+            return UFALSE;
+          }
+          for (i = 0; i < tupleA->length; i++) {
+            if (!valuesEqual(tupleA->buffer[i], tupleB->buffer[i])) {
+              return UFALSE;
+            }
+          }
+          return UTRUE;
+        }
         case OBJ_DICT: {
           /* TODO */
           return objA == objB;
@@ -123,6 +137,25 @@ ubool valueLessThan(Value a, Value b) {
           Value *bufA = listA->buffer;
           Value *bufB = listB->buffer;
           if (listA == listB) {
+            return UFALSE;
+          }
+          for (i = 0; i < len; i++) {
+            if (!valuesEqual(bufA[i], bufB[i])) {
+              return valueLessThan(bufA[i], bufB[i]);
+            }
+          }
+          return lenA < lenB;
+        }
+        case OBJ_TUPLE: {
+          ObjTuple *tupleA = (ObjTuple*)objA;
+          ObjTuple *tupleB = (ObjTuple*)objB;
+          size_t lenA = tupleA->length;
+          size_t lenB = tupleB->length;
+          size_t len = lenA < lenB ? lenA : lenB;
+          size_t i;
+          Value *bufA = tupleA->buffer;
+          Value *bufB = tupleB->buffer;
+          if (tupleA == tupleB) {
             return UFALSE;
           }
           for (i = 0; i < len; i++) {

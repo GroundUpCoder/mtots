@@ -20,6 +20,7 @@
 #define IS_STRING(value) isObjType(value, OBJ_STRING)
 #define IS_BYTE_ARRAY(value) isObjType(value, OBJ_BYTE_ARRAY)
 #define IS_LIST(value) isObjType(value, OBJ_LIST)
+#define IS_TUPLE(value) isObjType(value, OBJ_TUPLE)
 #define IS_DICT(value) isObjType(value, OBJ_DICT)
 #define IS_FILE(value) isObjType(value, OBJ_FILE)
 #define IS_NATIVE(value) isObjType(value, OBJ_NATIVE)
@@ -33,6 +34,7 @@
 #define AS_BYTE_ARRAY(value) ((ObjByteArray*)AS_OBJ(value))
 #define AS_CSTRING(value) (((ObjString*)AS_OBJ(value))->chars)
 #define AS_LIST(value) ((ObjList*)AS_OBJ(value))
+#define AS_TUPLE(value) ((ObjTuple*)AS_OBJ(value))
 #define AS_DICT(value) ((ObjDict*)AS_OBJ(value))
 #define AS_FILE(value) ((ObjFile*)AS_OBJ(value))
 #define AS_NATIVE(value) ((ObjNative*)AS_OBJ(value))
@@ -58,6 +60,7 @@ typedef enum {
   OBJ_STRING,
   OBJ_BYTE_ARRAY,
   OBJ_LIST,
+  OBJ_TUPLE,
   OBJ_DICT,
 
   OBJ_FILE,
@@ -100,12 +103,20 @@ typedef struct ObjByteArray {
   unsigned char *buffer;
 } ObjByteArray;
 
-typedef struct {
+typedef struct ObjList {
   Obj obj;
   size_t length;
   size_t capacity;
   Value *buffer;
 } ObjList;
+
+/* Unlike in Python, mtots tuples can only hold hashable items */
+typedef struct ObjTuple {
+  Obj obj;
+  size_t length;
+  size_t hash;
+  Value *buffer;
+} ObjTuple;
 
 typedef struct {
   Obj obj;
@@ -214,6 +225,7 @@ ObjByteArray *newByteArray(size_t size);
 ObjByteArray *takeByteArray(unsigned char *buffer, size_t size);
 ObjByteArray *copyByteArray(const unsigned char *buffer, size_t size);
 ObjList *newList(size_t size);
+ObjTuple *copyTuple(Value *buffer, size_t length);
 ObjDict *newDict();
 ObjFile *newFile(FILE *file, ubool isOpen, ObjString *name, FileMode mode);
 ObjFile *openFile(const char *filename, FileMode mode);

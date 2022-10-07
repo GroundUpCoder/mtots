@@ -25,6 +25,7 @@ typedef struct {
   Table strings;            /* table of all interned strings */
   Table modules;            /* all preloaded modules */
   Table nativeModuleThunks; /* Table of CFunctions */
+  Dict tuples;              /* table of all interned tuples */
 
   ObjString *preludeString;
   ObjString *initString;
@@ -43,6 +44,7 @@ typedef struct {
   ObjClass *stringClass;
   ObjClass *byteArrayClass;
   ObjClass *listClass;
+  ObjClass *tupleClass;
   ObjClass *dictClass;
   ObjClass *functionClass;
   ObjClass *operatorClass;

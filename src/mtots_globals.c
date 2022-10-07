@@ -40,6 +40,58 @@ static ubool implType(i16 argCount, Value *args, Value *out) {
 
 static CFunction cfunctionType = { implType, "type", 1};
 
+static ubool reprList(
+    Value *buffer, size_t length, char open, char close, Value *out) {
+  size_t i, charCount = 0;
+  Value *stackStart = vm.stackTop;
+  char *chars, *charsTop;
+
+  /* stringify all entries in the list and push them on the stack
+    * (for GC reasons) */
+  for (i = 0; i < length; i++) {
+    Value strval;
+    if (!implRepr(1, buffer + i, &strval)) {
+      return UFALSE;
+    }
+    push(strval);
+    if (!IS_STRING(strval)) {
+      runtimeError("Non-string value returned from repr()");
+      return UFALSE;
+    }
+    charCount += AS_STRING(strval)->length;
+  }
+
+  /* Account for the brackets '[]' and the ', ' in between
+    * each item. */
+  charCount += length == 0 ? 2 : 2 * length;
+  charsTop = chars = ALLOCATE(char, charCount + 1);
+
+  *charsTop++ = open;
+  for (i = 0; i < length; i++) {
+    ObjString *str = AS_STRING(stackStart[i]);
+    if (i > 0) {
+      *charsTop++ = ',';
+      *charsTop++ = ' ';
+    }
+    memcpy(charsTop, str->chars, str->length);
+    charsTop += str->length;
+  }
+  *charsTop++ = close;
+  *charsTop++ = '\0';
+
+  if (charCount + 1 != charsTop - chars) {
+    runtimeError("Assertion failed in repr(list)");
+    abort();
+  }
+
+  *out = OBJ_VAL(takeString(chars, charCount));
+
+  /* pop() the stack back to the way it was before */
+  vm.stackTop = stackStart;
+
+  return UTRUE;
+}
+
 ubool implRepr(i16 argCount, Value *args, Value *out) {
   switch (args->type) {
     case VAL_BOOL: *out = OBJ_VAL(
@@ -230,53 +282,11 @@ ubool implRepr(i16 argCount, Value *args, Value *out) {
         }
         case OBJ_LIST: {
           ObjList *list = AS_LIST(*args);
-          size_t i, charCount = 0;
-          Value *stackStart = vm.stackTop;
-          char *chars, *charsTop;
-
-          /* stringify all entries in the list and push them on the stack
-           * (for GC reasons) */
-          for (i = 0; i < list->length; i++) {
-            Value strval;
-            if (!implRepr(1, list->buffer + i, &strval)) {
-              return UFALSE;
-            }
-            push(strval);
-            if (!IS_STRING(strval)) {
-              runtimeError("Non-string value returned from repr()");
-              return UFALSE;
-            }
-            charCount += AS_STRING(strval)->length;
-          }
-
-          /* Account for the brackets '[]' and the ', ' in between
-           * each item. */
-          charCount += list->length == 0 ? 2 : 2 * list->length;
-          charsTop = chars = ALLOCATE(char, charCount + 1);
-
-          *charsTop++ = '[';
-          for (i = 0; i < list->length; i++) {
-            ObjString *str = AS_STRING(stackStart[i]);
-            if (i > 0) {
-              *charsTop++ = ',';
-              *charsTop++ = ' ';
-            }
-            memcpy(charsTop, str->chars, str->length);
-            charsTop += str->length;
-          }
-          *charsTop++ = ']';
-          *charsTop++ = '\0';
-
-          if (charCount + 1 != charsTop - chars) {
-            runtimeError("Assertion failed in repr(list)");
-            abort();
-          }
-
-          *out = OBJ_VAL(takeString(chars, charCount));
-
-          /* pop() the stack back to the way it was before */
-          vm.stackTop = stackStart;
-          break;
+          return reprList(list->buffer, list->length, '[', ']', out);
+        }
+        case OBJ_TUPLE: {
+          ObjTuple *tuple = AS_TUPLE(*args);
+          return reprList(tuple->buffer, tuple->length, '(', ')', out);
         }
         case OBJ_DICT: {
           ObjDict *dict = AS_DICT(*args);
@@ -695,6 +705,18 @@ static TypePattern argsAbs[] = {
 static CFunction funcAbs = {
   implAbs, "abs", sizeof(argsAbs)/sizeof(TypePattern), 0, argsAbs };
 
+static ubool implTuple(i16 argCount, Value *args, Value *out) {
+  ObjList *list = AS_LIST(args[0]);
+  *out = OBJ_VAL(copyTuple(list->buffer, list->length));
+  return UTRUE;
+}
+
+static TypePattern argsTuple[] = {
+  { TYPE_PATTERN_LIST },
+};
+
+static CFunction cfunctionTuple = { implTuple, "__tuple__", 1, 0, argsTuple };
+
 static ubool implSort(i16 argCount, Value *args, Value *out) {
   ObjList *list = AS_LIST(args[0]);
   ObjList *keys =
@@ -707,8 +729,12 @@ static ubool implSort(i16 argCount, Value *args, Value *out) {
   return UTRUE;
 }
 
-static CFunction cfunctionSort = {
-  implSort, "__sort__", 1, 2 };
+static TypePattern argsSort[] = {
+  { TYPE_PATTERN_LIST },
+  { TYPE_PATTERN_LIST_OR_NIL },
+};
+
+static CFunction cfunctionSort = { implSort, "__sort__", 1, 2, argsSort };
 
 static void defineStandardIOGlobals() {
   ObjString *name;
@@ -756,6 +782,7 @@ void defineDefaultGlobals() {
   defineGlobal("StopIteration", STOP_ITERATION_VAL());
 
   defineGlobal("__sort__", CFUNCTION_VAL(&cfunctionSort));
+  defineGlobal("__tuple__", CFUNCTION_VAL(&cfunctionTuple));
 
   defineGlobal("Table", OBJ_VAL(vm.tableClass));
   defineGlobal("ByteArray", OBJ_VAL(vm.byteArrayClass));

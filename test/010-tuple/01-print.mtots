@@ -1,0 +1,5 @@
+
+
+print(tuple([1, 2, 3]))
+print(tuple([1, 2, 3, "hello", "world"]))
+print(tuple([1, 2, tuple([3, "hello", "world"])]))
