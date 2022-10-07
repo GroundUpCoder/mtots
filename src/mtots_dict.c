@@ -136,9 +136,6 @@ ubool dictSet(Dict *dict, Value key, Value value) {
     }
     dict->size++;
   }
-  if (isNewKey && IS_NIL(entry->value)) {
-    dict->count++;
-  }
   entry->key = key;
   entry->value = value;
   return isNewKey;

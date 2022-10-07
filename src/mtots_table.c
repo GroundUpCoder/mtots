@@ -111,9 +111,6 @@ ubool tableSet(Table *table, ObjString *key, Value value) {
     }
     table->size++;
   }
-  if (isNewKey && IS_NIL(entry->value)) {
-    table->count++;
-  }
   entry->key = key;
   entry->value = value;
   return isNewKey;
