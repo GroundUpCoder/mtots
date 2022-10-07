@@ -94,6 +94,8 @@ ObjFunction *newFunction() {
   function->arity = 0;
   function->upvalueCount = 0;
   function->name = NULL;
+  function->defaultArgs = NULL;
+  function->defaultArgsCount = 0;
   initChunk(&function->chunk);
   return function;
 }

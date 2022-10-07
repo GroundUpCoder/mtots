@@ -79,6 +79,8 @@ typedef struct {
   i16 upvalueCount;
   Chunk chunk;
   ObjString *name;
+  Value *defaultArgs;
+  i16 defaultArgsCount;
 } ObjFunction;
 
 struct ObjString {

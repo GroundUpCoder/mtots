@@ -315,6 +315,17 @@ static ubool callNativeClosure(ObjNativeClosure *nc, i16 argCount) {
 ubool call(ObjClosure *closure, i16 argCount) {
   CallFrame *frame;
 
+  if (argCount < closure->function->arity &&
+      argCount + closure->function->defaultArgsCount >=
+        closure->function->arity) {
+    size_t i = 0;
+    while (argCount < closure->function->arity) {
+      push(closure->function->defaultArgs[i]);
+      i++;
+      argCount++;
+    }
+  }
+
   if (argCount != closure->function->arity) {
     runtimeError(
       "Expected %d arguments but got %d",

@@ -25,6 +25,7 @@
 #define UFALSE 0
 
 #define U8_COUNT (U8_MAX + 1)
+#define MAX_ARG_COUNT 127
 
 /* PLATFORM DEPENDENT NOTE: Strictly speaking, C89 does not
  * guarantee that char always holds 8 bits (e.g. on some

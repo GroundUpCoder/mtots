@@ -75,6 +75,9 @@ typedef struct Compiler {
   i16 localCount;
   Upvalue upvalues[U8_COUNT];
   i16 scopeDepth;
+
+  Value defaultArgs[U8_COUNT];
+  i16 defaultArgsCount;
 } Compiler;
 
 typedef struct ClassCompiler {
@@ -229,7 +232,10 @@ static void initCompiler(Compiler *compiler, FunctionType type) {
   compiler->type = type;
   compiler->localCount = 0;
   compiler->scopeDepth = 0;
+  compiler->defaultArgsCount = 0;
+
   compiler->function = newFunction();
+
   current = compiler;
   if (type != TYPE_SCRIPT) {
     current->function->name = copyString(
@@ -253,6 +259,17 @@ static ObjFunction *endCompiler() {
 
   emitReturn();
   function = current->function;
+
+  /* Copy over any default arguments */
+  if (current->defaultArgsCount > 0) {
+    function->defaultArgs = ALLOCATE(Value, current->defaultArgsCount);
+    function->defaultArgsCount = current->defaultArgsCount;
+    memcpy(
+      function->defaultArgs,
+      current->defaultArgs,
+      sizeof(Value) * current->defaultArgsCount);
+  }
+
 #if DEBUG_PRINT_CODE
   if (!parser.hadError) {
     disassembleChunk(
@@ -648,7 +665,7 @@ static ubool getHexDigit(char hex, int *out) {
   return UFALSE;
 }
 
-static void string(ubool canAssign) {
+static ObjString *stringTokenToObjString() {
   size_t i, size = 0;
   const char *p = parser.previous.start + 1;
   char *s, *sp;
@@ -672,7 +689,7 @@ static void string(ubool canAssign) {
             char buffer[32];
             sprintf(buffer, "Invalid string escape '\\%c'", p[i]);
             error(buffer);
-            return;
+            return NULL;
           }
         }
         break;
@@ -694,7 +711,7 @@ static void string(ubool canAssign) {
               char buffer[32];
               sprintf(buffer, "Invalid hex digit %c", p[i]);
               error(buffer);
-              return;
+              return NULL;
             }
             i++;
             value = 16 * digitval;
@@ -702,7 +719,7 @@ static void string(ubool canAssign) {
               char buffer[32];
               sprintf(buffer, "Invalid hex digit %c", p[i]);
               error(buffer);
-              return;
+              return NULL;
             }
             value += digitval;
             *sp++ = value;
@@ -724,7 +741,14 @@ static void string(ubool canAssign) {
     abort(); /* size calculations were invalid */
   }
   *sp = '\0';
-  emitConstant(OBJ_VAL(takeString(s, size)));
+  return takeString(s, size);
+}
+
+static void string(ubool canAssign) {
+  ObjString *str = stringTokenToObjString();
+  if (str != NULL) {
+    emitConstant(OBJ_VAL(str));
+  }
 }
 
 static void namedVariable(Token name, ubool canAssign) {
@@ -958,6 +982,24 @@ static void block(ubool newScope) {
   }
 }
 
+static Value defaultArgument() {
+  if (match(TOKEN_NIL)) {
+    return NIL_VAL();
+  } else if (match(TOKEN_TRUE)) {
+    return BOOL_VAL(UTRUE);
+  } else if (match(TOKEN_FALSE)) {
+    return BOOL_VAL(UFALSE);
+  } else if (match(TOKEN_NUMBER)) {
+    double value = strtod(parser.previous.start, NULL);
+    return NUMBER_VAL(value);
+  } else if (match(TOKEN_STRING)) {
+    ObjString *str = stringTokenToObjString();
+    return str ? OBJ_VAL(str) : NIL_VAL();
+  }
+  error("Expected default argument expression");
+  return NIL_VAL();
+}
+
 static void function(FunctionType type) {
   Compiler compiler;
   ObjFunction *function;
@@ -976,6 +1018,12 @@ static void function(FunctionType type) {
       }
       constant = parseVariable("Expect parameter name");
       defineVariable(constant);
+      if (compiler.defaultArgsCount > 0 && !check(TOKEN_EQUAL)) {
+        error("non-optional argument may not follow an optional argument");
+      }
+      if (match(TOKEN_EQUAL)) {
+        compiler.defaultArgs[compiler.defaultArgsCount++] = defaultArgument();
+      }
     } while (match(TOKEN_COMMA));
   }
   consume(TOKEN_RIGHT_PAREN, "Expect ')' after parameters");
@@ -1407,6 +1455,10 @@ ObjFunction *compile(const char *source) {
 void markCompilerRoots() {
   Compiler *compiler = current;
   while (compiler != NULL) {
+    i16 i;
+    for (i = 0; i < compiler->defaultArgsCount; i++) {
+      markValue(compiler->defaultArgs[i]);
+    }
     markObject((Obj*)compiler->function);
     compiler = compiler->enclosing;
   }

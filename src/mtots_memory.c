@@ -99,8 +99,12 @@ static void blackenObject(Obj *object) {
     }
     case OBJ_FUNCTION: {
       ObjFunction *function = (ObjFunction*) object;
+      size_t i;
       markObject((Obj*)function->name);
       markArray(&function->chunk.constants);
+      for (i = 0; i < function->defaultArgsCount; i++) {
+        markValue(function->defaultArgs[i]);
+      }
       break;
     }
     case OBJ_NATIVE_CLOSURE: {
@@ -171,6 +175,7 @@ static void freeObject(Obj *object) {
     case OBJ_FUNCTION: {
       ObjFunction *function = (ObjFunction*) object;
       freeChunk(&function->chunk);
+      FREE_ARRAY(Value, function->defaultArgs, function->defaultArgsCount);
       FREE(ObjFunction, object);
       break;
     }
