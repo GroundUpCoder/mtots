@@ -1,0 +1,9 @@
+
+
+final tuple1 = tuple(["aa", 2, 5])
+final x = 3
+final tuple2 = tuple(["a" + "a", x - 1, x + 2])
+final tuple3 = tuple(["aa", 2, 6])
+
+print("tuple1 == tuple2 = %r" % [tuple1 == tuple2])
+print("tuple1 == tuple3 = %r" % [tuple1 == tuple3])

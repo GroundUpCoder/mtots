@@ -60,20 +60,6 @@ ubool valuesEqual(Value a, Value b) {
           }
           return UTRUE;
         }
-        case OBJ_TUPLE: {
-          ObjTuple *tupleA = (ObjTuple*)objA, *tupleB = (ObjTuple*)objB;
-          size_t i;
-          if (tupleA->length != tupleB->length ||
-              tupleA->hash != tupleB->hash) {
-            return UFALSE;
-          }
-          for (i = 0; i < tupleA->length; i++) {
-            if (!valuesEqual(tupleA->buffer[i], tupleB->buffer[i])) {
-              return UFALSE;
-            }
-          }
-          return UTRUE;
-        }
         case OBJ_DICT: {
           /* TODO */
           return objA == objB;
