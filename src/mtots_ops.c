@@ -39,6 +39,9 @@ ubool valuesEqual(Value a, Value b) {
       if (objA->type != objB->type) {
         return UFALSE;
       }
+      if (objA == objB) {
+        return UTRUE;
+      }
       switch (objA->type) {
         case OBJ_BYTE_ARRAY: {
           ObjByteArray *aa = (ObjByteArray*)objA, *ab = (ObjByteArray*)objB;
@@ -61,8 +64,25 @@ ubool valuesEqual(Value a, Value b) {
           return UTRUE;
         }
         case OBJ_DICT: {
-          /* TODO */
-          return objA == objB;
+          ObjDict *dictA = (ObjDict*)objA, *dictB = (ObjDict*)objB;
+          size_t i;
+          if (dictA->dict.size != dictB->dict.size) {
+            return UFALSE;
+          }
+          for (i = 0; i < dictA->dict.capacity; i++) {
+            DictEntry *entry = &dictA->dict.entries[i];
+            Value key = entry->key;
+            if (!IS_EMPTY_KEY(key)) {
+              Value value1 = entry->value, value2;
+              if (!dictGet(&dictB->dict, key, &value2)) {
+                return UFALSE;
+              }
+              if (!valuesEqual(value1, value2)) {
+                return UFALSE;
+              }
+            }
+          }
+          return UTRUE;
         }
         default: return objA == objB;
       }
