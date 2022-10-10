@@ -1093,7 +1093,8 @@ static void prepPrelude() {
       if (entry->key != NULL) {
         if (strcmp(entry->key->chars, "sorted") == 0 ||
             strcmp(entry->key->chars, "list") == 0 ||
-            strcmp(entry->key->chars, "tuple") == 0) {
+            strcmp(entry->key->chars, "tuple") == 0 ||
+            strcmp(entry->key->chars, "set") == 0) {
           tableSet(&vm.globals, entry->key, entry->value);
         } else if (strcmp(entry->key->chars, "__List__") == 0) {
           ObjClass *mixinListClass;

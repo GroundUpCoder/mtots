@@ -20,6 +20,13 @@ def tuple(iterable):
   return __tuple__(items)
 
 
+def set(iterable):
+  var s = {}
+  for item in iterable:
+    s[item] = nil
+  return s
+
+
 def sorted(iterable, key=nil):
   final items = []
   for item in iterable:
