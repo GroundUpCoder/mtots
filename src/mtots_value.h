@@ -90,13 +90,13 @@ typedef struct ValueArray {
 
 #define OBJ_VAL(object) (OBJ_VAL_EXPLICIT((Obj*)(object)))
 
-STATIC_INLINE Value BOOL_VAL(ubool value);
-STATIC_INLINE Value NIL_VAL();
-STATIC_INLINE Value NUMBER_VAL(double value);
-STATIC_INLINE Value CFUNCTION_VAL(CFunction *func);
-STATIC_INLINE Value OPERATOR_VAL(Operator op);
-STATIC_INLINE Value SENTINEL_VAL(Sentinel sentinel);
-STATIC_INLINE Value OBJ_VAL_EXPLICIT(Obj *object);
+Value BOOL_VAL(ubool value);
+Value NIL_VAL();
+Value NUMBER_VAL(double value);
+Value CFUNCTION_VAL(CFunction *func);
+Value OPERATOR_VAL(Operator op);
+Value SENTINEL_VAL(Sentinel sentinel);
+Value OBJ_VAL_EXPLICIT(Obj *object);
 
 #define IS_STOP_ITERATION(value) ( \
   IS_SENTINEL(value) && \

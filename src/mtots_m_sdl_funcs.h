@@ -6,6 +6,10 @@
 
 #include <stdio.h>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 /**********************************************************
  * functions: Initialization and Startup
  *********************************************************/
@@ -87,7 +91,12 @@ static ubool implGetTicks(i16 argCount, Value *args, Value *out) {
 static CFunction funcGetTicks = { implGetTicks, "getTicks", 0 };
 
 static ubool implDelay(i16 argCount, Value *args, Value *out) {
-  SDL_Delay(AS_NUMBER(args[0]));
+  double ms = AS_NUMBER(args[0]);
+#ifdef __EMSCRIPTEN__
+  emscripten_sleep(ms);
+#else
+  SDL_Delay(ms);
+#endif
   return UTRUE;
 }
 

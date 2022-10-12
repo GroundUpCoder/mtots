@@ -6,10 +6,6 @@
 
 #define DICT_MAX_LOAD 0.75
 
-STATIC_INLINE ubool isNan(double x) {
-  return x != x;
-}
-
 void initDict(Dict *dict) {
   dict->count = 0;
   dict->capacity = 0;

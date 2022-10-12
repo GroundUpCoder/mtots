@@ -32,6 +32,15 @@ static void repl() {
 }
 
 int main(int argc, const char *argv[]) {
+#ifdef __EMSCRIPTEN__
+  const char *fakeArgv[2] = {
+    "",
+    "/home/web_user/apps/music-keyboard.mtots",
+  };
+  argc = 2;
+  argv = fakeArgv;
+#endif
+
   initRules();
   initVM();
 

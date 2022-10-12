@@ -17,36 +17,36 @@
   return (i32) AS_NUMBER(value);
 }
 
-STATIC_INLINE Value BOOL_VAL(ubool value) {
+Value BOOL_VAL(ubool value) {
   Value v = {VAL_BOOL};
   v.as.boolean = value;
   return v;
 }
-STATIC_INLINE Value NIL_VAL() {
+Value NIL_VAL() {
   Value v = {VAL_NIL};
   return v;
 }
-STATIC_INLINE Value NUMBER_VAL(double value) {
+Value NUMBER_VAL(double value) {
   Value v = {VAL_NUMBER};
   v.as.number = value;
   return v;
 }
-STATIC_INLINE Value CFUNCTION_VAL(CFunction *func) {
+Value CFUNCTION_VAL(CFunction *func) {
   Value v = {VAL_CFUNCTION};
   v.as.cfunction = func;
   return v;
 }
-STATIC_INLINE Value OPERATOR_VAL(Operator op) {
+Value OPERATOR_VAL(Operator op) {
   Value v = {VAL_OPERATOR};
   v.as.op = op;
   return v;
 }
-STATIC_INLINE Value SENTINEL_VAL(Sentinel sentinel) {
+Value SENTINEL_VAL(Sentinel sentinel) {
   Value v = {VAL_SENTINEL};
   v.as.sentinel = sentinel;
   return v;
 }
-STATIC_INLINE Value OBJ_VAL_EXPLICIT(Obj *object) {
+Value OBJ_VAL_EXPLICIT(Obj *object) {
   Value v = {VAL_OBJ};
   v.as.obj = object;
   return v;

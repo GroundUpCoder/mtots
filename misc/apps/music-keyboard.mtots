@@ -15,8 +15,8 @@ sdl.init(sdl.INIT_AUDIO | sdl.INIT_VIDEO)
 ################################################################
 # Initialize Audio
 ################################################################
-final adev = sdl.openAudioDevice(nil)
-adev.pause(0)
+# we can't initialize this right away on web
+var adev = nil
 final keyToTrackMap = {}
 final trackToKeyMap = [nil] * sdl.AUDIO_TRACK_COUNT
 final keyToNoteID = {
@@ -184,6 +184,9 @@ def eventLoop():
       elif event.type == sdl.KEYDOWN and event.repeat:
         pass # ignore repeats
       elif event.type == sdl.KEYDOWN:
+        if adev is nil:
+          adev = sdl.openAudioDevice(nil)
+          adev.pause(0)
         if event.key == sdl.key.SPACE:
           waveformIndex = (waveformIndex + 1) % len(waveforms)
 

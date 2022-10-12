@@ -124,7 +124,9 @@ static const char *getRoot() {
 ubool canOpen(const char *path) {
   FILE *file = fopen(path, "r");
   ubool opened = file != NULL;
-  fclose(file);
+  if (file != NULL) {
+    fclose(file);
+  }
   return opened;
 }
 

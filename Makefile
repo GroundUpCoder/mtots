@@ -1,7 +1,20 @@
-.PHONY: clean
+.PHONY: clean web
 
 mtots: src/* scripts/*
 	sh scripts/build-macos-debug.sh
+
+web: out-web
+
+out-web: src/* misc/new-samples/* misc/apps/* root/*
+	mkdir -p out-web
+	emcc -g src/*.c -Isrc -o out-web/index.html \
+		-sUSE_SDL=2 \
+		-sASYNCIFY \
+		-O3 \
+		-DMTOTS_ENABLE_SDL=1 \
+		--preload-file misc/new-samples@/home/web_user/samples \
+		--preload-file misc/apps@/home/web_user/apps \
+		--preload-file root@/home/web_user/git/mtots/root
 
 sdl-demo: src/* misc/sdl-demo/*
 	cc -std=c89 \
@@ -76,4 +89,4 @@ sdl-audio-demo-02: src/* misc/sdl-demo/*
 		-o sdl-audio-demo-02
 
 clean:
-	rm -rf mtots sdl-demo
+	rm -rf mtots sdl-demo out-web
