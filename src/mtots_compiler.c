@@ -634,8 +634,14 @@ static void or_(ubool canAssign) {
 
 static void rawString(ubool canAssign) {
   emitConstant(OBJ_VAL(copyString(
-    parser.previous.start + 1,
-    parser.previous.length - 2)));
+    parser.previous.start + 2,
+    parser.previous.length - 3)));
+}
+
+static void tripleQuoteRawString(ubool canAssign) {
+  emitConstant(OBJ_VAL(copyString(
+    parser.previous.start + 4,
+    parser.previous.length - 7)));
 }
 
 static ubool getHexDigit(char hex, int *out) {
@@ -902,6 +908,8 @@ void initRules() {
   rules[TOKEN_IDENTIFIER] = newRule(variable, NULL, PREC_NONE);
   rules[TOKEN_STRING] = newRule(string, NULL, PREC_NONE);
   rules[TOKEN_RAW_STRING] = newRule(rawString, NULL, PREC_NONE);
+  rules[TOKEN_TRIPLE_QUOTE_RAW_STRING] =
+    newRule(tripleQuoteRawString, NULL, PREC_NONE);
   rules[TOKEN_NUMBER] = newRule(number, NULL, PREC_NONE);
   rules[TOKEN_NUMBER_HEX] = newRule(numberHex, NULL, PREC_NONE);
   rules[TOKEN_NUMBER_BIN] = newRule(numberBin, NULL, PREC_NONE);

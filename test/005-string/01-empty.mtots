@@ -1,0 +1,10 @@
+print('"" = %r' % [""])
+print("'' = %r" % [''])
+print("len('') = %r" % [len('')])
+print('\'\' == "" = %r' % ['' == ""])
+print('\'\' == r"" = %r' % ['' == r""])
+print('r"" = %r' % [r""])
+print('"" == r"""""" = %r' % ["" == r""""""])
+print(r"""
+Hello world
+New Line""")

@@ -322,6 +322,12 @@ static Token string(char quote, TokenType type) {
     if (peek() == '\n') {
       scanner.line++;
     }
+    if (peek() == '\\') {
+      advance();
+      if (isAtEnd()) {
+        return errorToken("Expected string escape but got EOF");
+      }
+    }
     advance();
   }
 
@@ -331,6 +337,43 @@ static Token string(char quote, TokenType type) {
 
   advance(); /* The closing quote */
   return makeToken(type);
+}
+
+static Token rawString(char quote) {
+  while (peek() != quote && !isAtEnd()) {
+    if (peek() == '\n') {
+      scanner.line++;
+    }
+    advance();
+  }
+
+  if (isAtEnd()) {
+    return errorToken("Unterminated string");
+  }
+
+  advance(); /* The closing quote */
+  return makeToken(TOKEN_RAW_STRING);
+}
+
+static Token rawTripleQuoteString(char quote) {
+  size_t quoteRun = 0;
+  while (quoteRun < 3 && !isAtEnd()) {
+    if (peek() == '\n') {
+      scanner.line++;
+    }
+    if (peek() == quote) {
+      quoteRun++;
+    } else {
+      quoteRun = 0;
+    }
+    advance();
+  }
+
+  if (isAtEnd()) {
+    return errorToken("Unterminated string");
+  }
+
+  return makeToken(TOKEN_TRIPLE_QUOTE_RAW_STRING);
 }
 
 Token scanToken() {
@@ -362,7 +405,16 @@ Token scanToken() {
 
   if (c == 'r' && (peek() == '"' || peek() == '\'')) {
     char quote = advance();
-    return string(quote, TOKEN_RAW_STRING);
+    if (peek() == quote) {
+      advance();
+      if (peek() == quote) {
+        advance();
+        return rawTripleQuoteString(quote);
+      } else {
+        return makeToken(TOKEN_RAW_STRING);
+      }
+    }
+    return rawString(quote);
   }
 
   if (isAlpha(c)) {
