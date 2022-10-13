@@ -1,13 +1,52 @@
-.PHONY: clean web
+.PHONY: clean test
 
-mtots: src/* scripts/*
-	sh scripts/build-macos-debug.sh
+out/macos: src/* scripts/*
+	mkdir -p out/macos
+	cp lib/angle/targets/macos/*.dylib out/macos
+	cc -std=c89 \
+		-Wall -Werror -Wpedantic \
+		-framework AudioToolbox \
+		-framework AudioToolbox \
+		-framework Carbon \
+		-framework Cocoa \
+		-framework CoreAudio \
+		-framework CoreFoundation \
+		-framework CoreVideo \
+		-framework ForceFeedback \
+		-framework GameController \
+		-framework IOKit \
+		-framework CoreHaptics \
+		-framework Metal \
+		-DMTOTS_ENABLE_SDL=1 \
+		-Isrc \
+		-Ilib/sdl/include \
+		-Ilib/angle/include \
+		src/*.c \
+		lib/sdl/targets/macos/libSDL2.a \
+		lib/angle/targets/macos/libEGL.dylib \
+		lib/angle/targets/macos/libGLESv2.dylib \
+		-fsanitize=address \
+		-O0 -g \
+		-flto \
+		-o out/macos/mtots
 
-web: out-web
+out/c89: src/* scripts/*
+	mkdir -p out/c89
+	cc -std=c89 \
+		-Wall -Werror -Wpedantic \
+		-Isrc \
+		src/*.c \
+		-fsanitize=address \
+		-O0 -g \
+		-flto \
+		-o out/c89/mtots
 
-out-web: src/* misc/new-samples/* misc/apps/* root/*
-	mkdir -p out-web
-	emcc -g src/*.c -Isrc -o out-web/index.html \
+test: out/c89 scripts/run-tests.py
+	python3 scripts/run-tests.py
+
+out/web: src/* misc/new-samples/* misc/apps/* root/*
+	mkdir -p out/web
+	emcc -g src/*.c -Isrc -o out/web/index.html \
 		-sUSE_SDL=2 \
 		-sASYNCIFY \
 		-O3 \
@@ -16,77 +55,5 @@ out-web: src/* misc/new-samples/* misc/apps/* root/*
 		--preload-file misc/apps@/home/web_user/apps \
 		--preload-file root@/home/web_user/git/mtots/root
 
-sdl-demo: src/* misc/sdl-demo/*
-	cc -std=c89 \
-		-framework AudioToolbox \
-		-framework AudioToolbox \
-		-framework Carbon \
-		-framework Cocoa \
-		-framework CoreAudio \
-		-framework CoreFoundation \
-		-framework CoreVideo \
-		-framework ForceFeedback \
-		-framework GameController \
-		-framework IOKit \
-		-framework CoreHaptics \
-		-framework Metal \
-		-Wall -Werror -Wpedantic \
-		-Isrc \
-		-Ilib/sdl/include \
-		misc/sdl-demo/main.c \
-		lib/sdl/targets/macos/libSDL2.a \
-		-fsanitize=address \
-		-O0 -g \
-		-flto \
-		-o sdl-demo
-
-sdl-audio-demo-01: src/* misc/sdl-demo/*
-	cc -std=c89 \
-		-framework AudioToolbox \
-		-framework AudioToolbox \
-		-framework Carbon \
-		-framework Cocoa \
-		-framework CoreAudio \
-		-framework CoreFoundation \
-		-framework CoreVideo \
-		-framework ForceFeedback \
-		-framework GameController \
-		-framework IOKit \
-		-framework CoreHaptics \
-		-framework Metal \
-		-Wall -Werror -Wpedantic \
-		-Isrc \
-		-Ilib/sdl/include \
-		misc/sdl-demo/audio-demo-01.c \
-		lib/sdl/targets/macos/libSDL2.a \
-		-fsanitize=address \
-		-O0 -g \
-		-flto \
-		-o sdl-audio-demo-01
-
-sdl-audio-demo-02: src/* misc/sdl-demo/*
-	cc -std=c89 \
-		-framework AudioToolbox \
-		-framework AudioToolbox \
-		-framework Carbon \
-		-framework Cocoa \
-		-framework CoreAudio \
-		-framework CoreFoundation \
-		-framework CoreVideo \
-		-framework ForceFeedback \
-		-framework GameController \
-		-framework IOKit \
-		-framework CoreHaptics \
-		-framework Metal \
-		-Wall -Werror -Wpedantic \
-		-Isrc \
-		-Ilib/sdl/include \
-		misc/sdl-demo/audio-demo-02.c \
-		lib/sdl/targets/macos/libSDL2.a \
-		-fsanitize=address \
-		-O0 -g \
-		-flto \
-		-o sdl-audio-demo-02
-
 clean:
-	rm -rf mtots sdl-demo out-web
+	rm -rf out

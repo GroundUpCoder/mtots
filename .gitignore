@@ -1,10 +1,6 @@
-/mtots
-/mtots.dSYM/
-/sdl-demo
-/sdl-demo.dSYM/
 *.pyc
 /venv
 /requirements.txt
 .DS_Store
 /sdl-audio-demo*
-/out-web/
+/out/

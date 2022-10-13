@@ -5,7 +5,7 @@ import os, sys, subprocess
 
 repoDir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 testDir = os.path.join(repoDir, 'test')
-mtotsPath = os.path.join(repoDir, 'mtots')
+mtotsPath = os.path.join(repoDir, 'out', 'c89', 'mtots')
 
 dirnames = sorted(os.listdir(testDir))
 

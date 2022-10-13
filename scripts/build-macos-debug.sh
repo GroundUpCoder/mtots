@@ -1,3 +1,5 @@
+mkdir -p out/macos
+cp lib/angle/targets/macos/*.dylib out/macos
 cc -std=c89 \
   -Wall -Werror -Wpedantic \
   -framework AudioToolbox \
@@ -18,4 +20,4 @@ cc -std=c89 \
   -fsanitize=address \
   -O0 -g \
   -flto \
-  -o mtots
+  -o out/macos/mtots
