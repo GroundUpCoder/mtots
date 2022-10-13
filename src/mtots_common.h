@@ -54,4 +54,7 @@ typedef   signed int   i32;
 
 typedef u8 ubool;
 
+typedef float  f32;
+typedef double f64;
+
 #endif/*mtots_common_h*/

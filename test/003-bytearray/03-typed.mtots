@@ -1,0 +1,9 @@
+
+
+final ba = ByteArray(32)
+
+print('ba.f32(0, 5.5) = %r' % [ba.f32(0, 5.5)])
+print('ba.f32(0) = %r' % [ba.f32(0)])
+print('ba.f64(0) = %r' % [ba.f64(0)])
+print('ba.u32(4, 77) = %r' % [ba.u32(4, 77)])
+print('ba.u32(4) = %r' % [ba.u32(4)])
