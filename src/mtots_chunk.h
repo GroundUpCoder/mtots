@@ -10,7 +10,6 @@ typedef enum {
   OP_TRUE,
   OP_FALSE,
   OP_POP,
-  OP_ROT_TWO,   /* Swaps the two top-most stack items (comp w/ Python) */
   OP_GET_LOCAL,
   OP_SET_LOCAL,
   OP_GET_GLOBAL,
@@ -36,6 +35,7 @@ typedef enum {
   OP_BITWISE_AND,
   OP_BITWISE_XOR,
   OP_BITWISE_NOT,
+  OP_IN,
   OP_NOT,
   OP_NEGATE,
   OP_JUMP,

@@ -482,17 +482,7 @@ static void binary(ubool canAssign) {
     case TOKEN_GREATER_EQUAL: emitBytes(OP_LESS, OP_NOT); break;
     case TOKEN_LESS: emitByte(OP_LESS); break;
     case TOKEN_LESS_EQUAL: emitBytes(OP_GREATER, OP_NOT); break;
-    case TOKEN_IN: {
-      Token nameToken = syntheticToken("__contains__");
-      u8 name = identifierConstant(&nameToken);
-      emitByte(OP_ROT_TWO);
-      emitBytes(OP_INVOKE, name);
-      emitByte(1); /* 1 argument */
-      if (notIn) {
-        emitByte(OP_NOT);
-      }
-      break;
-    }
+    case TOKEN_IN: emitByte(OP_IN); if (notIn) emitByte(OP_NOT); break;
     case TOKEN_PLUS: emitByte(OP_ADD); break;
     case TOKEN_MINUS: emitByte(OP_SUBTRACT); break;
     case TOKEN_STAR: emitByte(OP_MULTIPLY); break;

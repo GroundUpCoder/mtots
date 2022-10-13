@@ -2,18 +2,18 @@
 
 #include "mtots_vm.h"
 
-static ubool implClassContains(i16 argCount, Value *args, Value *out) {
+static ubool implClassGetName(i16 argCount, Value *args, Value *out) {
   ObjClass *cls = AS_CLASS(args[-1]);
-  *out = BOOL_VAL(cls == getClass(args[0]));
+  *out = OBJ_VAL(cls->name);
   return UTRUE;
 }
 
-static CFunction funcClassContains = { implClassContains, "__contains__", 1 };
+static CFunction funcClassGetName = { implClassGetName, "getName", 0 };
 
 void initClassClass() {
   ObjString *tmpstr;
   CFunction *methods[] = {
-    &funcClassContains,
+    &funcClassGetName,
   };
   size_t i;
   ObjClass *cls;

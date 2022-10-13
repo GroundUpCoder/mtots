@@ -33,6 +33,7 @@ typedef struct {
   ObjString *lenString;
   ObjString *mulString;
   ObjString *modString;
+  ObjString *containsString;
   ObjString *nilString;
   ObjString *trueString;
   ObjString *falseString;

@@ -1,0 +1,4 @@
+
+print('List.getName() = %r' % [List.getName()])
+print('Number.getName() = %r' % [Number.getName()])
+print('Tuple.getName() = %r' % [Tuple.getName()])

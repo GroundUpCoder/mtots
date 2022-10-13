@@ -74,8 +74,6 @@ int disassembleInstruction(Chunk *chunk, int offset) {
       return simpleInstruction("OP_FALSE", offset);
     case OP_POP:
       return simpleInstruction("OP_POP", offset);
-    case OP_ROT_TWO:
-      return simpleInstruction("OP_ROT_TWO", offset);
     case OP_GET_LOCAL:
       return byteInstruction("OP_GET_LOCAL", chunk, offset);
     case OP_SET_LOCAL:
@@ -126,6 +124,8 @@ int disassembleInstruction(Chunk *chunk, int offset) {
       return simpleInstruction("OP_BITWISE_XOR", offset);
     case OP_BITWISE_NOT:
       return simpleInstruction("OP_BITWISE_NOT", offset);
+    case OP_IN:
+      return simpleInstruction("OP_IN", offset);
     case OP_NOT:
       return simpleInstruction("OP_NOT", offset);
     case OP_NEGATE:

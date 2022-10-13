@@ -116,6 +116,7 @@ void initVM() {
   vm.lenString = NULL;
   vm.mulString = NULL;
   vm.modString = NULL;
+  vm.containsString = NULL;
   vm.nilString = NULL;
   vm.trueString = NULL;
   vm.falseString = NULL;
@@ -149,6 +150,7 @@ void initVM() {
   vm.lenString = copyCString("__len__");
   vm.mulString = copyCString("__mul__");
   vm.modString = copyCString("__mod__");
+  vm.containsString = copyCString("__contains__");
   vm.nilString = copyCString("nil");
   vm.trueString = copyCString("true");
   vm.falseString = copyCString("false");
@@ -186,6 +188,7 @@ void freeVM() {
   vm.lenString = NULL;
   vm.mulString = NULL;
   vm.modString = NULL;
+  vm.containsString = NULL;
   vm.nilString = NULL;
   vm.trueString = NULL;
   vm.falseString = NULL;
@@ -654,13 +657,6 @@ InterpretResult run(i16 returnFrameCount) {
       case OP_TRUE: push(BOOL_VAL(1)); break;
       case OP_FALSE: push(BOOL_VAL(0)); break;
       case OP_POP: pop(); break;
-      case OP_ROT_TWO: {
-        Value b = pop();
-        Value a = pop();
-        push(b);
-        push(a);
-        break;
-      }
       case OP_GET_LOCAL: {
         u8 slot = READ_BYTE();
         push(frame->slots[slot]);
@@ -874,6 +870,22 @@ InterpretResult run(i16 returnFrameCount) {
         }
         x = AS_U32(pop());
         push(NUMBER_VAL(~x));
+        break;
+      }
+      case OP_IN: {
+        if (IS_CLASS(peek(0))) {
+          ObjClass *cls = AS_CLASS(pop());
+          push(BOOL_VAL(cls == getClass(pop())));
+        } else {
+          Value b = pop();
+          Value a = pop();
+          push(b);
+          push(a);
+          if (!invoke(vm.containsString, 1)) {
+            return INTERPRET_RUNTIME_ERROR;
+          }
+          frame = &vm.frames[vm.frameCount - 1];
+        }
         break;
       }
       case OP_NOT:
