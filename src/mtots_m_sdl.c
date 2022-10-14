@@ -17,11 +17,13 @@
 #include "mtots_m_sdl_adev.h"
 #include "mtots_m_sdl_funcs.h"
 #include "mtots_m_sdl_acb.h"
+#include "mtots_m_sdl_gl.h"
 
 static ubool impl(i16 argCount, Value *args, Value *out) {
   ObjInstance *module = AS_INSTANCE(args[0]);
   size_t i;
   ObjInstance *inst;
+  ObjInstance *sdlglModule;
 
   audioTracksetMutex = SDL_CreateMutex();
 
@@ -46,6 +48,11 @@ static ubool impl(i16 argCount, Value *args, Value *out) {
   for (i = 0; i < sizeof(functions)/sizeof(CFunction*); i++) {
     tableSetN(&module->fields, functions[i]->name, CFUNCTION_VAL(functions[i]));
   }
+
+  sdlglModule = createSDLGLModule();
+  push(OBJ_VAL(sdlglModule));
+  tableSetN(&module->fields, "gl", OBJ_VAL(sdlglModule));
+  pop(); /* sdlglModule */
 
   inst = newInstance(vm.tableClass);
   tableSetN(&module->fields, "key", OBJ_VAL(inst));

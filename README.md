@@ -12,10 +12,10 @@ that the C89 standard does not always guarantee.
 I list these assumptions explicitly here:
 
 * there are 8 bits in a byte
-* short is exactly 2 bytes
-* int is exactly 4 bytes
-* float is exactly 32 bits
-* double is exactly 64 bits
+* `short` is exactly 2 bytes
+* `int` is exactly 4 bytes
+* `float` is exactly 32 bits
+* `double` is exactly 64 bits
 
 NOTE: there's no need to explicitly specify that a char
 is one byte, since a char is required to be 1 byte by

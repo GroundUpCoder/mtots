@@ -51,7 +51,8 @@
         "mtots_m_sdl_aspec.h": "c"
     },
     "C_Cpp.default.defines": [
-        "MTOTS_ENABLE_SDL=1"
+        "MTOTS_ENABLE_SDL=1",
+        "MTOTS_ENABLE_OPENGLES3=1"
     ],
     "cmake.configureOnOpen": false
 }

@@ -18,6 +18,7 @@ out/macos: src/* scripts/*
 		-framework CoreHaptics \
 		-framework Metal \
 		-DMTOTS_ENABLE_SDL=1 \
+		-DMTOTS_ENABLE_OPENGLES3=1 \
 		-Isrc \
 		-Ilib/sdl/include \
 		-Ilib/angle/include \
@@ -48,9 +49,11 @@ out/web: src/* misc/new-samples/* misc/apps/* root/*
 	mkdir -p out/web
 	emcc -g src/*.c -Isrc -o out/web/index.html \
 		-sUSE_SDL=2 \
+    -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2 \
 		-sASYNCIFY \
 		-O3 \
 		-DMTOTS_ENABLE_SDL=1 \
+		-DMTOTS_ENABLE_OPENGLES3=1 \
 		--preload-file misc/new-samples@/home/web_user/samples \
 		--preload-file misc/apps@/home/web_user/apps \
 		--preload-file root@/home/web_user/git/mtots/root

@@ -204,7 +204,8 @@ struct ObjInstance {
 
 ubool IS_MODULE(Value value);
 
-ObjInstance *newModule(ObjString *name);
+ObjInstance *newModule(ObjString *name, ubool includeGlobals);
+ObjInstance *newModuleFromCString(const char *name, ubool includeGlobals);
 ObjClass *newClass(ObjString *name);
 ObjClass *newClassFromCString(const char *name);
 ObjClosure *newClosure(ObjFunction *function, ObjInstance *module);

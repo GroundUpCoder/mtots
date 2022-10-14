@@ -33,11 +33,7 @@ ubool IS_MODULE(Value value) {
   return IS_INSTANCE(value) && AS_INSTANCE(value)->klass->isModuleClass;
 }
 
-/* A module is a singleton instance
- * When a new module is created, a matching class is created as well.
- * When
- */
-ObjInstance *newModule(ObjString *name) {
+ObjInstance *newModule(ObjString *name, ubool includeGlobals) {
   ObjClass *klass;
   ObjInstance *instance;
 
@@ -48,10 +44,23 @@ ObjInstance *newModule(ObjString *name) {
   instance = newInstance(klass);
   pop(); /* klass */
 
-  /* populate with globals */
-  push(OBJ_VAL(instance));
-  tableAddAll(&vm.globals, &instance->fields);
-  pop(); /* instance */
+  if (includeGlobals) {
+    push(OBJ_VAL(instance));
+    tableAddAll(&vm.globals, &instance->fields);
+    pop(); /* instance */
+  }
+
+  return instance;
+}
+
+ObjInstance *newModuleFromCString(const char *name, ubool includeGlobals) {
+  ObjString *nameStr;
+  ObjInstance *instance;
+
+  nameStr = copyCString(name);
+  push(OBJ_VAL(nameStr));
+  instance = newModule(nameStr, includeGlobals);
+  pop(); /* nameStr */
 
   return instance;
 }

@@ -15,7 +15,7 @@ static void repl() {
   ObjString *mainModuleName;
   mainModuleName = copyCString("__main__");
   push(OBJ_VAL(mainModuleName));
-  module = newModule(mainModuleName);
+  module = newModule(mainModuleName, UTRUE);
   pop(); /* mainModuleName */
   push(OBJ_VAL(module));
   for (;;) {
@@ -27,6 +27,7 @@ static void repl() {
     }
 
     interpret(line, module);
+    pop(); /* return value */
   }
   pop(); /* module */
 }
@@ -35,7 +36,8 @@ int main(int argc, const char *argv[]) {
 #ifdef __EMSCRIPTEN__
   const char *fakeArgv[2] = {
     "",
-    "/home/web_user/apps/music-keyboard.mtots",
+    /* "/home/web_user/apps/music-keyboard.mtots", */
+    "/home/web_user/samples/angle-00.mtots",
   };
   argc = 2;
   argv = fakeArgv;

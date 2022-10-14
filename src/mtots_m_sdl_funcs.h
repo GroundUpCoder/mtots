@@ -43,6 +43,13 @@ static ubool implQuit(i16 argCount, Value *args, Value *out) {
 
 static CFunction funcQuit = { implQuit, "quit", 0 };
 
+static ubool implGetError(i16 argCount, Value *args, Value *out) {
+  *out = OBJ_VAL(copyCString(SDL_GetError()));
+  return UTRUE;
+}
+
+static CFunction funcGetError = { implGetError, "getError", 0 };
+
 static ubool implCreateWindow(i16 argCount, Value *args, Value *out) {
   ObjWindow *window;
   window = NEW_NATIVE(ObjWindow, &descriptorWindow);
@@ -315,6 +322,7 @@ static CFunction funcSetAudioTrack = {
 static CFunction *functions[] = {
   &funcInit,
   &funcQuit,
+  &funcGetError,
   &funcCreateWindow,
   &funcGetTicks,
   &funcDelay,

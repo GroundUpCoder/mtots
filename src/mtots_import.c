@@ -52,7 +52,7 @@ ubool importModuleWithPath(ObjString *moduleName, const char *path) {
   i16 returnFrameCount = vm.frameCount;
   ObjInstance *module;
 
-  module = newModule(moduleName);
+  module = newModule(moduleName, UTRUE);
   push(OBJ_VAL(module));
 
   function = compile(source);
@@ -98,7 +98,7 @@ static ubool importModuleNoCache(ObjString *moduleName) {
       abort();
     }
     nativeModuleThunk = AS_CFUNCTION(nativeModuleThunkValue);
-    module = newModule(moduleName);
+    module = newModule(moduleName, UFALSE);
     moduleValue = OBJ_VAL(module);
     push(OBJ_VAL(module));
     stackStart = vm.stackTop;
