@@ -193,7 +193,7 @@ def eventLoop():
     for key in keyToNoteID:
       final noteID = keyToNoteID[key]
       final freq = noteIDToFreq[noteID]
-      if key in keyToTrackMap and !kstate[key]:
+      if key in keyToTrackMap and not kstate[key]:
         final track = keyToTrackMap[key]
         keyToTrackMap.delete(key)
         trackToKeyMap[track] = nil

@@ -578,7 +578,9 @@ static void defineMethod(ObjString *name) {
 }
 
 static ubool isFalsey(Value value) {
-  return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
+  return IS_NIL(value) ||
+    (IS_BOOL(value) && !AS_BOOL(value)) ||
+    (IS_NUMBER(value) && AS_NUMBER(value) == 0);
 }
 
 static void concatenate() {

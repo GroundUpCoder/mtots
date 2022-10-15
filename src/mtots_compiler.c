@@ -27,9 +27,9 @@ typedef enum {
   PREC_ASSIGNMENT,  /* = */
   PREC_OR,          /* or */
   PREC_AND,         /* and */
-  PREC_EQUALITY,    /* == != */
-  PREC_COMPARISON,  /* < > <= >= */
-  PREC_SHIFT,      /* << >> */
+  PREC_NOT,         /* not */
+  PREC_COMPARISON,  /* == != < > <= >= in not-in is is-not */
+  PREC_SHIFT,       /* << >> */
   PREC_BITWISE_AND, /* & */
   PREC_BITWISE_XOR, /* ^ */
   PREC_BITWISE_OR,  /* | */
@@ -853,12 +853,13 @@ static void dictDisplay(ubool canAssign) {
 static void unary(ubool canAssign) {
   TokenType operatorType = parser.previous.type;
 
-  parsePrecedence(PREC_UNARY); /* compile the operand */
+  /* compile the operand */
+  parsePrecedence(operatorType == TOKEN_NOT ? PREC_NOT : PREC_UNARY);
 
   /* Emit the operator instruction */
   switch (operatorType) {
     case TOKEN_TILDE: emitByte(OP_BITWISE_NOT); break;
-    case TOKEN_BANG: emitByte(OP_NOT); break;
+    case TOKEN_NOT: emitByte(OP_NOT); break;
     case TOKEN_MINUS: emitByte(OP_NEGATE); break;
     default:
       abort();
@@ -897,9 +898,8 @@ void initRules() {
   rules[TOKEN_TILDE] = newRule(unary, NULL, PREC_NONE);
   rules[TOKEN_SHIFT_LEFT] = newRule(NULL, binary, PREC_SHIFT);
   rules[TOKEN_SHIFT_RIGHT] = newRule(NULL, binary, PREC_SHIFT);
-  rules[TOKEN_BANG] = newRule(unary, NULL, PREC_NONE);
-  rules[TOKEN_BANG_EQUAL] = newRule(NULL, binary, PREC_EQUALITY);
-  rules[TOKEN_EQUAL_EQUAL] = newRule(NULL, binary, PREC_EQUALITY);
+  rules[TOKEN_BANG_EQUAL] = newRule(NULL, binary, PREC_COMPARISON);
+  rules[TOKEN_EQUAL_EQUAL] = newRule(NULL, binary, PREC_COMPARISON);
   rules[TOKEN_GREATER] = newRule(NULL, binary, PREC_COMPARISON);
   rules[TOKEN_GREATER_EQUAL] = newRule(NULL, binary, PREC_COMPARISON);
   rules[TOKEN_LESS] = newRule(NULL, binary, PREC_COMPARISON);
@@ -920,9 +920,9 @@ void initRules() {
   rules[TOKEN_SUPER] = newRule(super_, NULL, PREC_NONE);
   rules[TOKEN_THIS] = newRule(this_, NULL, PREC_NONE);
   rules[TOKEN_TRUE] = newRule(literal, NULL, PREC_NONE);
-  rules[TOKEN_IN] = newRule(NULL, binary, PREC_EQUALITY);
-  rules[TOKEN_IS] = newRule(NULL, binary, PREC_EQUALITY);
-  rules[TOKEN_NOT] = newRule(NULL, binary, PREC_EQUALITY);
+  rules[TOKEN_IN] = newRule(NULL, binary, PREC_COMPARISON);
+  rules[TOKEN_IS] = newRule(NULL, binary, PREC_COMPARISON);
+  rules[TOKEN_NOT] = newRule(unary, binary, PREC_COMPARISON);
 }
 
 static void parsePrecedence(Precedence precedence) {

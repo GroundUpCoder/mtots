@@ -19,13 +19,31 @@ final window = sdl.createWindow(
 
 sdl.gl.createContext(window)
 
-gl.clearColor(0.2, 0.7, 0.5, 1)
-gl.clear(gl.COLOR_BUFFER_BIT)
-sdl.gl.swapWindow(window)
+def blitColor():
+  final r = colors[colori][0]
+  final g = colors[colori][1]
+  final b = colors[colori][2]
+  gl.clearColor(r, g, b, 1)
+  gl.clear(gl.COLOR_BUFFER_BIT)
+  sdl.gl.swapWindow(window)
+
+var colori = 0
+final colors = [
+  [0.2, 0.7, 0.5],
+  [1, 0, 0],
+  [0, 1, 0],
+  [0, 0, 1],
+]
+
+blitColor()
 
 var quit = false
 final event = sdl.Event()
-while !quit:
+while not quit:
   while sdl.pollEvent(event):
     if event.type == sdl.QUIT:
       quit = true
+    if event.type == sdl.KEYDOWN:
+      colori = (colori + 1) % len(colors)
+      blitColor()
+  sdl.delay(16)
