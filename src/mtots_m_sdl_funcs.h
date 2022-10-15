@@ -21,7 +21,7 @@ static ubool implInit(i16 argCount, Value *args, Value *out) {
   }
   SDL_SetMainReady();
   if (SDL_Init(flags) < 0) {
-    runtimeError("Failed to init SDL video: %s", SDL_GetError());
+    runtimeError("SDL_Init failed: %s", SDL_GetError());
     return UFALSE;
   }
   return UTRUE;
@@ -60,6 +60,10 @@ static ubool implCreateWindow(i16 argCount, Value *args, Value *out) {
     (int) AS_U32(args[3]),
     (int) AS_U32(args[4]),
     AS_U32(args[5]));
+  if (window->handle == NULL) {
+    runtimeError("SDL_CreateWindow failed: %s\n", SDL_GetError());
+    return UFALSE;
+  }
   *out = OBJ_VAL(window);
   return UTRUE;
 }

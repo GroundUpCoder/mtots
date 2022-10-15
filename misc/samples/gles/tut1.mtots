@@ -1,0 +1,31 @@
+import sdl
+import opengles3 as gl
+
+final DISP_WIDTH = 640
+final DISP_HEIGHT = 480
+
+sdl.init(sdl.INIT_VIDEO)
+
+sdl.gl.setAttribute(sdl.gl.CONTEXT_PROFILE_MASK, sdl.gl.CONTEXT_PROFILE_ES)
+sdl.gl.setAttribute(sdl.gl.CONTEXT_MAJOR_VERSION, 3)
+sdl.gl.setAttribute(sdl.gl.CONTEXT_MINOR_VERSION, 0)
+sdl.gl.setAttribute(sdl.gl.DOUBLEBUFFER, 1)
+
+final window = sdl.createWindow(
+  "SDL3+SDL2 Tutorial",
+  sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
+  DISP_WIDTH, DISP_HEIGHT,
+  sdl.WINDOW_OPENGL|sdl.WINDOW_SHOWN)
+
+sdl.gl.createContext(window)
+
+gl.clearColor(0.2, 0.7, 0.5, 1)
+gl.clear(gl.COLOR_BUFFER_BIT)
+sdl.gl.swapWindow(window)
+
+var quit = false
+final event = sdl.Event()
+while !quit:
+  while sdl.pollEvent(event):
+    if event.type == sdl.QUIT:
+      quit = true
