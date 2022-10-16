@@ -41,6 +41,9 @@ typedef enum {
   OP_JUMP,
   OP_JUMP_IF_FALSE,
   OP_JUMP_IF_STOP_ITERATION,
+  OP_TRY_START,
+  OP_TRY_END,
+  OP_RAISE,
   OP_GET_ITER, /* iterable TOS, replaces with iterator */
   OP_GET_NEXT, /* iterator TOS, pushes next item */
   OP_LOOP,

@@ -30,6 +30,7 @@ static void resetStack() {
   vm.stackTop = vm.stack;
   vm.frameCount = 0;
   vm.openUpvalues = NULL;
+  vm.trySnapshotsCount = 0;
 }
 
 static void printStack() {
@@ -41,11 +42,71 @@ static void printStack() {
     fprintf(
       stderr, "[line %d] in ", function->chunk.lines[instruction]);
     if (function->name == NULL) {
-      fprintf(stderr, "script\n");
+      if (function->moduleName == NULL) {
+        fprintf(stderr, "[script]\n");
+      } else {
+        fprintf(stderr, "%s\n", function->moduleName->chars);
+      }
     } else {
-      fprintf(stderr, "%s()\n", function->name->chars);
+      if (function->moduleName == NULL) {
+        fprintf(stderr, "%s()\n", function->name->chars);
+      } else {
+        fprintf(stderr, "%s:%s()\n",
+          function->moduleName->chars, function->name->chars);
+      }
     }
   }
+}
+
+static size_t printStackLength() {
+  i16 i;
+  size_t len = 0;
+  for (i = vm.frameCount - 1; i >= 0; i--) {
+    CallFrame *frame = &vm.frames[i];
+    ObjFunction *function = frame->closure->function;
+    size_t instruction = frame->ip - function->chunk.code - 1;
+    len += snprintf(NULL, 0, "[line %d] in ", function->chunk.lines[instruction]);
+    if (function->name == NULL) {
+      if (function->moduleName == NULL) {
+        len += snprintf(NULL, 0, "[script]\n");
+      } else {
+        len += snprintf(NULL, 0, "%s\n", function->moduleName->chars);
+      }
+    } else {
+      if (function->moduleName == NULL) {
+        len += snprintf(NULL, 0, "%s()\n", function->name->chars);
+      } else {
+        len += snprintf(NULL, 0, "%s:%s()\n",
+          function->moduleName->chars, function->name->chars);
+      }
+    }
+  }
+  return len;
+}
+
+static char *printStackToString(char *out) {
+  i16 i;
+  for (i = vm.frameCount - 1; i >= 0; i--) {
+    CallFrame *frame = &vm.frames[i];
+    ObjFunction *function = frame->closure->function;
+    size_t instruction = frame->ip - function->chunk.code - 1;
+    out += sprintf(out, "[line %d] in ", function->chunk.lines[instruction]);
+    if (function->name == NULL) {
+      if (function->moduleName == NULL) {
+        out += sprintf(out, "[script]\n");
+      } else {
+        out += sprintf(out, "%s\n", function->moduleName->chars);
+      }
+    } else {
+      if (function->moduleName == NULL) {
+        out += sprintf(out, "%s()\n", function->name->chars);
+      } else {
+        out += sprintf(out, "%s:%s()\n",
+          function->moduleName->chars, function->name->chars);
+      }
+    }
+  }
+  return out;
 }
 
 NORETURN void panic(const char *format, ...) {
@@ -59,13 +120,23 @@ NORETURN void panic(const char *format, ...) {
 }
 
 void runtimeError(const char *format, ...) {
+  size_t len = 0;
   va_list args;
+  char *ptr;
+
   va_start(args, format);
-  vfprintf(stderr, format, args);
+  len += vsnprintf(NULL, 0, format, args);
   va_end(args);
-  fputs("\n", stderr);
-  printStack();
-  resetStack();
+  len++; /* '\n' */
+  len += printStackLength();
+
+  ptr = vm.errorString = realloc(vm.errorString, sizeof(char) * (len + 1));
+
+  va_start(args, format);
+  ptr += vsprintf(ptr, format, args);
+  va_end(args);
+  ptr += sprintf(ptr, "\n");
+  printStackToString(ptr);
 }
 
 void defineGlobal(const char *name, Value value) {
@@ -110,6 +181,7 @@ void initVM() {
   vm.grayCapacity = 0;
   vm.grayStack = NULL;
 
+  vm.errorString = NULL;
   vm.preludeString = NULL;
   vm.initString = NULL;
   vm.iterString = NULL;
@@ -192,6 +264,7 @@ void freeVM() {
   vm.nilString = NULL;
   vm.trueString = NULL;
   vm.falseString = NULL;
+  free(vm.errorString);
   freeObjects();
 }
 
@@ -607,11 +680,22 @@ InterpretResult run(i16 returnFrameCount) {
 #define READ_CONSTANT() \
   (frame->closure->function->chunk.constants.values[READ_BYTE()])
 #define READ_STRING() AS_STRING(READ_CONSTANT())
+#define RETURN_RUNTIME_ERROR() \
+  do { \
+    TrySnapshot *snap; \
+    if (vm.trySnapshotsCount == 0) return INTERPRET_RUNTIME_ERROR; \
+    snap = &vm.trySnapshots[--vm.trySnapshotsCount]; \
+    vm.stackTop = snap->stackTop; \
+    vm.frameCount = snap->frameCount; \
+    frame = &vm.frames[vm.frameCount - 1]; \
+    frame->ip = snap->ip; \
+    goto loop; \
+  } while(0)
 #define BINARY_OP(valueType, op) \
   do { \
     if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) { \
       runtimeError("Operands must be numbers"); \
-      return INTERPRET_RUNTIME_ERROR; \
+      RETURN_RUNTIME_ERROR(); \
     } \
     { \
       double b = AS_NUMBER(pop()); \
@@ -623,7 +707,7 @@ InterpretResult run(i16 returnFrameCount) {
   do { \
     if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) { \
       runtimeError("Operands must be numbers"); \
-      return INTERPRET_RUNTIME_ERROR; \
+      RETURN_RUNTIME_ERROR(); \
     } \
     { \
       u32 b = AS_U32(pop()); \
@@ -637,6 +721,7 @@ InterpretResult run(i16 returnFrameCount) {
 
 #if DEBUG_TRACE_EXECUTION
     Value *slot;
+loop:
     printf("          ");
     for (slot = vm.stack; slot < vm.stackTop; slot++) {
       printf("[ ");
@@ -647,6 +732,8 @@ InterpretResult run(i16 returnFrameCount) {
     disassembleInstruction(
       &frame->closure->function->chunk,
       (int)(frame->ip - frame->closure->function->chunk.code));
+#else
+loop:
 #endif
 
     switch (instruction = READ_BYTE()) {
@@ -674,7 +761,7 @@ InterpretResult run(i16 returnFrameCount) {
         Value value;
         if (!tableGet(&frame->closure->module->fields, name, &value)) {
           runtimeError("Undefined variable '%s'", name->chars);
-          return INTERPRET_RUNTIME_ERROR;
+          RETURN_RUNTIME_ERROR();
         }
         push(value);
         break;
@@ -690,7 +777,7 @@ InterpretResult run(i16 returnFrameCount) {
         if (tableSet(&frame->closure->module->fields, name, peek(0))) {
           tableDelete(&frame->closure->module->fields, name);
           runtimeError("Undefined variable '%s'", name->chars);
-          return INTERPRET_RUNTIME_ERROR;
+          RETURN_RUNTIME_ERROR();
         }
         break;
       }
@@ -719,7 +806,7 @@ InterpretResult run(i16 returnFrameCount) {
           }
 
           runtimeError("Undefined field '%s'", name->chars);
-          return INTERPRET_RUNTIME_ERROR;
+          RETURN_RUNTIME_ERROR();
         }
 
         if (IS_NATIVE(peek(0))) {
@@ -735,14 +822,14 @@ InterpretResult run(i16 returnFrameCount) {
                 "Field %s not found on %s",
                 name->chars,
                 getKindName(peek(0)));
-              return INTERPRET_RUNTIME_ERROR;
+              RETURN_RUNTIME_ERROR();
             }
           }
         }
 
         runtimeError(
           "%s values do not have have fields", getKindName(peek(0)));
-        return INTERPRET_RUNTIME_ERROR;
+        RETURN_RUNTIME_ERROR();
       }
       case OP_SET_FIELD: {
         Value value;
@@ -771,14 +858,14 @@ InterpretResult run(i16 returnFrameCount) {
                 "Field %s not found on %s",
                 name->chars,
                 getKindName(peek(1)));
-              return INTERPRET_RUNTIME_ERROR;
+              RETURN_RUNTIME_ERROR();
             }
           }
         }
 
         runtimeError(
           "%s values do not have have fields", getKindName(peek(0)));
-        return INTERPRET_RUNTIME_ERROR;
+        RETURN_RUNTIME_ERROR();
         break;
       }
       case OP_IS: {
@@ -816,7 +903,7 @@ InterpretResult run(i16 returnFrameCount) {
           push(NUMBER_VAL(a + b));
         } else {
           runtimeError("Operands must be two numbers or two strings");
-          return INTERPRET_RUNTIME_ERROR;
+          RETURN_RUNTIME_ERROR();
         }
         break;
       }
@@ -828,7 +915,7 @@ InterpretResult run(i16 returnFrameCount) {
           push(NUMBER_VAL(a * b));
         } else {
           if (!invoke(vm.mulString, 1)) {
-            return INTERPRET_RUNTIME_ERROR;
+            RETURN_RUNTIME_ERROR();
           }
           frame = &vm.frames[vm.frameCount - 1];
         }
@@ -838,7 +925,7 @@ InterpretResult run(i16 returnFrameCount) {
       case OP_FLOOR_DIVIDE: {
         if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) {
           runtimeError("Operands must be numbers");
-          return INTERPRET_RUNTIME_ERROR;
+          RETURN_RUNTIME_ERROR();
         }
         {
           double b = AS_NUMBER(pop());
@@ -854,7 +941,7 @@ InterpretResult run(i16 returnFrameCount) {
           push(NUMBER_VAL(fmod(a, b)));
         } else {
           if (!invoke(vm.modString, 1)) {
-            return INTERPRET_RUNTIME_ERROR;
+            RETURN_RUNTIME_ERROR();
           }
           frame = &vm.frames[vm.frameCount - 1];
         }
@@ -868,7 +955,7 @@ InterpretResult run(i16 returnFrameCount) {
         u32 x;
         if (!IS_NUMBER(peek(0))) {
           runtimeError("Operand must be a number");
-          return INTERPRET_RUNTIME_ERROR;
+          RETURN_RUNTIME_ERROR();
         }
         x = AS_U32(pop());
         push(NUMBER_VAL(~x));
@@ -884,7 +971,7 @@ InterpretResult run(i16 returnFrameCount) {
           push(b);
           push(a);
           if (!invoke(vm.containsString, 1)) {
-            return INTERPRET_RUNTIME_ERROR;
+            RETURN_RUNTIME_ERROR();
           }
           frame = &vm.frames[vm.frameCount - 1];
         }
@@ -896,7 +983,7 @@ InterpretResult run(i16 returnFrameCount) {
       case OP_NEGATE:
         if (!IS_NUMBER(peek(0))) {
           runtimeError("Operand must be an number");
-          return INTERPRET_RUNTIME_ERROR;
+          RETURN_RUNTIME_ERROR();
         }
         push(NUMBER_VAL(-AS_NUMBER(pop())));
         break;
@@ -919,13 +1006,44 @@ InterpretResult run(i16 returnFrameCount) {
         }
         break;
       }
+      case OP_TRY_START: {
+        u16 offset = READ_SHORT();
+        TrySnapshot *snapshot;
+        if (vm.trySnapshotsCount >= TRY_SNAPSHOTS_MAX) {
+          panic("try snapshot overflow");
+        }
+        snapshot = &vm.trySnapshots[vm.trySnapshotsCount++];
+        snapshot->frameCount = vm.frameCount;
+        snapshot->ip = frame->ip + offset;
+        snapshot->stackTop = vm.stackTop;
+        if (frame != &vm.frames[vm.frameCount - 1]) {
+          panic("internal vm frame error");
+        }
+        break;
+      }
+      case OP_TRY_END: {
+        u16 offset = READ_SHORT();
+        if (vm.trySnapshotsCount == 0) {
+          panic("try snapshot underflow");
+        }
+        frame->ip += offset;
+        vm.trySnapshotsCount--;
+        break;
+      }
+      case OP_RAISE: {
+        if (!IS_STRING(peek(0))) {
+          panic("Only strings can be raised right now");
+        }
+        runtimeError("%s", AS_STRING(peek(0))->chars);
+        RETURN_RUNTIME_ERROR();
+      }
       case OP_GET_ITER: {
         Value iterable = peek(0);
         if (isIterator(iterable)) {
           /* nothing to do */
         } else {
           if (!invoke(vm.iterString, 0)) {
-            return INTERPRET_RUNTIME_ERROR;
+            RETURN_RUNTIME_ERROR();
           }
         }
         break;
@@ -933,7 +1051,7 @@ InterpretResult run(i16 returnFrameCount) {
       case OP_GET_NEXT: {
         push(peek(0));
         if (!callValue(peek(0), 0)) {
-          return INTERPRET_RUNTIME_ERROR;
+          RETURN_RUNTIME_ERROR();
         }
         frame = &vm.frames[vm.frameCount - 1];
         break;
@@ -946,7 +1064,7 @@ InterpretResult run(i16 returnFrameCount) {
       case OP_CALL: {
         i16 argCount = READ_BYTE();
         if (!callValue(peek(argCount), argCount)) {
-          return INTERPRET_RUNTIME_ERROR;
+          RETURN_RUNTIME_ERROR();
         }
         frame = &vm.frames[vm.frameCount - 1];
         break;
@@ -955,7 +1073,7 @@ InterpretResult run(i16 returnFrameCount) {
         ObjString *method = READ_STRING();
         i16 argCount = READ_BYTE();
         if (!invoke(method, argCount)) {
-          return INTERPRET_RUNTIME_ERROR;
+          RETURN_RUNTIME_ERROR();
         }
         frame = &vm.frames[vm.frameCount - 1];
         break;
@@ -965,7 +1083,7 @@ InterpretResult run(i16 returnFrameCount) {
         i16 argCount = READ_BYTE();
         ObjClass *superclass = AS_CLASS(pop());
         if (!invokeFromClass(superclass, method, argCount)) {
-          return INTERPRET_RUNTIME_ERROR;
+          RETURN_RUNTIME_ERROR();
         }
         frame = &vm.frames[vm.frameCount - 1];
         break;
@@ -1015,7 +1133,7 @@ InterpretResult run(i16 returnFrameCount) {
       case OP_IMPORT: {
         ObjString *name = READ_STRING();
         if (!importModule(name)) {
-          return INTERPRET_RUNTIME_ERROR;
+          RETURN_RUNTIME_ERROR();
         }
         break;
       }
@@ -1051,7 +1169,7 @@ InterpretResult run(i16 returnFrameCount) {
         superclass = peek(1);
         if (!IS_CLASS(superclass)) {
           runtimeError("Superclass must be a class");
-          return INTERPRET_RUNTIME_ERROR;
+          RETURN_RUNTIME_ERROR();
         }
 
         subclass = AS_CLASS(peek(0));
@@ -1073,7 +1191,7 @@ InterpretResult run(i16 returnFrameCount) {
 
 InterpretResult interpret(const char *source, ObjInstance *module) {
   ObjClosure *closure;
-  ObjFunction *function = compile(source);
+  ObjFunction *function = compile(source, module->klass->name);
   if (function == NULL) {
     return INTERPRET_COMPILE_ERROR;
   }

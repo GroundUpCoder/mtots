@@ -1,2 +1,2 @@
 Undefined variable 'x'
-[line 1] in script
+[line 1] in __main__

@@ -6,7 +6,7 @@
 
 void initRules();
 
-ObjFunction *compile(const char *source);
+ObjFunction *compile(const char *source, ObjString *moduleName);
 void markCompilerRoots();
 
 #endif/*mtots_compiler_h*/

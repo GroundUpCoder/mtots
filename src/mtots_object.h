@@ -84,6 +84,7 @@ typedef struct {
   ObjString *name;
   Value *defaultArgs;
   i16 defaultArgsCount;
+  ObjString *moduleName;
 } ObjFunction;
 
 struct ObjString {

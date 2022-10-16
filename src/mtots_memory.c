@@ -101,6 +101,7 @@ static void blackenObject(Obj *object) {
       ObjFunction *function = (ObjFunction*) object;
       size_t i;
       markObject((Obj*)function->name);
+      markObject((Obj*)function->moduleName);
       markArray(&function->chunk.constants);
       for (i = 0; i < function->defaultArgsCount; i++) {
         markValue(function->defaultArgs[i]);

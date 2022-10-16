@@ -1,4 +1,4 @@
-.PHONY: clean test
+.PHONY: clean test test-macos
 
 out/macos: src/* scripts/*
 	mkdir -p out/macos
@@ -31,7 +31,7 @@ out/macos: src/* scripts/*
 		-flto \
 		-o out/macos/mtots
 
-out/c89: src/* scripts/*
+out/c89: src/*
 	mkdir -p out/c89
 	cc -std=c89 \
 		-Wall -Werror -Wpedantic \
@@ -44,6 +44,9 @@ out/c89: src/* scripts/*
 
 test: out/c89 scripts/run-tests.py
 	python3 scripts/run-tests.py
+
+test-macos: out/macos scripts/run-tests.py
+	python3 scripts/run-tests.py macos
 
 out/web: src/* misc/new-samples/* misc/apps/* root/*
 	mkdir -p out/web

@@ -136,6 +136,12 @@ int disassembleInstruction(Chunk *chunk, int offset) {
       return jumpInstruction("OP_JUMP_IF_FALSE", 1, chunk, offset);
     case OP_JUMP_IF_STOP_ITERATION:
       return jumpInstruction("OP_JUMP_IF_STOP_ITERATION", 1, chunk, offset);
+    case OP_TRY_START:
+      return jumpInstruction("OP_TRY_START", 1, chunk, offset);
+    case OP_TRY_END:
+      return jumpInstruction("OP_TRY_END", 1, chunk, offset);
+    case OP_RAISE:
+      return simpleInstruction("OP_RAISE", offset);
     case OP_GET_ITER:
       return simpleInstruction("OP_GET_ITER", offset);
     case OP_GET_NEXT:

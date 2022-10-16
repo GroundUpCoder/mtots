@@ -3,9 +3,14 @@ Test runner requires Python3
 """
 import os, sys, subprocess
 
+kind = 'c89'
+
+if len(sys.argv) == 2:
+  kind = sys.argv[1]
+
 repoDir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 testDir = os.path.join(repoDir, 'test')
-mtotsPath = os.path.join(repoDir, 'out', 'c89', 'mtots')
+mtotsPath = os.path.join(repoDir, 'out', kind, 'mtots')
 
 dirnames = sorted(os.listdir(testDir))
 
@@ -90,7 +95,7 @@ for testSet in dirnames:
       print('##### Expected #####')
       print(proc.stderr)
       print('##### TO EQUAL #####')
-      print(expectOut)
+      print(expectErr)
     else:
       passCount += 1
       print("OK")

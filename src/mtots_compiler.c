@@ -25,6 +25,7 @@ typedef struct {
 typedef enum {
   PREC_NONE,
   PREC_ASSIGNMENT,  /* = */
+  PREC_IF,          /* if and try */
   PREC_OR,          /* or */
   PREC_AND,         /* and */
   PREC_NOT,         /* not */
@@ -621,6 +622,23 @@ static void numberBin(ubool canAssign) {
   emitConstant(NUMBER_VAL(value));
 }
 
+static void try_(ubool canAssign) {
+  i32 startJump, endJump;
+
+  startJump = emitJump(OP_TRY_START);
+  expression();
+  endJump = emitJump(OP_TRY_END);
+  consume(TOKEN_ELSE, "Expected 'else' in 'try' expression");
+  patchJump(startJump);
+  expression();
+  patchJump(endJump);
+}
+
+static void raise_(ubool canAssign) {
+  expression();
+  emitByte(OP_RAISE);
+}
+
 static void or_(ubool canAssign) {
   i32 elseJump = emitJump(OP_JUMP_IF_FALSE);
   i32 endJump = emitJump(OP_JUMP);
@@ -923,6 +941,8 @@ void initRules() {
   rules[TOKEN_IN] = newRule(NULL, binary, PREC_COMPARISON);
   rules[TOKEN_IS] = newRule(NULL, binary, PREC_COMPARISON);
   rules[TOKEN_NOT] = newRule(unary, binary, PREC_COMPARISON);
+  rules[TOKEN_RAISE] = newRule(raise_, NULL, PREC_NONE);
+  rules[TOKEN_TRY] = newRule(try_, NULL, PREC_NONE);
 }
 
 static void parsePrecedence(Precedence precedence) {
@@ -931,6 +951,7 @@ static void parsePrecedence(Precedence precedence) {
   advance();
   prefixRule = getRule(parser.previous.type)->prefix;
   if (prefixRule == NULL) {
+    printf("type = %d\n", parser.previous.type);
     error("Expected expression");
     abort();
     return;
@@ -1004,6 +1025,7 @@ static void function(FunctionType type) {
   i16 i;
 
   initCompiler(&compiler, type);
+  compiler.function->moduleName = compiler.enclosing->function->moduleName;
   beginScope();
 
   consume(TOKEN_LEFT_PAREN, "Expect '(' after function name");
@@ -1433,11 +1455,12 @@ static void statement() {
   }
 }
 
-ObjFunction *compile(const char *source) {
+ObjFunction *compile(const char *source, ObjString *moduleName) {
   Compiler compiler;
   ObjFunction *function;
   initScanner(source);
   initCompiler(&compiler, TYPE_SCRIPT);
+  compiler.function->moduleName = moduleName;
   parser.hadError = 0;
   parser.panicMode = 0;
   advance();

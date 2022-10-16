@@ -9,6 +9,8 @@
 
 #define FRAMES_MAX 64
 #define STACK_MAX (FRAMES_MAX * U8_COUNT)
+#define TRY_SNAPSHOTS_MAX 64
+#define MAX_ERROR_STRING_LENGTH 2048
 
 typedef struct {
   ObjClosure *closure;
@@ -17,10 +19,18 @@ typedef struct {
 } CallFrame;
 
 typedef struct {
+  u8 *ip;
+  Value *stackTop;
+  i16 frameCount;
+} TrySnapshot;
+
+typedef struct {
   CallFrame frames[FRAMES_MAX];
   i16 frameCount;
   Value stack[STACK_MAX];
   Value *stackTop;
+  TrySnapshot trySnapshots[TRY_SNAPSHOTS_MAX];
+  i16 trySnapshotsCount;
   Table globals;
   Table strings;            /* table of all interned strings */
   Table modules;            /* all preloaded modules */
@@ -68,6 +78,8 @@ typedef struct {
   size_t grayCount;
   size_t grayCapacity;
   Obj **grayStack;
+
+  char *errorString;
 } VM;
 
 typedef enum {

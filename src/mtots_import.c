@@ -55,7 +55,7 @@ ubool importModuleWithPath(ObjString *moduleName, const char *path) {
   module = newModule(moduleName, UTRUE);
   push(OBJ_VAL(module));
 
-  function = compile(source);
+  function = compile(source, moduleName);
   if (function == NULL) {
     runtimeError("Failed to compile %s", path);
     return UFALSE;

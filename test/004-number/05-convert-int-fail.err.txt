@@ -1,2 +1,2 @@
 Could not convert string to int: 45.5
-[line 1] in script
+[line 1] in __main__

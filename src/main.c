@@ -26,7 +26,9 @@ static void repl() {
       break;
     }
 
-    interpret(line, module);
+    if (interpret(line, module) == INTERPRET_RUNTIME_ERROR) {
+      fprintf(stderr, "%s", vm.errorString);
+    }
     pop(); /* return value */
   }
   pop(); /* module */
@@ -55,6 +57,9 @@ int main(int argc, const char *argv[]) {
     status = importModuleWithPath(mainModuleName, argv[1]);
     pop(); /* mainModuleName */
     if (!status) {
+      if (vm.errorString) {
+        fprintf(stderr, "%s", vm.errorString);
+      }
       exit(MTOTS_EXIT_CODE_RUNTIME_ERROR);
     }
   } else {

@@ -105,6 +105,7 @@ ObjFunction *newFunction() {
   function->name = NULL;
   function->defaultArgs = NULL;
   function->defaultArgsCount = 0;
+  function->moduleName = NULL;
   initChunk(&function->chunk);
   return function;
 }
