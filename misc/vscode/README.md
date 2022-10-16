@@ -8,6 +8,10 @@ language itself is more fleshed out.
 
 ## Release Notes
 
+### 0.0.3
+
+`try` and `raise` are valid keywords
+
 ### 0.0.2
 
 Properly color line comments

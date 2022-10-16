@@ -31,7 +31,7 @@
 				},
 				{
 					"name": "keyword.control.mtots",
-					"match": "\\b(elif|else|for|if|return|while|pass|from|import|as|and|or|not|in|is)\\b"
+					"match": "\\b(elif|else|for|if|return|while|pass|from|import|as|and|or|not|in|is|raise|try)\\b"
 				},
 				{
 					"comment": "Globals provided by the runtime (functions)",
@@ -51,7 +51,7 @@
 				{
 					"comment": "Reserved keyword",
 					"name": "invalid.deprecated.mtots",
-					"match": "\\b(assert|async|await|break|continue|del|except|finally|global|raise|try|with|yield|lambda)\\b"
+					"match": "\\b(assert|async|await|break|continue|del|except|finally|global|with|yield|lambda)\\b"
 				}
 			]
 		},
