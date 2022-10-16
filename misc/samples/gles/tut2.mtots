@@ -1,0 +1,133 @@
+import sdl
+import opengles3 as gl
+
+# Vertex Shader
+final VS = r"""#version 300 es
+in vec2 vertPos;
+out vec4 color;
+const vec4 white = vec4(1.0);
+
+void main() {
+  color = white;
+  gl_Position = vec4(vertPos, 0.0, 1.0);
+}
+"""
+
+# Fragment Shader
+final FS = r"""#version 300 es
+precision highp float;
+in vec4 color;
+out vec4 fragColor;
+void main() {
+  fragColor = color;
+}
+"""
+
+final DISP_WIDTH = 640
+final DISP_HEIGHT = 480
+
+sdl.init(sdl.INIT_VIDEO)
+
+sdl.gl.setAttribute(sdl.gl.CONTEXT_PROFILE_MASK, sdl.gl.CONTEXT_PROFILE_ES)
+sdl.gl.setAttribute(sdl.gl.CONTEXT_MAJOR_VERSION, 3)
+sdl.gl.setAttribute(sdl.gl.CONTEXT_MINOR_VERSION, 0)
+sdl.gl.setAttribute(sdl.gl.DOUBLEBUFFER, 1)
+
+final window = sdl.createWindow(
+  "SDL3+SDL2 Tutorial",
+  sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
+  DISP_WIDTH, DISP_HEIGHT,
+  sdl.WINDOW_OPENGL|sdl.WINDOW_SHOWN)
+
+sdl.gl.createContext(window)
+
+def compileShader(typ, source):
+  final shader = gl.createShader(typ)
+
+  gl.shaderSource(shader, source)
+  gl.compileShader(shader)
+
+  if gl.getShaderiv(shader, gl.COMPILE_STATUS) == 0:
+    print('shader compilation failed: %s' % [gl.getShaderInfoLog()])
+
+  return shader
+
+def checkLinkStatusAndReturnProgram(program):
+  if gl.getError() != gl.NO_ERROR:
+    return 0
+
+  if gl.getProgramiv(program, gl.LINK_STATUS) == 0:
+    print('program link failed: %s' % [
+      gl.getProgramInfoLog()])
+
+    gl.deleteProgram(program)
+    return 0
+
+  return program
+
+def compileProgram(vsSource, fsSource):
+  final vs = compileShader(gl.VERTEX_SHADER, vsSource)
+  final fs = compileShader(gl.FRAGMENT_SHADER, fsSource)
+
+  if vs == 0 or fs == 0:
+    gl.deleteShader(fs)
+    gl.deleteShader(vs)
+    return 0
+
+  final program = gl.createProgram()
+
+  gl.attachShader(program, vs)
+  gl.deleteShader(vs)
+
+  gl.attachShader(program, fs)
+  gl.deleteShader(fs)
+
+  gl.linkProgram(program)
+
+  return checkLinkStatusAndReturnProgram(program)
+
+def floatArray(numbers):
+  final arr = ByteArray(4 * len(numbers))
+  for i in range(len(numbers)):
+    arr.f32(4 * i, numbers[i])
+  return arr
+
+def createVBO(vertices):
+  final vertexData = floatArray(vertices)
+  final vbo = gl.genBuffer()
+  gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
+  gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW)
+  gl.bindBuffer(gl.ARRAY_BUFFER, 0)
+
+  if gl.getError() != gl.NO_ERROR:
+    gl.deleteBuffer(vbo)
+    print("Creating VBO failed %r" % [gl.getError()])
+    vbo = 0
+
+  return vbo
+
+final shaderProgram = compileProgram(VS, FS)
+gl.useProgram(shaderProgram)
+final vertices = [
+  0.0, -0.9,
+  0.9, 0.9,
+  -0.9, 0.9,
+]
+final triangleVBO = createVBO(vertices)
+if not triangleVBO:
+  raise 'failure'
+print('triangleVBO = %r' % [triangleVBO])
+var positionIdx = 0
+gl.bindBuffer(gl.ARRAY_BUFFER, triangleVBO)
+gl.vertexAttribPointer(positionIdx, 2, gl.FLOAT, gl.FALSE, 8, 0)
+gl.enableVertexAttribArray(positionIdx)
+gl.drawArrays(gl.TRIANGLES, 0, 3)
+sdl.gl.swapWindow(window)
+
+var quit = false
+final event = sdl.Event()
+while not quit:
+  while sdl.pollEvent(event):
+    if event.type == sdl.QUIT:
+      quit = true
+  sdl.delay(16)
