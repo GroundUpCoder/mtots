@@ -62,7 +62,10 @@ ubool implSDLGLCreateContext(i16 argCount, Value *args, Value *out) {
 
   /* NOTE: Consider adding a `void*` type to mtots so that I can return the exact
    * context value here */
-  *out = BOOL_VAL(context != NULL);
+  if (context == NULL) {
+    runtimeError("SDL_GL_CreateConext failed: %s", SDL_GetError());
+    return UFALSE;
+  }
   return UTRUE;
 }
 
