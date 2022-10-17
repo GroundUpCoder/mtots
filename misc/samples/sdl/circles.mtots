@@ -1,0 +1,5 @@
+import glu
+
+final app = glu.App()
+app.init()
+app.run()

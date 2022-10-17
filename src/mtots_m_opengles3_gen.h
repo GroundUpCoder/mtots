@@ -529,6 +529,24 @@ static CFunction funcDrawArrays = {
   implDrawArrays, "drawArrays",
   sizeof(argsDrawArrays)/sizeof(TypePattern), 0, argsDrawArrays,
 };
+static ubool implDrawElements(i16 argCount, Value *args, Value *out) {
+  u32 mode = AS_U32(args[0]);
+  i32 count = AS_I32(args[1]);
+  u32 type = AS_U32(args[2]);
+  const void *indices = (void*)(size_t)AS_NUMBER(args[3]);
+  glDrawElements(mode, count, type, indices);
+  return UTRUE;
+}
+static TypePattern argsDrawElements[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcDrawElements = {
+  implDrawElements, "drawElements",
+  sizeof(argsDrawElements)/sizeof(TypePattern), 0, argsDrawElements,
+};
 static ubool implEnable(i16 argCount, Value *args, Value *out) {
   u32 cap = AS_U32(args[0]);
   glEnable(cap);
@@ -1549,6 +1567,7 @@ static CFunction *genFunctions[] = {
   &funcDisable,
   &funcDisableVertexAttribArray,
   &funcDrawArrays,
+  &funcDrawElements,
   &funcEnable,
   &funcEnableVertexAttribArray,
   &funcFinish,

@@ -60,7 +60,7 @@ void glDetachShader(GLuint program, GLuint shader);
 void glDisable(GLenum cap);
 void glDisableVertexAttribArray(GLuint index);
 void glDrawArrays(GLenum mode, GLint first, GLsizei count);
-void glDrawElements(GLenum mode, GLsizei count, GLenum type, const void* indices);
+void glDrawElements(GLenum mode, GLsizei count, GLenum type, PtrOffset indices);
 void glEnable(GLenum cap);
 void glEnableVertexAttribArray(GLuint index);
 void glFinish();

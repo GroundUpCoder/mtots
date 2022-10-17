@@ -1,0 +1,58 @@
+r"""
+Shader helpers for the glu module
+"""
+import opengles3 as gl
+
+
+def compileShader(typ, source):
+  final shader = gl.createShader(typ)
+
+  gl.shaderSource(shader, source)
+  gl.compileShader(shader)
+
+  if gl.getShaderiv(shader, gl.COMPILE_STATUS) == 0:
+    print('shader compilation failed: %s' % [gl.getShaderInfoLog(shader)])
+    return 0
+
+  return shader
+
+
+def checkLinkStatusAndReturnProgram(program):
+  if gl.getError() != gl.NO_ERROR:
+    return 0
+
+  if gl.getProgramiv(program, gl.LINK_STATUS) == 0:
+    print('program link failed: %s' % [
+      gl.getProgramInfoLog(program)])
+
+    gl.deleteProgram(program)
+    return 0
+
+  return program
+
+
+def compileProgram(vsSource, fsSource):
+  final vs = compileShader(gl.VERTEX_SHADER, vsSource)
+  final fs = compileShader(gl.FRAGMENT_SHADER, fsSource)
+
+  if vs == 0 or fs == 0:
+    gl.deleteShader(fs)
+    gl.deleteShader(vs)
+    raise "Failed to compile vertex or fragment shader"
+
+  final program = gl.createProgram()
+
+  gl.attachShader(program, vs)
+  gl.deleteShader(vs)
+
+  gl.attachShader(program, fs)
+  gl.deleteShader(fs)
+
+  gl.linkProgram(program)
+
+  final result = checkLinkStatusAndReturnProgram(program)
+
+  if result == 0:
+    raise "Failed to link shader program"
+
+  return result

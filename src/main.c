@@ -39,7 +39,8 @@ int main(int argc, const char *argv[]) {
   const char *fakeArgv[2] = {
     "",
     /* "/home/web_user/apps/music-keyboard.mtots", */
-    "/home/web_user/samples/angle-00.mtots",
+    /* "/home/web_user/samples/angle-00.mtots", */
+    "/home/web_user/samples/webgl2/ch02-square.mtots",
   };
   argc = 2;
   argv = fakeArgv;

@@ -1,0 +1,98 @@
+import glu
+import opengles3 as gl
+import sdl
+
+final app = glu.App()
+app.width = 640
+app.height = 640
+app.init()
+
+final VS = r"""
+#version 300 es
+precision mediump float;
+
+in vec3 aVertexPosition;
+
+void main(void) {
+  gl_Position = vec4(aVertexPosition, 1.0);
+}
+""".strip()
+
+final FS = r"""
+#version 300 es
+precision mediump float;
+
+out vec4 fragColor;
+
+void main(void) {
+  fragColor = vec4(1.0, 0.0, 0.0, 1.0);
+}
+""".strip()
+
+final shaderProgram = glu.compileProgram(VS, FS)
+final aVertexPosition = gl.getAttribLocation(shaderProgram, 'aVertexPosition')
+print('aVertexPosition = %s' % [aVertexPosition])
+
+def f32Array(numbers):
+  final ba = ByteArray(4 * len(numbers))
+  for i in range(len(numbers)):
+    ba.f32(4 * i, numbers[i])
+  return ba
+
+def u16Array(numbers):
+  final ba = ByteArray(2 * len(numbers))
+  for i in range(len(numbers)):
+    ba.u16(2 * i, numbers[i])
+  return ba
+
+final vertices = [
+  -0.5, 0.5, 0,
+  -0.5, -0.5, 0,
+  0.5, -0.5, 0,
+  0.5, 0.5, 0,
+]
+final verticesArray = f32Array(vertices)
+final indices = [
+  0, 1, 2, 0, 2, 3,
+]
+final indicesArray = u16Array(indices)
+
+# VBO
+final squareVertexBuffer = gl.genBuffer()
+gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexBuffer)
+gl.bufferData(gl.ARRAY_BUFFER, verticesArray, gl.STATIC_DRAW)
+
+# IBO
+final squareIndexBuffer = gl.genBuffer()
+gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, squareIndexBuffer)
+gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indicesArray, gl.STATIC_DRAW)
+
+# Clean
+gl.bindBuffer(gl.ARRAY_BUFFER, 0)
+gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
+
+print('squareVertexBuffer = %r' % [squareVertexBuffer])
+print('squareIndexBuffer = %r' % [squareIndexBuffer])
+
+def draw():
+  gl.clearColor(0, 0.2, 0, 1)
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+  gl.viewport(0, 0, app.viewport_width, app.viewport_height)
+
+  gl.useProgram(shaderProgram)
+  gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexBuffer)
+  gl.vertexAttribPointer(aVertexPosition, 3, gl.FLOAT, false, 0, 0)
+  gl.enableVertexAttribArray(aVertexPosition)
+
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, squareIndexBuffer)
+
+  gl.drawElements(gl.TRIANGLES, len(indices), gl.UNSIGNED_SHORT, 0)
+
+  # clean
+  gl.bindBuffer(gl.ARRAY_BUFFER, 0)
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
+
+draw()
+sdl.gl.swapWindow(app.window)
+
+app.run()

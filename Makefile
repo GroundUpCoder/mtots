@@ -48,7 +48,7 @@ test: out/c89 scripts/run-tests.py
 test-macos: out/macos scripts/run-tests.py
 	python3 scripts/run-tests.py macos
 
-out/web: src/* misc/new-samples/* misc/apps/* root/*
+out/web: src/* misc/samples/* misc/samples/webgl2/* misc/apps/* root/*
 	mkdir -p out/web
 	emcc -g src/*.c -Isrc -o out/web/index.html \
 		-sUSE_SDL=2 \
@@ -57,7 +57,7 @@ out/web: src/* misc/new-samples/* misc/apps/* root/*
 		-O3 \
 		-DMTOTS_ENABLE_SDL=1 \
 		-DMTOTS_ENABLE_OPENGLES3=1 \
-		--preload-file misc/new-samples@/home/web_user/samples \
+		--preload-file misc/samples@/home/web_user/samples \
 		--preload-file misc/apps@/home/web_user/apps \
 		--preload-file root@/home/web_user/git/mtots/root
 
