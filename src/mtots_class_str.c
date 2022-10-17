@@ -197,12 +197,48 @@ static ubool implStrMod(i16 argCount, Value *args, Value *out) {
 
 static CFunction funcStrMod = { implStrMod, "__mod__", 1 };
 
+static char DEFAULT_STRIP_SET[] = " \t\r\n";
+
+static ubool containsChar(const char *charSet, char ch) {
+  for (; *charSet != '\0'; charSet++) {
+    if (*charSet == ch) {
+      return UTRUE;
+    }
+  }
+  return UFALSE;
+}
+
+static ubool implStrStrip(i16 argCount, Value *args, Value *out) {
+  ObjString *str = AS_STRING(args[-1]);
+  const char *stripSet = DEFAULT_STRIP_SET;
+  const char *start = str->chars;
+  const char *end = str->chars + str->length;
+  if (argCount > 0) {
+    stripSet = AS_STRING(args[0])->chars;
+  }
+  while (start < end && containsChar(stripSet, start[0])) {
+    start++;
+  }
+  while (start < end && containsChar(stripSet, end[-1])) {
+    end--;
+  }
+  *out = OBJ_VAL(copyString(start, end - start));
+  return UTRUE;
+}
+
+static TypePattern argsStrStrip[] = {
+  { TYPE_PATTERN_STRING },
+};
+
+static CFunction funcStrStrip = { implStrStrip, "strip", 0, 1, argsStrStrip };
+
 void initStringClass() {
   ObjString *tmpstr;
   CFunction *methods[] = {
     &funcStrGetItem,
     &funcStrSlice,
-    &funcStrMod
+    &funcStrMod,
+    &funcStrStrip,
   };
   size_t i;
   ObjClass *cls;
@@ -214,6 +250,7 @@ void initStringClass() {
   pop();
 
   for (i = 0; i < sizeof(methods) / sizeof(CFunction*); i++) {
+    methods[i]->receiverType.type = TYPE_PATTERN_STRING;
     tmpstr = copyCString(methods[i]->name);
     push(OBJ_VAL(tmpstr));
     tableSet(
