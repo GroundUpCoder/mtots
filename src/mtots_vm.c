@@ -443,6 +443,14 @@ static ubool callByteArrayClass(i16 argCount) {
     push(OBJ_VAL(ba));
     return UTRUE;
   }
+  if (IS_BYTE_ARRAY(arg)) {
+    ObjByteArray *otherBA = AS_BYTE_ARRAY(arg);
+    ObjByteArray *ba = copyByteArray(otherBA->buffer, otherBA->size);
+    pop(); /* arg */
+    pop(); /* ByeArray class */
+    push(OBJ_VAL(ba));
+    return UTRUE;
+  }
   if (IS_STRING(arg)) {
     ObjString *str = AS_STRING(arg);
     ObjByteArray *ba = copyByteArray(
