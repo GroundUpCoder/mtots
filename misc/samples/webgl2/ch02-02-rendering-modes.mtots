@@ -118,6 +118,7 @@ def draw():
     print('unrecognized rendering mode %r' % [renderingMode])
 
   # clean
+  gl.useProgram(0)
   gl.bindVertexArray(0)
 
 draw()
