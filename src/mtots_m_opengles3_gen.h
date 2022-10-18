@@ -1529,6 +1529,681 @@ static CFunction funcViewport = {
   implViewport, "viewport",
   sizeof(argsViewport)/sizeof(TypePattern), 0, argsViewport,
 };
+static ubool implReadBuffer(i16 argCount, Value *args, Value *out) {
+  u32 src = AS_U32(args[0]);
+  glReadBuffer(src);
+  return UTRUE;
+}
+static TypePattern argsReadBuffer[] = {
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcReadBuffer = {
+  implReadBuffer, "readBuffer",
+  sizeof(argsReadBuffer)/sizeof(TypePattern), 0, argsReadBuffer,
+};
+static ubool implCopyTexSubImage3D(i16 argCount, Value *args, Value *out) {
+  u32 target = AS_U32(args[0]);
+  i32 level = AS_I32(args[1]);
+  i32 xoffset = AS_I32(args[2]);
+  i32 yoffset = AS_I32(args[3]);
+  i32 zoffset = AS_I32(args[4]);
+  i32 x = AS_I32(args[5]);
+  i32 y = AS_I32(args[6]);
+  i32 width = AS_I32(args[7]);
+  i32 height = AS_I32(args[8]);
+  glCopyTexSubImage3D(target, level, xoffset, yoffset, zoffset, x, y, width, height);
+  return UTRUE;
+}
+static TypePattern argsCopyTexSubImage3D[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcCopyTexSubImage3D = {
+  implCopyTexSubImage3D, "copyTexSubImage3D",
+  sizeof(argsCopyTexSubImage3D)/sizeof(TypePattern), 0, argsCopyTexSubImage3D,
+};
+static ubool implGenQuerie(i16 argCount, Value *args, Value *out) {
+  GLuint value;
+  glGenQueries(1, &value);
+  *out = NUMBER_VAL(value);
+  return UTRUE;
+}
+static CFunction funcGenQuerie = {
+  implGenQuerie, "genQuerie",
+};
+static ubool implDeleteQuerie(i16 argCount, Value *args, Value *out) {
+  GLuint value = AS_U32(args[0]);
+  glDeleteQueries(1, &value);
+  return UTRUE;
+}
+static TypePattern argsDeleteQuerie[] = {
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcDeleteQuerie = {
+  implDeleteQuerie, "deleteQuerie",
+  sizeof(argsDeleteQuerie)/sizeof(TypePattern), 0, argsDeleteQuerie,
+};
+static ubool implIsQuery(i16 argCount, Value *args, Value *out) {
+  u32 id = AS_U32(args[0]);
+  *out = BOOL_VAL(glIsQuery(id));
+  return UTRUE;
+}
+static TypePattern argsIsQuery[] = {
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcIsQuery = {
+  implIsQuery, "isQuery",
+  sizeof(argsIsQuery)/sizeof(TypePattern), 0, argsIsQuery,
+};
+static ubool implBeginQuery(i16 argCount, Value *args, Value *out) {
+  u32 target = AS_U32(args[0]);
+  u32 id = AS_U32(args[1]);
+  glBeginQuery(target, id);
+  return UTRUE;
+}
+static TypePattern argsBeginQuery[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcBeginQuery = {
+  implBeginQuery, "beginQuery",
+  sizeof(argsBeginQuery)/sizeof(TypePattern), 0, argsBeginQuery,
+};
+static ubool implEndQuery(i16 argCount, Value *args, Value *out) {
+  u32 target = AS_U32(args[0]);
+  glEndQuery(target);
+  return UTRUE;
+}
+static TypePattern argsEndQuery[] = {
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcEndQuery = {
+  implEndQuery, "endQuery",
+  sizeof(argsEndQuery)/sizeof(TypePattern), 0, argsEndQuery,
+};
+static ubool implUnmapBuffer(i16 argCount, Value *args, Value *out) {
+  u32 target = AS_U32(args[0]);
+  *out = BOOL_VAL(glUnmapBuffer(target));
+  return UTRUE;
+}
+static TypePattern argsUnmapBuffer[] = {
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcUnmapBuffer = {
+  implUnmapBuffer, "unmapBuffer",
+  sizeof(argsUnmapBuffer)/sizeof(TypePattern), 0, argsUnmapBuffer,
+};
+static ubool implBlitFramebuffer(i16 argCount, Value *args, Value *out) {
+  i32 srcX0 = AS_I32(args[0]);
+  i32 srcY0 = AS_I32(args[1]);
+  i32 srcX1 = AS_I32(args[2]);
+  i32 srcY1 = AS_I32(args[3]);
+  i32 dstX0 = AS_I32(args[4]);
+  i32 dstY0 = AS_I32(args[5]);
+  i32 dstX1 = AS_I32(args[6]);
+  i32 dstY1 = AS_I32(args[7]);
+  u32 mask = AS_U32(args[8]);
+  u32 filter = AS_U32(args[9]);
+  glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
+  return UTRUE;
+}
+static TypePattern argsBlitFramebuffer[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcBlitFramebuffer = {
+  implBlitFramebuffer, "blitFramebuffer",
+  sizeof(argsBlitFramebuffer)/sizeof(TypePattern), 0, argsBlitFramebuffer,
+};
+static ubool implRenderbufferStorageMultisample(i16 argCount, Value *args, Value *out) {
+  u32 target = AS_U32(args[0]);
+  i32 samples = AS_I32(args[1]);
+  u32 internalformat = AS_U32(args[2]);
+  i32 width = AS_I32(args[3]);
+  i32 height = AS_I32(args[4]);
+  glRenderbufferStorageMultisample(target, samples, internalformat, width, height);
+  return UTRUE;
+}
+static TypePattern argsRenderbufferStorageMultisample[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcRenderbufferStorageMultisample = {
+  implRenderbufferStorageMultisample, "renderbufferStorageMultisample",
+  sizeof(argsRenderbufferStorageMultisample)/sizeof(TypePattern), 0, argsRenderbufferStorageMultisample,
+};
+static ubool implFramebufferTextureLayer(i16 argCount, Value *args, Value *out) {
+  u32 target = AS_U32(args[0]);
+  u32 attachment = AS_U32(args[1]);
+  u32 texture = AS_U32(args[2]);
+  i32 level = AS_I32(args[3]);
+  i32 layer = AS_I32(args[4]);
+  glFramebufferTextureLayer(target, attachment, texture, level, layer);
+  return UTRUE;
+}
+static TypePattern argsFramebufferTextureLayer[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcFramebufferTextureLayer = {
+  implFramebufferTextureLayer, "framebufferTextureLayer",
+  sizeof(argsFramebufferTextureLayer)/sizeof(TypePattern), 0, argsFramebufferTextureLayer,
+};
+static ubool implFlushMappedBufferRange(i16 argCount, Value *args, Value *out) {
+  u32 target = AS_U32(args[0]);
+  long offset = (long)AS_NUMBER(args[1]);
+  size_t length = (size_t)AS_NUMBER(args[2]);
+  glFlushMappedBufferRange(target, offset, length);
+  return UTRUE;
+}
+static TypePattern argsFlushMappedBufferRange[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcFlushMappedBufferRange = {
+  implFlushMappedBufferRange, "flushMappedBufferRange",
+  sizeof(argsFlushMappedBufferRange)/sizeof(TypePattern), 0, argsFlushMappedBufferRange,
+};
+static ubool implBindVertexArray(i16 argCount, Value *args, Value *out) {
+  u32 array = AS_U32(args[0]);
+  glBindVertexArray(array);
+  return UTRUE;
+}
+static TypePattern argsBindVertexArray[] = {
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcBindVertexArray = {
+  implBindVertexArray, "bindVertexArray",
+  sizeof(argsBindVertexArray)/sizeof(TypePattern), 0, argsBindVertexArray,
+};
+static ubool implDeleteVertexArray(i16 argCount, Value *args, Value *out) {
+  GLuint value = AS_U32(args[0]);
+  glDeleteVertexArrays(1, &value);
+  return UTRUE;
+}
+static TypePattern argsDeleteVertexArray[] = {
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcDeleteVertexArray = {
+  implDeleteVertexArray, "deleteVertexArray",
+  sizeof(argsDeleteVertexArray)/sizeof(TypePattern), 0, argsDeleteVertexArray,
+};
+static ubool implGenVertexArray(i16 argCount, Value *args, Value *out) {
+  GLuint value;
+  glGenVertexArrays(1, &value);
+  *out = NUMBER_VAL(value);
+  return UTRUE;
+}
+static CFunction funcGenVertexArray = {
+  implGenVertexArray, "genVertexArray",
+};
+static ubool implIsVertexArray(i16 argCount, Value *args, Value *out) {
+  u32 array = AS_U32(args[0]);
+  *out = BOOL_VAL(glIsVertexArray(array));
+  return UTRUE;
+}
+static TypePattern argsIsVertexArray[] = {
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcIsVertexArray = {
+  implIsVertexArray, "isVertexArray",
+  sizeof(argsIsVertexArray)/sizeof(TypePattern), 0, argsIsVertexArray,
+};
+static ubool implBeginTransformFeedback(i16 argCount, Value *args, Value *out) {
+  u32 primitiveMode = AS_U32(args[0]);
+  glBeginTransformFeedback(primitiveMode);
+  return UTRUE;
+}
+static TypePattern argsBeginTransformFeedback[] = {
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcBeginTransformFeedback = {
+  implBeginTransformFeedback, "beginTransformFeedback",
+  sizeof(argsBeginTransformFeedback)/sizeof(TypePattern), 0, argsBeginTransformFeedback,
+};
+static ubool implEndTransformFeedback(i16 argCount, Value *args, Value *out) {
+  glEndTransformFeedback();
+  return UTRUE;
+}
+static CFunction funcEndTransformFeedback = {
+  implEndTransformFeedback, "endTransformFeedback",
+};
+static ubool implBindBufferRange(i16 argCount, Value *args, Value *out) {
+  u32 target = AS_U32(args[0]);
+  u32 index = AS_U32(args[1]);
+  u32 buffer = AS_U32(args[2]);
+  long offset = (long)AS_NUMBER(args[3]);
+  size_t size = (size_t)AS_NUMBER(args[4]);
+  glBindBufferRange(target, index, buffer, offset, size);
+  return UTRUE;
+}
+static TypePattern argsBindBufferRange[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcBindBufferRange = {
+  implBindBufferRange, "bindBufferRange",
+  sizeof(argsBindBufferRange)/sizeof(TypePattern), 0, argsBindBufferRange,
+};
+static ubool implBindBufferBase(i16 argCount, Value *args, Value *out) {
+  u32 target = AS_U32(args[0]);
+  u32 index = AS_U32(args[1]);
+  u32 buffer = AS_U32(args[2]);
+  glBindBufferBase(target, index, buffer);
+  return UTRUE;
+}
+static TypePattern argsBindBufferBase[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcBindBufferBase = {
+  implBindBufferBase, "bindBufferBase",
+  sizeof(argsBindBufferBase)/sizeof(TypePattern), 0, argsBindBufferBase,
+};
+static ubool implVertexAttribI4i(i16 argCount, Value *args, Value *out) {
+  u32 index = AS_U32(args[0]);
+  i32 x = AS_I32(args[1]);
+  i32 y = AS_I32(args[2]);
+  i32 z = AS_I32(args[3]);
+  i32 w = AS_I32(args[4]);
+  glVertexAttribI4i(index, x, y, z, w);
+  return UTRUE;
+}
+static TypePattern argsVertexAttribI4i[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcVertexAttribI4i = {
+  implVertexAttribI4i, "vertexAttribI4i",
+  sizeof(argsVertexAttribI4i)/sizeof(TypePattern), 0, argsVertexAttribI4i,
+};
+static ubool implVertexAttribI4ui(i16 argCount, Value *args, Value *out) {
+  u32 index = AS_U32(args[0]);
+  u32 x = AS_U32(args[1]);
+  u32 y = AS_U32(args[2]);
+  u32 z = AS_U32(args[3]);
+  u32 w = AS_U32(args[4]);
+  glVertexAttribI4ui(index, x, y, z, w);
+  return UTRUE;
+}
+static TypePattern argsVertexAttribI4ui[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcVertexAttribI4ui = {
+  implVertexAttribI4ui, "vertexAttribI4ui",
+  sizeof(argsVertexAttribI4ui)/sizeof(TypePattern), 0, argsVertexAttribI4ui,
+};
+static ubool implGetFragDataLocation(i16 argCount, Value *args, Value *out) {
+  u32 program = AS_U32(args[0]);
+  const char *name = AS_STRING(args[1])->chars;
+  *out = NUMBER_VAL(glGetFragDataLocation(program, name));
+  return UTRUE;
+}
+static TypePattern argsGetFragDataLocation[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_STRING },
+};
+static CFunction funcGetFragDataLocation = {
+  implGetFragDataLocation, "getFragDataLocation",
+  sizeof(argsGetFragDataLocation)/sizeof(TypePattern), 0, argsGetFragDataLocation,
+};
+static ubool implUniform1ui(i16 argCount, Value *args, Value *out) {
+  i32 location = AS_I32(args[0]);
+  u32 v0 = AS_U32(args[1]);
+  glUniform1ui(location, v0);
+  return UTRUE;
+}
+static TypePattern argsUniform1ui[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcUniform1ui = {
+  implUniform1ui, "uniform1ui",
+  sizeof(argsUniform1ui)/sizeof(TypePattern), 0, argsUniform1ui,
+};
+static ubool implUniform2ui(i16 argCount, Value *args, Value *out) {
+  i32 location = AS_I32(args[0]);
+  u32 v0 = AS_U32(args[1]);
+  u32 v1 = AS_U32(args[2]);
+  glUniform2ui(location, v0, v1);
+  return UTRUE;
+}
+static TypePattern argsUniform2ui[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcUniform2ui = {
+  implUniform2ui, "uniform2ui",
+  sizeof(argsUniform2ui)/sizeof(TypePattern), 0, argsUniform2ui,
+};
+static ubool implUniform3ui(i16 argCount, Value *args, Value *out) {
+  i32 location = AS_I32(args[0]);
+  u32 v0 = AS_U32(args[1]);
+  u32 v1 = AS_U32(args[2]);
+  u32 v2 = AS_U32(args[3]);
+  glUniform3ui(location, v0, v1, v2);
+  return UTRUE;
+}
+static TypePattern argsUniform3ui[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcUniform3ui = {
+  implUniform3ui, "uniform3ui",
+  sizeof(argsUniform3ui)/sizeof(TypePattern), 0, argsUniform3ui,
+};
+static ubool implUniform4ui(i16 argCount, Value *args, Value *out) {
+  i32 location = AS_I32(args[0]);
+  u32 v0 = AS_U32(args[1]);
+  u32 v1 = AS_U32(args[2]);
+  u32 v2 = AS_U32(args[3]);
+  u32 v3 = AS_U32(args[4]);
+  glUniform4ui(location, v0, v1, v2, v3);
+  return UTRUE;
+}
+static TypePattern argsUniform4ui[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcUniform4ui = {
+  implUniform4ui, "uniform4ui",
+  sizeof(argsUniform4ui)/sizeof(TypePattern), 0, argsUniform4ui,
+};
+static ubool implClearBufferfi(i16 argCount, Value *args, Value *out) {
+  u32 buffer = AS_U32(args[0]);
+  i32 drawbuffer = AS_I32(args[1]);
+  float depth = (float)AS_NUMBER(args[2]);
+  i32 stencil = AS_I32(args[3]);
+  glClearBufferfi(buffer, drawbuffer, depth, stencil);
+  return UTRUE;
+}
+static TypePattern argsClearBufferfi[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcClearBufferfi = {
+  implClearBufferfi, "clearBufferfi",
+  sizeof(argsClearBufferfi)/sizeof(TypePattern), 0, argsClearBufferfi,
+};
+static ubool implCopyBufferSubData(i16 argCount, Value *args, Value *out) {
+  u32 readTarget = AS_U32(args[0]);
+  u32 writeTarget = AS_U32(args[1]);
+  long readOffset = (long)AS_NUMBER(args[2]);
+  long writeOffset = (long)AS_NUMBER(args[3]);
+  size_t size = (size_t)AS_NUMBER(args[4]);
+  glCopyBufferSubData(readTarget, writeTarget, readOffset, writeOffset, size);
+  return UTRUE;
+}
+static TypePattern argsCopyBufferSubData[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcCopyBufferSubData = {
+  implCopyBufferSubData, "copyBufferSubData",
+  sizeof(argsCopyBufferSubData)/sizeof(TypePattern), 0, argsCopyBufferSubData,
+};
+static ubool implGetUniformBlockIndex(i16 argCount, Value *args, Value *out) {
+  u32 program = AS_U32(args[0]);
+  const char *uniformBlockName = AS_STRING(args[1])->chars;
+  *out = NUMBER_VAL(glGetUniformBlockIndex(program, uniformBlockName));
+  return UTRUE;
+}
+static TypePattern argsGetUniformBlockIndex[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_STRING },
+};
+static CFunction funcGetUniformBlockIndex = {
+  implGetUniformBlockIndex, "getUniformBlockIndex",
+  sizeof(argsGetUniformBlockIndex)/sizeof(TypePattern), 0, argsGetUniformBlockIndex,
+};
+static ubool implUniformBlockBinding(i16 argCount, Value *args, Value *out) {
+  u32 program = AS_U32(args[0]);
+  u32 uniformBlockIndex = AS_U32(args[1]);
+  u32 uniformBlockBinding = AS_U32(args[2]);
+  glUniformBlockBinding(program, uniformBlockIndex, uniformBlockBinding);
+  return UTRUE;
+}
+static TypePattern argsUniformBlockBinding[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcUniformBlockBinding = {
+  implUniformBlockBinding, "uniformBlockBinding",
+  sizeof(argsUniformBlockBinding)/sizeof(TypePattern), 0, argsUniformBlockBinding,
+};
+static ubool implDrawArraysInstanced(i16 argCount, Value *args, Value *out) {
+  u32 mode = AS_U32(args[0]);
+  i32 first = AS_I32(args[1]);
+  i32 count = AS_I32(args[2]);
+  i32 instancecount = AS_I32(args[3]);
+  glDrawArraysInstanced(mode, first, count, instancecount);
+  return UTRUE;
+}
+static TypePattern argsDrawArraysInstanced[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcDrawArraysInstanced = {
+  implDrawArraysInstanced, "drawArraysInstanced",
+  sizeof(argsDrawArraysInstanced)/sizeof(TypePattern), 0, argsDrawArraysInstanced,
+};
+static ubool implIsSampler(i16 argCount, Value *args, Value *out) {
+  u32 sampler = AS_U32(args[0]);
+  *out = BOOL_VAL(glIsSampler(sampler));
+  return UTRUE;
+}
+static TypePattern argsIsSampler[] = {
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcIsSampler = {
+  implIsSampler, "isSampler",
+  sizeof(argsIsSampler)/sizeof(TypePattern), 0, argsIsSampler,
+};
+static ubool implBindSampler(i16 argCount, Value *args, Value *out) {
+  u32 unit = AS_U32(args[0]);
+  u32 sampler = AS_U32(args[1]);
+  glBindSampler(unit, sampler);
+  return UTRUE;
+}
+static TypePattern argsBindSampler[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcBindSampler = {
+  implBindSampler, "bindSampler",
+  sizeof(argsBindSampler)/sizeof(TypePattern), 0, argsBindSampler,
+};
+static ubool implSamplerParameteri(i16 argCount, Value *args, Value *out) {
+  u32 sampler = AS_U32(args[0]);
+  u32 pname = AS_U32(args[1]);
+  i32 param = AS_I32(args[2]);
+  glSamplerParameteri(sampler, pname, param);
+  return UTRUE;
+}
+static TypePattern argsSamplerParameteri[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcSamplerParameteri = {
+  implSamplerParameteri, "samplerParameteri",
+  sizeof(argsSamplerParameteri)/sizeof(TypePattern), 0, argsSamplerParameteri,
+};
+static ubool implSamplerParameterf(i16 argCount, Value *args, Value *out) {
+  u32 sampler = AS_U32(args[0]);
+  u32 pname = AS_U32(args[1]);
+  float param = (float)AS_NUMBER(args[2]);
+  glSamplerParameterf(sampler, pname, param);
+  return UTRUE;
+}
+static TypePattern argsSamplerParameterf[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcSamplerParameterf = {
+  implSamplerParameterf, "samplerParameterf",
+  sizeof(argsSamplerParameterf)/sizeof(TypePattern), 0, argsSamplerParameterf,
+};
+static ubool implVertexAttribDivisor(i16 argCount, Value *args, Value *out) {
+  u32 index = AS_U32(args[0]);
+  u32 divisor = AS_U32(args[1]);
+  glVertexAttribDivisor(index, divisor);
+  return UTRUE;
+}
+static TypePattern argsVertexAttribDivisor[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcVertexAttribDivisor = {
+  implVertexAttribDivisor, "vertexAttribDivisor",
+  sizeof(argsVertexAttribDivisor)/sizeof(TypePattern), 0, argsVertexAttribDivisor,
+};
+static ubool implBindTransformFeedback(i16 argCount, Value *args, Value *out) {
+  u32 target = AS_U32(args[0]);
+  u32 id = AS_U32(args[1]);
+  glBindTransformFeedback(target, id);
+  return UTRUE;
+}
+static TypePattern argsBindTransformFeedback[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcBindTransformFeedback = {
+  implBindTransformFeedback, "bindTransformFeedback",
+  sizeof(argsBindTransformFeedback)/sizeof(TypePattern), 0, argsBindTransformFeedback,
+};
+static ubool implIsTransformFeedback(i16 argCount, Value *args, Value *out) {
+  u32 id = AS_U32(args[0]);
+  *out = BOOL_VAL(glIsTransformFeedback(id));
+  return UTRUE;
+}
+static TypePattern argsIsTransformFeedback[] = {
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcIsTransformFeedback = {
+  implIsTransformFeedback, "isTransformFeedback",
+  sizeof(argsIsTransformFeedback)/sizeof(TypePattern), 0, argsIsTransformFeedback,
+};
+static ubool implPauseTransformFeedback(i16 argCount, Value *args, Value *out) {
+  glPauseTransformFeedback();
+  return UTRUE;
+}
+static CFunction funcPauseTransformFeedback = {
+  implPauseTransformFeedback, "pauseTransformFeedback",
+};
+static ubool implResumeTransformFeedback(i16 argCount, Value *args, Value *out) {
+  glResumeTransformFeedback();
+  return UTRUE;
+}
+static CFunction funcResumeTransformFeedback = {
+  implResumeTransformFeedback, "resumeTransformFeedback",
+};
+static ubool implProgramParameteri(i16 argCount, Value *args, Value *out) {
+  u32 program = AS_U32(args[0]);
+  u32 pname = AS_U32(args[1]);
+  i32 value = AS_I32(args[2]);
+  glProgramParameteri(program, pname, value);
+  return UTRUE;
+}
+static TypePattern argsProgramParameteri[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcProgramParameteri = {
+  implProgramParameteri, "programParameteri",
+  sizeof(argsProgramParameteri)/sizeof(TypePattern), 0, argsProgramParameteri,
+};
+static ubool implTexStorage2D(i16 argCount, Value *args, Value *out) {
+  u32 target = AS_U32(args[0]);
+  i32 levels = AS_I32(args[1]);
+  u32 internalformat = AS_U32(args[2]);
+  i32 width = AS_I32(args[3]);
+  i32 height = AS_I32(args[4]);
+  glTexStorage2D(target, levels, internalformat, width, height);
+  return UTRUE;
+}
+static TypePattern argsTexStorage2D[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcTexStorage2D = {
+  implTexStorage2D, "texStorage2D",
+  sizeof(argsTexStorage2D)/sizeof(TypePattern), 0, argsTexStorage2D,
+};
+static ubool implTexStorage3D(i16 argCount, Value *args, Value *out) {
+  u32 target = AS_U32(args[0]);
+  i32 levels = AS_I32(args[1]);
+  u32 internalformat = AS_U32(args[2]);
+  i32 width = AS_I32(args[3]);
+  i32 height = AS_I32(args[4]);
+  i32 depth = AS_I32(args[5]);
+  glTexStorage3D(target, levels, internalformat, width, height, depth);
+  return UTRUE;
+}
+static TypePattern argsTexStorage3D[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+static CFunction funcTexStorage3D = {
+  implTexStorage3D, "texStorage3D",
+  sizeof(argsTexStorage3D)/sizeof(TypePattern), 0, argsTexStorage3D,
+};
 static CFunction *genFunctions[] = {
   &funcActiveTexture,
   &funcAttachShader,
@@ -1636,5 +2311,49 @@ static CFunction *genFunctions[] = {
   &funcVertexAttrib4f,
   &funcVertexAttribPointer,
   &funcViewport,
+  &funcReadBuffer,
+  &funcCopyTexSubImage3D,
+  &funcGenQuerie,
+  &funcDeleteQuerie,
+  &funcIsQuery,
+  &funcBeginQuery,
+  &funcEndQuery,
+  &funcUnmapBuffer,
+  &funcBlitFramebuffer,
+  &funcRenderbufferStorageMultisample,
+  &funcFramebufferTextureLayer,
+  &funcFlushMappedBufferRange,
+  &funcBindVertexArray,
+  &funcDeleteVertexArray,
+  &funcGenVertexArray,
+  &funcIsVertexArray,
+  &funcBeginTransformFeedback,
+  &funcEndTransformFeedback,
+  &funcBindBufferRange,
+  &funcBindBufferBase,
+  &funcVertexAttribI4i,
+  &funcVertexAttribI4ui,
+  &funcGetFragDataLocation,
+  &funcUniform1ui,
+  &funcUniform2ui,
+  &funcUniform3ui,
+  &funcUniform4ui,
+  &funcClearBufferfi,
+  &funcCopyBufferSubData,
+  &funcGetUniformBlockIndex,
+  &funcUniformBlockBinding,
+  &funcDrawArraysInstanced,
+  &funcIsSampler,
+  &funcBindSampler,
+  &funcSamplerParameteri,
+  &funcSamplerParameterf,
+  &funcVertexAttribDivisor,
+  &funcBindTransformFeedback,
+  &funcIsTransformFeedback,
+  &funcPauseTransformFeedback,
+  &funcResumeTransformFeedback,
+  &funcProgramParameteri,
+  &funcTexStorage2D,
+  &funcTexStorage3D,
 };
 #endif/*mtots_m_opengles3_gen_h*/

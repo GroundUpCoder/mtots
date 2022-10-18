@@ -11,12 +11,19 @@ unsupported = {
   'const void*',
   'const GLchar*const*',
   'void*',
+  'void**',
   'GLsizei*',
   'GLboolean*',
   'GLint*',
+  'GLuint*',
   'GLfloat*',
+  'GLsync',
+  'GLint64*',
   'const GLfloat*',
   'const GLint*',
+  'const GLuint*',
+  'const GLenum*',
+  'const GLint64*',
 }
 
 # These are functions that accept 'n' and a pointer to 'GLuint's.
@@ -24,6 +31,7 @@ unsupported = {
 # cumbersome to use, their singular versions (i.e. when n = 1)
 # are often very useful.
 singularizableFunctions = {
+  # GLES 2
   'glDeleteBuffers',
   'glDeleteFramebuffers',
   'glDeleteRenderbuffers',
@@ -36,6 +44,12 @@ singularizableFunctions = {
   'glGenFramebuffers',
   'glGenRenderbuffers',
   'glGenTextures',
+
+  # GLES 3.0
+  'glDeleteQueries',
+  'glDeleteVertexArrays',
+  'glGenQueries',
+  'glGenVertexArrays',
 }
 
 # These are functions that end with 'iv' or 'fv'
@@ -175,6 +189,8 @@ def emitInitArg(i, argType, argName):
     print(f'  u32 {argName} = AS_U32(args[{i}]);')
   elif argType in ('GLint', 'GLsizei'):
     print(f'  i32 {argName} = AS_I32(args[{i}]);')
+  elif argType == 'GLintptr':
+    print(f'  long {argName} = (long)AS_NUMBER(args[{i}]);')
   elif argType == 'GLfloat':
     print(f'  float {argName} = (float)AS_NUMBER(args[{i}]);')
   elif argType == 'const GLchar*':
@@ -189,7 +205,7 @@ def emitArgTypePattern(argType):
   if argType == 'GLboolean':
     print('  { TYPE_PATTERN_BOOL },')
   elif argType in (
-      'GLsizeiptr', 'GLsizei',
+      'GLsizeiptr', 'GLsizei', 'GLintptr',
       'GLenum', 'GLuint', 'GLbitfield', 'GLint',
       'GLfloat', 'PtrOffset'):
     print('  { TYPE_PATTERN_NUMBER },')
