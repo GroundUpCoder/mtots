@@ -26,6 +26,12 @@ unsupported = {
   'const GLint64*',
 }
 
+unsupportedFunctions = {
+  # Not supported in webgl
+  'glFlushMappedBufferRange',
+  'glUnmapBuffer',
+}
+
 # These are functions that accept 'n' and a pointer to 'GLuint's.
 # While translating these functions exactly as is would be a bit
 # cumbersome to use, their singular versions (i.e. when n = 1)
@@ -270,6 +276,9 @@ with open(headerPath) as f:
     assert glFuncName.startswith('gl'), glFuncName
     baseName = glFuncName[len('gl'):]
     mtotsName = baseName[0].lower() + baseName[1:]
+
+    if glFuncName in unsupportedFunctions:
+      continue
 
     if glFuncName in ivfvFunctions:
       handleivfv()

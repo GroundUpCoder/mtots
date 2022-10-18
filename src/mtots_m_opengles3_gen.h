@@ -1628,18 +1628,6 @@ static CFunction funcEndQuery = {
   implEndQuery, "endQuery",
   sizeof(argsEndQuery)/sizeof(TypePattern), 0, argsEndQuery,
 };
-static ubool implUnmapBuffer(i16 argCount, Value *args, Value *out) {
-  u32 target = AS_U32(args[0]);
-  *out = BOOL_VAL(glUnmapBuffer(target));
-  return UTRUE;
-}
-static TypePattern argsUnmapBuffer[] = {
-  { TYPE_PATTERN_NUMBER },
-};
-static CFunction funcUnmapBuffer = {
-  implUnmapBuffer, "unmapBuffer",
-  sizeof(argsUnmapBuffer)/sizeof(TypePattern), 0, argsUnmapBuffer,
-};
 static ubool implBlitFramebuffer(i16 argCount, Value *args, Value *out) {
   i32 srcX0 = AS_I32(args[0]);
   i32 srcY0 = AS_I32(args[1]);
@@ -1709,22 +1697,6 @@ static TypePattern argsFramebufferTextureLayer[] = {
 static CFunction funcFramebufferTextureLayer = {
   implFramebufferTextureLayer, "framebufferTextureLayer",
   sizeof(argsFramebufferTextureLayer)/sizeof(TypePattern), 0, argsFramebufferTextureLayer,
-};
-static ubool implFlushMappedBufferRange(i16 argCount, Value *args, Value *out) {
-  u32 target = AS_U32(args[0]);
-  long offset = (long)AS_NUMBER(args[1]);
-  size_t length = (size_t)AS_NUMBER(args[2]);
-  glFlushMappedBufferRange(target, offset, length);
-  return UTRUE;
-}
-static TypePattern argsFlushMappedBufferRange[] = {
-  { TYPE_PATTERN_NUMBER },
-  { TYPE_PATTERN_NUMBER },
-  { TYPE_PATTERN_NUMBER },
-};
-static CFunction funcFlushMappedBufferRange = {
-  implFlushMappedBufferRange, "flushMappedBufferRange",
-  sizeof(argsFlushMappedBufferRange)/sizeof(TypePattern), 0, argsFlushMappedBufferRange,
 };
 static ubool implBindVertexArray(i16 argCount, Value *args, Value *out) {
   u32 array = AS_U32(args[0]);
@@ -2318,11 +2290,9 @@ static CFunction *genFunctions[] = {
   &funcIsQuery,
   &funcBeginQuery,
   &funcEndQuery,
-  &funcUnmapBuffer,
   &funcBlitFramebuffer,
   &funcRenderbufferStorageMultisample,
   &funcFramebufferTextureLayer,
-  &funcFlushMappedBufferRange,
   &funcBindVertexArray,
   &funcDeleteVertexArray,
   &funcGenVertexArray,
