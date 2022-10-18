@@ -445,7 +445,7 @@ static ubool callByteArrayClass(i16 argCount) {
   }
   if (IS_BYTE_ARRAY(arg)) {
     ObjByteArray *otherBA = AS_BYTE_ARRAY(arg);
-    ObjByteArray *ba = copyByteArray(otherBA->buffer, otherBA->size);
+    ObjByteArray *ba = copyByteArray(otherBA->buffer, otherBA->length);
     pop(); /* arg */
     pop(); /* ByeArray class */
     push(OBJ_VAL(ba));
@@ -542,7 +542,7 @@ static ubool callOperator(Operator op, i16 argCount) {
             vm.stackTop[-1] = NUMBER_VAL(AS_STRING(receiver)->length);
             return UTRUE;
           case OBJ_BYTE_ARRAY:
-            vm.stackTop[-1] = NUMBER_VAL(AS_BYTE_ARRAY(receiver)->size);
+            vm.stackTop[-1] = NUMBER_VAL(AS_BYTE_ARRAY(receiver)->length);
           case OBJ_LIST:
             vm.stackTop[-1] = NUMBER_VAL(AS_LIST(receiver)->length);
             return UTRUE;

@@ -276,7 +276,7 @@ ubool implRepr(i16 argCount, Value *args, Value *out) {
           char buffer[128];
           ObjByteArray *byteArray = AS_BYTE_ARRAY(args[0]);
           snprintf(buffer, 128,
-            "<ByteArray (%lu)>", (unsigned long)byteArray->size);
+            "<ByteArray (%lu)>", (unsigned long)byteArray->length);
           *out = OBJ_VAL(copyCString(buffer));
           break;
         }
@@ -421,7 +421,7 @@ ubool implStr(i16 argCount, Value *args, Value *out) {
   }
   if (IS_BYTE_ARRAY(*args)) {
     ObjByteArray *ba = AS_BYTE_ARRAY(*args);
-    *out = OBJ_VAL(copyString((const char*)ba->buffer, ba->size));
+    *out = OBJ_VAL(copyString((const char*)ba->buffer, ba->length));
     return UTRUE;
   }
   return implRepr(argCount, args, out);

@@ -224,26 +224,26 @@ ObjString *copyCString(const char *chars) {
   return copyString(chars, strlen(chars));
 }
 
-ObjByteArray *newByteArray(size_t size) {
-  unsigned char *newBuffer = ALLOCATE(unsigned char, size);
+ObjByteArray *newByteArray(size_t length) {
+  unsigned char *newBuffer = ALLOCATE(unsigned char, length);
   ObjByteArray *byteArray = ALLOCATE_OBJ(ObjByteArray, OBJ_BYTE_ARRAY);
-  memset(newBuffer, 0, size);
+  memset(newBuffer, 0, length);
   byteArray->buffer = newBuffer;
-  byteArray->size = size;
+  byteArray->length = length;
   return byteArray;
 }
 
-ObjByteArray *takeByteArray(unsigned char *buffer, size_t size) {
+ObjByteArray *takeByteArray(unsigned char *buffer, size_t length) {
   ObjByteArray *byteArray = ALLOCATE_OBJ(ObjByteArray, OBJ_BYTE_ARRAY);
   byteArray->buffer = buffer;
-  byteArray->size = size;
+  byteArray->length = length;
   return byteArray;
 }
 
-ObjByteArray *copyByteArray(const unsigned char *buffer, size_t size) {
-  unsigned char *newBuffer = ALLOCATE(unsigned char, size);
-  memcpy(newBuffer, buffer, size);
-  return takeByteArray(newBuffer, size);
+ObjByteArray *copyByteArray(const unsigned char *buffer, size_t length) {
+  unsigned char *newBuffer = ALLOCATE(unsigned char, length);
+  memcpy(newBuffer, buffer, length);
+  return takeByteArray(newBuffer, length);
 }
 
 ObjList *newList(size_t size) {
@@ -410,7 +410,7 @@ void printObject(Value value) {
       printf("%s", AS_CSTRING(value));
       break;
     case OBJ_BYTE_ARRAY:
-      printf("<byteArray %lu>", (unsigned long)AS_BYTE_ARRAY(value)->size);
+      printf("<byteArray %lu>", (unsigned long)AS_BYTE_ARRAY(value)->length);
       break;
     case OBJ_LIST:
       printf("<list %lu items>", (unsigned long) AS_LIST(value)->length);

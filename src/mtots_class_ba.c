@@ -14,12 +14,12 @@ static ubool implByteArrayGetItem(i16 argCount, Value *args, Value *out) {
   ba = AS_BYTE_ARRAY(receiver);
   index = AS_NUMBER(args[0]);
   if (index < 0) {
-    index += ba->size;
+    index += ba->length;
   }
-  if (index < 0 || index >= ba->size) {
+  if (index < 0 || index >= ba->length) {
     runtimeError("Index %lu out of range of ByteArray (%lu)",
       (unsigned long) index,
-      (unsigned long) ba->size);
+      (unsigned long) ba->length);
     return UFALSE;
   }
   *out = NUMBER_VAL(ba->buffer[index]);
@@ -46,12 +46,12 @@ static ubool implByteArraySetItem(i16 argCount, Value *args, Value *out) {
   ba = AS_BYTE_ARRAY(receiver);
   index = AS_NUMBER(args[0]);
   if (index < 0) {
-    index += ba->size;
+    index += ba->length;
   }
-  if (index < 0 || index >= ba->size) {
+  if (index < 0 || index >= ba->length) {
     runtimeError("Index %lu out of range of ByteArray (%lu)",
       (unsigned long) index,
-      (unsigned long) ba->size);
+      (unsigned long) ba->length);
     return UFALSE;
   }
   value = AS_NUMBER(args[1]);
@@ -72,7 +72,7 @@ static CFunction funcByteArraySetItem = {
 static ubool implByteArrayI8(i16 argCount, Value *args, Value *out) {
   ObjByteArray *ba = AS_BYTE_ARRAY(args[-1]);
   size_t index = (size_t) AS_NUMBER(args[0]);
-  if (index >= ba->size) {
+  if (index >= ba->length) {
     runtimeError("ByteArray overflow");
     return UFALSE;
   }
@@ -100,7 +100,7 @@ static CFunction funcByteArrayI8 = {
 static ubool implByteArrayU8(i16 argCount, Value *args, Value *out) {
   ObjByteArray *ba = AS_BYTE_ARRAY(args[-1]);
   size_t index = (size_t) AS_NUMBER(args[0]);
-  if (index >= ba->size) {
+  if (index >= ba->length) {
     runtimeError("ByteArray overflow");
     return UFALSE;
   }
@@ -128,7 +128,7 @@ static CFunction funcByteArrayU8 = {
 static ubool implByteArrayI16(i16 argCount, Value *args, Value *out) {
   ObjByteArray *ba = AS_BYTE_ARRAY(args[-1]);
   size_t index = (size_t) AS_NUMBER(args[0]);
-  if (index >= ba->size || index + 2 > ba->size) {
+  if (index >= ba->length || index + 2 > ba->length) {
     runtimeError("ByteArray overflow");
     return UFALSE;
   }
@@ -156,7 +156,7 @@ static CFunction funcByteArrayI16 = {
 static ubool implByteArrayU16(i16 argCount, Value *args, Value *out) {
   ObjByteArray *ba = AS_BYTE_ARRAY(args[-1]);
   size_t index = (size_t) AS_NUMBER(args[0]);
-  if (index >= ba->size || index + 2 > ba->size) {
+  if (index >= ba->length || index + 2 > ba->length) {
     runtimeError("ByteArray overflow");
     return UFALSE;
   }
@@ -184,7 +184,7 @@ static CFunction funcByteArrayU16 = {
 static ubool implByteArrayI32(i16 argCount, Value *args, Value *out) {
   ObjByteArray *ba = AS_BYTE_ARRAY(args[-1]);
   size_t index = (size_t) AS_NUMBER(args[0]);
-  if (index >= ba->size || index + 4 > ba->size) {
+  if (index >= ba->length || index + 4 > ba->length) {
     runtimeError("ByteArray overflow");
     return UFALSE;
   }
@@ -212,7 +212,7 @@ static CFunction funcByteArrayI32 = {
 static ubool implByteArrayU32(i16 argCount, Value *args, Value *out) {
   ObjByteArray *ba = AS_BYTE_ARRAY(args[-1]);
   size_t index = (size_t) AS_NUMBER(args[0]);
-  if (index >= ba->size || index + 4 > ba->size) {
+  if (index >= ba->length || index + 4 > ba->length) {
     runtimeError("ByteArray overflow");
     return UFALSE;
   }
@@ -240,7 +240,7 @@ static CFunction funcByteArrayU32 = {
 static ubool implByteArrayF32(i16 argCount, Value *args, Value *out) {
   ObjByteArray *ba = AS_BYTE_ARRAY(args[-1]);
   size_t index = (size_t) AS_NUMBER(args[0]);
-  if (index >= ba->size || index + 4 > ba->size) {
+  if (index >= ba->length || index + 4 > ba->length) {
     runtimeError("ByteArray overflow");
     return UFALSE;
   }
@@ -268,7 +268,7 @@ static CFunction funcByteArrayF32 = {
 static ubool implByteArrayF64(i16 argCount, Value *args, Value *out) {
   ObjByteArray *ba = AS_BYTE_ARRAY(args[-1]);
   size_t index = (size_t) AS_NUMBER(args[0]);
-  if (index >= ba->size || index + 4 > ba->size) {
+  if (index >= ba->length || index + 4 > ba->length) {
     runtimeError("ByteArray overflow");
     return UFALSE;
   }

@@ -45,10 +45,10 @@ ubool valuesEqual(Value a, Value b) {
       switch (objA->type) {
         case OBJ_BYTE_ARRAY: {
           ObjByteArray *aa = (ObjByteArray*)objA, *ab = (ObjByteArray*)objB;
-          if (aa->size != ab->size) {
+          if (aa->length != ab->length) {
             return UFALSE;
           }
-          return memcmp(aa->buffer, ab->buffer, aa->size) == 0;
+          return memcmp(aa->buffer, ab->buffer, aa->length) == 0;
         }
         case OBJ_LIST: {
           ObjList *listA = (ObjList*)objA, *listB = (ObjList*)objB;

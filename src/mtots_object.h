@@ -100,7 +100,7 @@ struct ObjString {
  * that point to the underlying buffer */
 typedef struct ObjByteArray {
   Obj obj;
-  size_t size;
+  size_t length;
   unsigned char *buffer;
 } ObjByteArray;
 
