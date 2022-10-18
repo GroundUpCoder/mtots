@@ -40,7 +40,7 @@ int main(int argc, const char *argv[]) {
     "",
     /* "/home/web_user/apps/music-keyboard.mtots", */
     /* "/home/web_user/samples/angle-00.mtots", */
-    "/home/web_user/samples/webgl2/ch02-square.mtots",
+    "/home/web_user/samples/webgl2/ch02-02-rendering-modes.mtots",
   };
   argc = 2;
   argv = fakeArgv;
