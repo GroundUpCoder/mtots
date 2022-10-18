@@ -30,7 +30,22 @@ final DEFAULT_HEIGHT = 480
 
 final compileProgram = libshader.compileProgram
 
+def f32Array(numbers):
+  final ba = ByteArray(4 * len(numbers))
+  for i in range(len(numbers)):
+    ba.f32(4 * i, numbers[i])
+  return ba
+
+def u16Array(numbers):
+  final ba = ByteArray(2 * len(numbers))
+  for i in range(len(numbers)):
+    ba.u16(2 * i, numbers[i])
+  return ba
+
 def _nopDraw():
+  pass
+
+def _nopEvent(_event):
   pass
 
 class App:
@@ -41,6 +56,7 @@ class App:
     this.fps = 60
     this.window = nil
     this._onDraw = _nopDraw
+    this._onKeydown = _nopEvent
     this.viewport_width = this.viewport_height = 0
 
   def init():
@@ -62,11 +78,18 @@ class App:
     this.viewport_height = dim.y
     gl.viewport(0, 0, dim.x, dim.y)
 
+  def onDraw(onDraw):
+    this._onDraw = onDraw
+
+  def onKeydown(onKeydown):
+    this._onKeydown = onKeydown
+
   def run():
     # Run the event loop
     final ticksPerFrame = (1 / this.fps) * 1000 # 1 tick <-> millis
     final event = sdl.Event()
     final draw = this._onDraw
+    final onKeydown = this._onKeydown
 
     while true:
       final startTicks = sdl.getTicks()
@@ -74,6 +97,8 @@ class App:
         if event.type == sdl.QUIT:
           sdl.quit()
           return 0
+        elif event.type == sdl.KEYDOWN:
+          onKeydown(event)
 
       draw()
 

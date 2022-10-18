@@ -1,0 +1,17 @@
+r"""
+Utilities for byte arrays
+"""
+
+
+def fromF32(numbers):
+  final ba = ByteArray(4 * len(numbers))
+  for i in range(len(numbers)):
+    ba.f32(4 * i, numbers[i])
+  return ba
+
+
+def fromU16(numbers):
+  final ba = ByteArray(2 * len(numbers))
+  for i in range(len(numbers)):
+    ba.u16(2 * i, numbers[i])
+  return ba
