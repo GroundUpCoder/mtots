@@ -59,6 +59,12 @@ class App:
     this._onKeydown = _nopEvent
     this.viewport_width = this.viewport_height = 0
 
+    # Fields for redirecting calls to methods
+    # This is primarily to allow '@' syntax
+    def onDraw(onDraw):
+      this.onDraw(onDraw)
+    this.onDraw = onDraw
+
   def init():
     sdl.init(sdl.INIT_VIDEO)
     sdl.gl.setAttribute(sdl.gl.CONTEXT_PROFILE_MASK, sdl.gl.CONTEXT_PROFILE_ES)

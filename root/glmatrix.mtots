@@ -34,6 +34,10 @@ class Mat4:
   def toByteArray():
     return bytearray.fromF32(this._arr)
 
+  def setByteArray(ba):
+    for i in range(16):
+      ba.f32(4 * i, this._arr[i])
+
   def setPerspective(fovy, aspect, near, far=nil):
     r"""
     Sets this to a perspective projection matrix with the given bounds.

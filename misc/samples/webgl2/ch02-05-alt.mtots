@@ -1,0 +1,152 @@
+r"""
+Variant of ch02-05 where I'm just playing around with things
+"""
+import glu
+import opengles3 as gl
+import sdl
+import bytearray
+import glmatrix
+
+final app = glu.App()
+app.width = 640
+app.height = 640
+app.init()
+
+final VS = r"""
+#version 300 es
+precision mediump float;
+
+// We will discuss these matrices in later chapters
+uniform mat4 uModelViewMatrix;
+uniform mat4 uProjectionMatrix;
+
+in vec3 aVertexPosition;
+
+void main(void) {
+  gl_Position = uProjectionMatrix * uModelViewMatrix * vec4(aVertexPosition, 1.0);
+}
+""".strip()
+
+final FS = r"""
+#version 300 es
+precision mediump float;
+
+out vec4 fragColor;
+
+void main(void) {
+  fragColor = vec4(0.5, 0.9, 0.2, 1.0);
+}
+""".strip()
+
+final shaderProgram = glu.compileProgram(VS, FS)
+final aVertexPosition = gl.getAttribLocation(shaderProgram, 'aVertexPosition')
+final uProjectionMatrix = gl.getUniformLocation(shaderProgram, 'uProjectionMatrix')
+final uModelViewMatrix = gl.getUniformLocation(shaderProgram, 'uModelViewMatrix')
+print('aVertexPosition = %s' % [aVertexPosition])
+print('uProjectionMatrix = %s' % [uProjectionMatrix])
+print('uModelViewMatrix = %s' % [uModelViewMatrix])
+
+final vertices = [
+  1.5, 0, 0,
+  -1.5, 1, 0,
+  -1.5, 0.809017, 0.587785,
+  -1.5, 0.309017, 0.951057,
+  -1.5, -0.309017, 0.951057,
+  -1.5, -0.809017, 0.587785,
+  -1.5, -1, 0,
+  -1.5, -0.809017, -0.587785,
+  -1.5, -0.309017, -0.951057,
+  -1.5, 0.309017, -0.951057,
+  -1.5, 0.809017, -0.587785,
+]
+final verticesArray = bytearray.fromF32(vertices)
+final indices = [
+  0, 1, 2,
+  0, 2, 3,
+  0, 3, 4,
+  0, 4, 5,
+  0, 5, 6,
+  0, 6, 7,
+  0, 7, 8,
+  0, 8, 9,
+  0, 9, 10,
+  0, 10, 1,
+]
+final indicesArray = bytearray.fromU16(indices)
+
+# VAO
+final coneVAO = gl.genVertexArray()
+gl.bindVertexArray(coneVAO)
+
+# VBO
+final coneVertexBuffer = gl.genBuffer()
+gl.bindBuffer(gl.ARRAY_BUFFER, coneVertexBuffer)
+gl.bufferData(gl.ARRAY_BUFFER, verticesArray, gl.STATIC_DRAW)
+gl.enableVertexAttribArray(aVertexPosition)
+gl.vertexAttribPointer(aVertexPosition, 3, gl.FLOAT, false, 0, 0)
+
+# IBO
+final coneIndexBuffer = gl.genBuffer()
+gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, coneIndexBuffer)
+gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indicesArray, gl.STATIC_DRAW)
+
+# Clean
+gl.bindVertexArray(0)
+gl.useProgram(0)
+gl.bindBuffer(gl.ARRAY_BUFFER, 0)
+gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
+
+print('coneVertexBuffer = %r' % [coneVertexBuffer])
+print('coneIndexBuffer = %r' % [coneIndexBuffer])
+
+final projectionMatrix = glmatrix.Mat4()
+final modelViewMatrix = glmatrix.Mat4()
+
+projectionMatrix.setPerspective(
+  45, app.viewport_width / app.viewport_height, 0.1, 10000)
+modelViewMatrix.setIdentity()
+modelViewMatrix.setTranslate(modelViewMatrix, [0, 0, -5])
+
+final projectionMatrixBytes = projectionMatrix.toByteArray()
+final modelViewMatrixBytes = modelViewMatrix.toByteArray()
+
+var x = 0
+var y = 0
+var z = -5
+var dx = 0.007
+var dz = 0.005
+var dy = 0.008
+
+@app.onDraw
+def():
+  modelViewMatrix.setIdentity()
+  modelViewMatrix.setTranslate(modelViewMatrix, [x, y, z])
+  modelViewMatrix.setByteArray(modelViewMatrixBytes)
+  x = x + dx
+  z = z + dz
+  y = y + dy
+  if z > -4 or z < -5:
+    dz = -dz
+  if y > 1 or y < 0:
+    dy = -dy
+  if x > 1 or x < -1:
+    dx = -dx
+
+  gl.clearColor(0, 0.2, 0, 1)
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+  gl.viewport(0, 0, app.viewport_width, app.viewport_height)
+
+  gl.bindVertexArray(coneVAO)
+  gl.useProgram(shaderProgram)
+  gl.uniformMatrix4fv(uProjectionMatrix, 1, false, projectionMatrixBytes)
+  gl.uniformMatrix4fv(uModelViewMatrix, 1, false, modelViewMatrixBytes)
+
+  gl.drawElements(gl.LINE_LOOP, len(indices), gl.UNSIGNED_SHORT, 0)
+
+  # clean
+  gl.useProgram(0)
+  gl.bindVertexArray(0)
+
+  sdl.gl.swapWindow(app.window)
+
+app.run()
