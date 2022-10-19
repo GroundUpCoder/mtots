@@ -19,7 +19,6 @@ unsupported = {
   'GLfloat*',
   'GLsync',
   'GLint64*',
-  'const GLfloat*',
   'const GLint*',
   'const GLuint*',
   'const GLenum*',
@@ -203,6 +202,9 @@ def emitInitArg(i, argType, argName):
     print(f'  const char *{argName} = AS_STRING(args[{i}])->chars;')
   elif argType == 'PtrOffset':
     print(f'  const void *{argName} = (void*)(size_t)AS_NUMBER(args[{i}]);')
+  elif argType == 'const GLfloat*':
+    print(f'  const GLfloat *{argName} = '
+          f'(const GLfloat*)AS_BYTE_ARRAY(args[{i}])->buffer;')
   else:
     raise Exception(f"unrecognized parameter type {argType} (in {glFuncName})")
 
@@ -217,6 +219,8 @@ def emitArgTypePattern(argType):
     print('  { TYPE_PATTERN_NUMBER },')
   elif argType == 'const GLchar*':
     print('  { TYPE_PATTERN_STRING },')
+  elif argType == 'const GLfloat*':
+    print('  { TYPE_PATTERN_BYTE_ARRAY_OR_VIEW },')
   else:
     raise Exception(f"unrecognized paramter type (2) {argType}")
 

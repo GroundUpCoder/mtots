@@ -763,6 +763,8 @@ static void defineStandardIOGlobals() {
 
 void defineDefaultGlobals() {
   defineGlobal("PI", NUMBER_VAL(M_PI));
+  defineGlobal("NAN", NUMBER_VAL(0.0/0.0));
+  defineGlobal("INFINITY", NUMBER_VAL(1.0/0.0));
 
   defineGlobal("len", OPERATOR_VAL(OperatorLen));
 

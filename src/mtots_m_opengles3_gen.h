@@ -1275,6 +1275,22 @@ static CFunction funcUniform1f = {
   implUniform1f, "uniform1f",
   sizeof(argsUniform1f)/sizeof(TypePattern), 0, argsUniform1f,
 };
+static ubool implUniform1fv(i16 argCount, Value *args, Value *out) {
+  i32 location = AS_I32(args[0]);
+  i32 count = AS_I32(args[1]);
+  const GLfloat *value = (const GLfloat*)AS_BYTE_ARRAY(args[2])->buffer;
+  glUniform1fv(location, count, value);
+  return UTRUE;
+}
+static TypePattern argsUniform1fv[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_BYTE_ARRAY_OR_VIEW },
+};
+static CFunction funcUniform1fv = {
+  implUniform1fv, "uniform1fv",
+  sizeof(argsUniform1fv)/sizeof(TypePattern), 0, argsUniform1fv,
+};
 static ubool implUniform1i(i16 argCount, Value *args, Value *out) {
   i32 location = AS_I32(args[0]);
   i32 v0 = AS_I32(args[1]);
@@ -1304,6 +1320,22 @@ static TypePattern argsUniform2f[] = {
 static CFunction funcUniform2f = {
   implUniform2f, "uniform2f",
   sizeof(argsUniform2f)/sizeof(TypePattern), 0, argsUniform2f,
+};
+static ubool implUniform2fv(i16 argCount, Value *args, Value *out) {
+  i32 location = AS_I32(args[0]);
+  i32 count = AS_I32(args[1]);
+  const GLfloat *value = (const GLfloat*)AS_BYTE_ARRAY(args[2])->buffer;
+  glUniform2fv(location, count, value);
+  return UTRUE;
+}
+static TypePattern argsUniform2fv[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_BYTE_ARRAY_OR_VIEW },
+};
+static CFunction funcUniform2fv = {
+  implUniform2fv, "uniform2fv",
+  sizeof(argsUniform2fv)/sizeof(TypePattern), 0, argsUniform2fv,
 };
 static ubool implUniform2i(i16 argCount, Value *args, Value *out) {
   i32 location = AS_I32(args[0]);
@@ -1338,6 +1370,22 @@ static TypePattern argsUniform3f[] = {
 static CFunction funcUniform3f = {
   implUniform3f, "uniform3f",
   sizeof(argsUniform3f)/sizeof(TypePattern), 0, argsUniform3f,
+};
+static ubool implUniform3fv(i16 argCount, Value *args, Value *out) {
+  i32 location = AS_I32(args[0]);
+  i32 count = AS_I32(args[1]);
+  const GLfloat *value = (const GLfloat*)AS_BYTE_ARRAY(args[2])->buffer;
+  glUniform3fv(location, count, value);
+  return UTRUE;
+}
+static TypePattern argsUniform3fv[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_BYTE_ARRAY_OR_VIEW },
+};
+static CFunction funcUniform3fv = {
+  implUniform3fv, "uniform3fv",
+  sizeof(argsUniform3fv)/sizeof(TypePattern), 0, argsUniform3fv,
 };
 static ubool implUniform3i(i16 argCount, Value *args, Value *out) {
   i32 location = AS_I32(args[0]);
@@ -1377,6 +1425,22 @@ static CFunction funcUniform4f = {
   implUniform4f, "uniform4f",
   sizeof(argsUniform4f)/sizeof(TypePattern), 0, argsUniform4f,
 };
+static ubool implUniform4fv(i16 argCount, Value *args, Value *out) {
+  i32 location = AS_I32(args[0]);
+  i32 count = AS_I32(args[1]);
+  const GLfloat *value = (const GLfloat*)AS_BYTE_ARRAY(args[2])->buffer;
+  glUniform4fv(location, count, value);
+  return UTRUE;
+}
+static TypePattern argsUniform4fv[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_BYTE_ARRAY_OR_VIEW },
+};
+static CFunction funcUniform4fv = {
+  implUniform4fv, "uniform4fv",
+  sizeof(argsUniform4fv)/sizeof(TypePattern), 0, argsUniform4fv,
+};
 static ubool implUniform4i(i16 argCount, Value *args, Value *out) {
   i32 location = AS_I32(args[0]);
   i32 v0 = AS_I32(args[1]);
@@ -1396,6 +1460,60 @@ static TypePattern argsUniform4i[] = {
 static CFunction funcUniform4i = {
   implUniform4i, "uniform4i",
   sizeof(argsUniform4i)/sizeof(TypePattern), 0, argsUniform4i,
+};
+static ubool implUniformMatrix2fv(i16 argCount, Value *args, Value *out) {
+  i32 location = AS_I32(args[0]);
+  i32 count = AS_I32(args[1]);
+  ubool transpose = AS_BOOL(args[2]);
+  const GLfloat *value = (const GLfloat*)AS_BYTE_ARRAY(args[3])->buffer;
+  glUniformMatrix2fv(location, count, transpose, value);
+  return UTRUE;
+}
+static TypePattern argsUniformMatrix2fv[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_BOOL },
+  { TYPE_PATTERN_BYTE_ARRAY_OR_VIEW },
+};
+static CFunction funcUniformMatrix2fv = {
+  implUniformMatrix2fv, "uniformMatrix2fv",
+  sizeof(argsUniformMatrix2fv)/sizeof(TypePattern), 0, argsUniformMatrix2fv,
+};
+static ubool implUniformMatrix3fv(i16 argCount, Value *args, Value *out) {
+  i32 location = AS_I32(args[0]);
+  i32 count = AS_I32(args[1]);
+  ubool transpose = AS_BOOL(args[2]);
+  const GLfloat *value = (const GLfloat*)AS_BYTE_ARRAY(args[3])->buffer;
+  glUniformMatrix3fv(location, count, transpose, value);
+  return UTRUE;
+}
+static TypePattern argsUniformMatrix3fv[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_BOOL },
+  { TYPE_PATTERN_BYTE_ARRAY_OR_VIEW },
+};
+static CFunction funcUniformMatrix3fv = {
+  implUniformMatrix3fv, "uniformMatrix3fv",
+  sizeof(argsUniformMatrix3fv)/sizeof(TypePattern), 0, argsUniformMatrix3fv,
+};
+static ubool implUniformMatrix4fv(i16 argCount, Value *args, Value *out) {
+  i32 location = AS_I32(args[0]);
+  i32 count = AS_I32(args[1]);
+  ubool transpose = AS_BOOL(args[2]);
+  const GLfloat *value = (const GLfloat*)AS_BYTE_ARRAY(args[3])->buffer;
+  glUniformMatrix4fv(location, count, transpose, value);
+  return UTRUE;
+}
+static TypePattern argsUniformMatrix4fv[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_BOOL },
+  { TYPE_PATTERN_BYTE_ARRAY_OR_VIEW },
+};
+static CFunction funcUniformMatrix4fv = {
+  implUniformMatrix4fv, "uniformMatrix4fv",
+  sizeof(argsUniformMatrix4fv)/sizeof(TypePattern), 0, argsUniformMatrix4fv,
 };
 static ubool implUseProgram(i16 argCount, Value *args, Value *out) {
   u32 program = AS_U32(args[0]);
@@ -1435,6 +1553,20 @@ static CFunction funcVertexAttrib1f = {
   implVertexAttrib1f, "vertexAttrib1f",
   sizeof(argsVertexAttrib1f)/sizeof(TypePattern), 0, argsVertexAttrib1f,
 };
+static ubool implVertexAttrib1fv(i16 argCount, Value *args, Value *out) {
+  u32 index = AS_U32(args[0]);
+  const GLfloat *v = (const GLfloat*)AS_BYTE_ARRAY(args[1])->buffer;
+  glVertexAttrib1fv(index, v);
+  return UTRUE;
+}
+static TypePattern argsVertexAttrib1fv[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_BYTE_ARRAY_OR_VIEW },
+};
+static CFunction funcVertexAttrib1fv = {
+  implVertexAttrib1fv, "vertexAttrib1fv",
+  sizeof(argsVertexAttrib1fv)/sizeof(TypePattern), 0, argsVertexAttrib1fv,
+};
 static ubool implVertexAttrib2f(i16 argCount, Value *args, Value *out) {
   u32 index = AS_U32(args[0]);
   float x = (float)AS_NUMBER(args[1]);
@@ -1450,6 +1582,20 @@ static TypePattern argsVertexAttrib2f[] = {
 static CFunction funcVertexAttrib2f = {
   implVertexAttrib2f, "vertexAttrib2f",
   sizeof(argsVertexAttrib2f)/sizeof(TypePattern), 0, argsVertexAttrib2f,
+};
+static ubool implVertexAttrib2fv(i16 argCount, Value *args, Value *out) {
+  u32 index = AS_U32(args[0]);
+  const GLfloat *v = (const GLfloat*)AS_BYTE_ARRAY(args[1])->buffer;
+  glVertexAttrib2fv(index, v);
+  return UTRUE;
+}
+static TypePattern argsVertexAttrib2fv[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_BYTE_ARRAY_OR_VIEW },
+};
+static CFunction funcVertexAttrib2fv = {
+  implVertexAttrib2fv, "vertexAttrib2fv",
+  sizeof(argsVertexAttrib2fv)/sizeof(TypePattern), 0, argsVertexAttrib2fv,
 };
 static ubool implVertexAttrib3f(i16 argCount, Value *args, Value *out) {
   u32 index = AS_U32(args[0]);
@@ -1468,6 +1614,20 @@ static TypePattern argsVertexAttrib3f[] = {
 static CFunction funcVertexAttrib3f = {
   implVertexAttrib3f, "vertexAttrib3f",
   sizeof(argsVertexAttrib3f)/sizeof(TypePattern), 0, argsVertexAttrib3f,
+};
+static ubool implVertexAttrib3fv(i16 argCount, Value *args, Value *out) {
+  u32 index = AS_U32(args[0]);
+  const GLfloat *v = (const GLfloat*)AS_BYTE_ARRAY(args[1])->buffer;
+  glVertexAttrib3fv(index, v);
+  return UTRUE;
+}
+static TypePattern argsVertexAttrib3fv[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_BYTE_ARRAY_OR_VIEW },
+};
+static CFunction funcVertexAttrib3fv = {
+  implVertexAttrib3fv, "vertexAttrib3fv",
+  sizeof(argsVertexAttrib3fv)/sizeof(TypePattern), 0, argsVertexAttrib3fv,
 };
 static ubool implVertexAttrib4f(i16 argCount, Value *args, Value *out) {
   u32 index = AS_U32(args[0]);
@@ -1488,6 +1648,20 @@ static TypePattern argsVertexAttrib4f[] = {
 static CFunction funcVertexAttrib4f = {
   implVertexAttrib4f, "vertexAttrib4f",
   sizeof(argsVertexAttrib4f)/sizeof(TypePattern), 0, argsVertexAttrib4f,
+};
+static ubool implVertexAttrib4fv(i16 argCount, Value *args, Value *out) {
+  u32 index = AS_U32(args[0]);
+  const GLfloat *v = (const GLfloat*)AS_BYTE_ARRAY(args[1])->buffer;
+  glVertexAttrib4fv(index, v);
+  return UTRUE;
+}
+static TypePattern argsVertexAttrib4fv[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_BYTE_ARRAY_OR_VIEW },
+};
+static CFunction funcVertexAttrib4fv = {
+  implVertexAttrib4fv, "vertexAttrib4fv",
+  sizeof(argsVertexAttrib4fv)/sizeof(TypePattern), 0, argsVertexAttrib4fv,
 };
 static ubool implVertexAttribPointer(i16 argCount, Value *args, Value *out) {
   u32 index = AS_U32(args[0]);
@@ -1627,6 +1801,114 @@ static TypePattern argsEndQuery[] = {
 static CFunction funcEndQuery = {
   implEndQuery, "endQuery",
   sizeof(argsEndQuery)/sizeof(TypePattern), 0, argsEndQuery,
+};
+static ubool implUniformMatrix2x3fv(i16 argCount, Value *args, Value *out) {
+  i32 location = AS_I32(args[0]);
+  i32 count = AS_I32(args[1]);
+  ubool transpose = AS_BOOL(args[2]);
+  const GLfloat *value = (const GLfloat*)AS_BYTE_ARRAY(args[3])->buffer;
+  glUniformMatrix2x3fv(location, count, transpose, value);
+  return UTRUE;
+}
+static TypePattern argsUniformMatrix2x3fv[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_BOOL },
+  { TYPE_PATTERN_BYTE_ARRAY_OR_VIEW },
+};
+static CFunction funcUniformMatrix2x3fv = {
+  implUniformMatrix2x3fv, "uniformMatrix2x3fv",
+  sizeof(argsUniformMatrix2x3fv)/sizeof(TypePattern), 0, argsUniformMatrix2x3fv,
+};
+static ubool implUniformMatrix3x2fv(i16 argCount, Value *args, Value *out) {
+  i32 location = AS_I32(args[0]);
+  i32 count = AS_I32(args[1]);
+  ubool transpose = AS_BOOL(args[2]);
+  const GLfloat *value = (const GLfloat*)AS_BYTE_ARRAY(args[3])->buffer;
+  glUniformMatrix3x2fv(location, count, transpose, value);
+  return UTRUE;
+}
+static TypePattern argsUniformMatrix3x2fv[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_BOOL },
+  { TYPE_PATTERN_BYTE_ARRAY_OR_VIEW },
+};
+static CFunction funcUniformMatrix3x2fv = {
+  implUniformMatrix3x2fv, "uniformMatrix3x2fv",
+  sizeof(argsUniformMatrix3x2fv)/sizeof(TypePattern), 0, argsUniformMatrix3x2fv,
+};
+static ubool implUniformMatrix2x4fv(i16 argCount, Value *args, Value *out) {
+  i32 location = AS_I32(args[0]);
+  i32 count = AS_I32(args[1]);
+  ubool transpose = AS_BOOL(args[2]);
+  const GLfloat *value = (const GLfloat*)AS_BYTE_ARRAY(args[3])->buffer;
+  glUniformMatrix2x4fv(location, count, transpose, value);
+  return UTRUE;
+}
+static TypePattern argsUniformMatrix2x4fv[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_BOOL },
+  { TYPE_PATTERN_BYTE_ARRAY_OR_VIEW },
+};
+static CFunction funcUniformMatrix2x4fv = {
+  implUniformMatrix2x4fv, "uniformMatrix2x4fv",
+  sizeof(argsUniformMatrix2x4fv)/sizeof(TypePattern), 0, argsUniformMatrix2x4fv,
+};
+static ubool implUniformMatrix4x2fv(i16 argCount, Value *args, Value *out) {
+  i32 location = AS_I32(args[0]);
+  i32 count = AS_I32(args[1]);
+  ubool transpose = AS_BOOL(args[2]);
+  const GLfloat *value = (const GLfloat*)AS_BYTE_ARRAY(args[3])->buffer;
+  glUniformMatrix4x2fv(location, count, transpose, value);
+  return UTRUE;
+}
+static TypePattern argsUniformMatrix4x2fv[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_BOOL },
+  { TYPE_PATTERN_BYTE_ARRAY_OR_VIEW },
+};
+static CFunction funcUniformMatrix4x2fv = {
+  implUniformMatrix4x2fv, "uniformMatrix4x2fv",
+  sizeof(argsUniformMatrix4x2fv)/sizeof(TypePattern), 0, argsUniformMatrix4x2fv,
+};
+static ubool implUniformMatrix3x4fv(i16 argCount, Value *args, Value *out) {
+  i32 location = AS_I32(args[0]);
+  i32 count = AS_I32(args[1]);
+  ubool transpose = AS_BOOL(args[2]);
+  const GLfloat *value = (const GLfloat*)AS_BYTE_ARRAY(args[3])->buffer;
+  glUniformMatrix3x4fv(location, count, transpose, value);
+  return UTRUE;
+}
+static TypePattern argsUniformMatrix3x4fv[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_BOOL },
+  { TYPE_PATTERN_BYTE_ARRAY_OR_VIEW },
+};
+static CFunction funcUniformMatrix3x4fv = {
+  implUniformMatrix3x4fv, "uniformMatrix3x4fv",
+  sizeof(argsUniformMatrix3x4fv)/sizeof(TypePattern), 0, argsUniformMatrix3x4fv,
+};
+static ubool implUniformMatrix4x3fv(i16 argCount, Value *args, Value *out) {
+  i32 location = AS_I32(args[0]);
+  i32 count = AS_I32(args[1]);
+  ubool transpose = AS_BOOL(args[2]);
+  const GLfloat *value = (const GLfloat*)AS_BYTE_ARRAY(args[3])->buffer;
+  glUniformMatrix4x3fv(location, count, transpose, value);
+  return UTRUE;
+}
+static TypePattern argsUniformMatrix4x3fv[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_BOOL },
+  { TYPE_PATTERN_BYTE_ARRAY_OR_VIEW },
+};
+static CFunction funcUniformMatrix4x3fv = {
+  implUniformMatrix4x3fv, "uniformMatrix4x3fv",
+  sizeof(argsUniformMatrix4x3fv)/sizeof(TypePattern), 0, argsUniformMatrix4x3fv,
 };
 static ubool implBlitFramebuffer(i16 argCount, Value *args, Value *out) {
   i32 srcX0 = AS_I32(args[0]);
@@ -1920,6 +2202,22 @@ static CFunction funcUniform4ui = {
   implUniform4ui, "uniform4ui",
   sizeof(argsUniform4ui)/sizeof(TypePattern), 0, argsUniform4ui,
 };
+static ubool implClearBufferfv(i16 argCount, Value *args, Value *out) {
+  u32 buffer = AS_U32(args[0]);
+  i32 drawbuffer = AS_I32(args[1]);
+  const GLfloat *value = (const GLfloat*)AS_BYTE_ARRAY(args[2])->buffer;
+  glClearBufferfv(buffer, drawbuffer, value);
+  return UTRUE;
+}
+static TypePattern argsClearBufferfv[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_BYTE_ARRAY_OR_VIEW },
+};
+static CFunction funcClearBufferfv = {
+  implClearBufferfv, "clearBufferfv",
+  sizeof(argsClearBufferfv)/sizeof(TypePattern), 0, argsClearBufferfv,
+};
 static ubool implClearBufferfi(i16 argCount, Value *args, Value *out) {
   u32 buffer = AS_U32(args[0]);
   i32 drawbuffer = AS_I32(args[1]);
@@ -2063,6 +2361,22 @@ static TypePattern argsSamplerParameterf[] = {
 static CFunction funcSamplerParameterf = {
   implSamplerParameterf, "samplerParameterf",
   sizeof(argsSamplerParameterf)/sizeof(TypePattern), 0, argsSamplerParameterf,
+};
+static ubool implSamplerParameterfv(i16 argCount, Value *args, Value *out) {
+  u32 sampler = AS_U32(args[0]);
+  u32 pname = AS_U32(args[1]);
+  const GLfloat *param = (const GLfloat*)AS_BYTE_ARRAY(args[2])->buffer;
+  glSamplerParameterfv(sampler, pname, param);
+  return UTRUE;
+}
+static TypePattern argsSamplerParameterfv[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_BYTE_ARRAY_OR_VIEW },
+};
+static CFunction funcSamplerParameterfv = {
+  implSamplerParameterfv, "samplerParameterfv",
+  sizeof(argsSamplerParameterfv)/sizeof(TypePattern), 0, argsSamplerParameterfv,
 };
 static ubool implVertexAttribDivisor(i16 argCount, Value *args, Value *out) {
   u32 index = AS_U32(args[0]);
@@ -2268,19 +2582,30 @@ static CFunction *genFunctions[] = {
   &funcTexParameteri,
   &funcTexParameteriv,
   &funcUniform1f,
+  &funcUniform1fv,
   &funcUniform1i,
   &funcUniform2f,
+  &funcUniform2fv,
   &funcUniform2i,
   &funcUniform3f,
+  &funcUniform3fv,
   &funcUniform3i,
   &funcUniform4f,
+  &funcUniform4fv,
   &funcUniform4i,
+  &funcUniformMatrix2fv,
+  &funcUniformMatrix3fv,
+  &funcUniformMatrix4fv,
   &funcUseProgram,
   &funcValidateProgram,
   &funcVertexAttrib1f,
+  &funcVertexAttrib1fv,
   &funcVertexAttrib2f,
+  &funcVertexAttrib2fv,
   &funcVertexAttrib3f,
+  &funcVertexAttrib3fv,
   &funcVertexAttrib4f,
+  &funcVertexAttrib4fv,
   &funcVertexAttribPointer,
   &funcViewport,
   &funcReadBuffer,
@@ -2290,6 +2615,12 @@ static CFunction *genFunctions[] = {
   &funcIsQuery,
   &funcBeginQuery,
   &funcEndQuery,
+  &funcUniformMatrix2x3fv,
+  &funcUniformMatrix3x2fv,
+  &funcUniformMatrix2x4fv,
+  &funcUniformMatrix4x2fv,
+  &funcUniformMatrix3x4fv,
+  &funcUniformMatrix4x3fv,
   &funcBlitFramebuffer,
   &funcRenderbufferStorageMultisample,
   &funcFramebufferTextureLayer,
@@ -2308,6 +2639,7 @@ static CFunction *genFunctions[] = {
   &funcUniform2ui,
   &funcUniform3ui,
   &funcUniform4ui,
+  &funcClearBufferfv,
   &funcClearBufferfi,
   &funcCopyBufferSubData,
   &funcGetUniformBlockIndex,
@@ -2317,6 +2649,7 @@ static CFunction *genFunctions[] = {
   &funcBindSampler,
   &funcSamplerParameteri,
   &funcSamplerParameterf,
+  &funcSamplerParameterfv,
   &funcVertexAttribDivisor,
   &funcBindTransformFeedback,
   &funcIsTransformFeedback,
