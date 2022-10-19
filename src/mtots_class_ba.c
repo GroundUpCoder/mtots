@@ -3,15 +3,62 @@
 
 #include <string.h>
 
-static ubool implByteArrayGetItem(i16 argCount, Value *args, Value *out) {
-  Value receiver = args[-1];
-  ObjByteArray *ba;
-  i32 index;
-  if (!IS_BYTE_ARRAY(receiver)) {
-    runtimeError("Expected ByteArray as receiver to ByteArray.__getitem__()");
+static ubool implByteArrayRaw(i16 argCount, Value *args, Value *out) {
+  ObjByteArray *ba = AS_BYTE_ARRAY(args[-1]);
+  *out = OBJ_VAL(copyString((char*)ba->buffer, ba->length));
+  return UTRUE;
+}
+
+static CFunction funcByteArrayRaw = { implByteArrayRaw, "raw" };
+
+static ubool implByteArrayView(i16 argCount, Value *args, Value *out) {
+  ObjByteArray *ba = AS_BYTE_ARRAY(args[-1]);
+  double low = 0, high = ba->length;
+  size_t ilow, ihigh;
+  if (argCount > 0) {
+    low = AS_NUMBER(args[0]);
+    if (low < 0) {
+      low += ba->length;
+    }
+    if (low < 0 || low >= ba->length) {
+      runtimeError("Index %f (low) out of range of ByteArray (%lu)",
+        low, (unsigned long) ba->length);
+      return UFALSE;
+    }
+  }
+  if (argCount > 1) {
+    high = AS_NUMBER(args[1]);
+  }
+  if (high < 0) {
+    high += ba->length;
+  }
+  if (high < 0 || high > ba->length) {
+    runtimeError("Index %f (high) out of range of ByteArray (%lu)",
+      high, (unsigned long) ba->length);
     return UFALSE;
   }
-  ba = AS_BYTE_ARRAY(receiver);
+  ilow = (size_t)low;
+  ihigh = (size_t)high;
+  if (ihigh < ilow) {
+    ihigh = ilow;
+  }
+  *out = OBJ_VAL(newByteArrayView(ihigh - ilow, ba->buffer + ilow, ba));
+  return UTRUE;
+}
+
+static TypePattern argsByteArrayView[] = {
+  { TYPE_PATTERN_NUMBER },
+  { TYPE_PATTERN_NUMBER },
+};
+
+static CFunction funcByteArrayView = {
+  implByteArrayView, "view", 0, 2,
+  argsByteArrayView,
+};
+
+static ubool implByteArrayGetItem(i16 argCount, Value *args, Value *out) {
+  ObjByteArray *ba = AS_BYTE_ARRAY(args[-1]);
+  i32 index;
   index = AS_NUMBER(args[0]);
   if (index < 0) {
     index += ba->length;
@@ -35,15 +82,9 @@ static CFunction funcByteArrayGetItem = { implByteArrayGetItem, "__getitem__",
   argsByteArrayGetItem };
 
 static ubool implByteArraySetItem(i16 argCount, Value *args, Value *out) {
-  Value receiver = args[-1];
-  ObjByteArray *ba;
+  ObjByteArray *ba = AS_BYTE_ARRAY(args[-1]);
   i32 index;
   u8 value;
-  if (!IS_BYTE_ARRAY(receiver)) {
-    runtimeError("Expected ByteArray as receiver to ByteArray.__setitem__()");
-    return UFALSE;
-  }
-  ba = AS_BYTE_ARRAY(receiver);
   index = AS_NUMBER(args[0]);
   if (index < 0) {
     index += ba->length;
@@ -293,20 +334,23 @@ static CFunction funcByteArrayF64 = {
   implByteArrayF64, "f64", 1, 2, argsByteArrayF64,
 };
 
+static CFunction *methods[] = {
+  &funcByteArrayRaw,
+  &funcByteArrayView,
+  &funcByteArrayGetItem,
+  &funcByteArraySetItem,
+  &funcByteArrayF32,
+  &funcByteArrayF64,
+  &funcByteArrayI8,
+  &funcByteArrayU8,
+  &funcByteArrayI16,
+  &funcByteArrayU16,
+  &funcByteArrayI32,
+  &funcByteArrayU32,
+};
+
 void initByteArrayClass() {
   ObjString *tmpstr;
-  CFunction *methods[] = {
-    &funcByteArrayGetItem,
-    &funcByteArraySetItem,
-    &funcByteArrayF32,
-    &funcByteArrayF64,
-    &funcByteArrayI8,
-    &funcByteArrayU8,
-    &funcByteArrayI16,
-    &funcByteArrayU16,
-    &funcByteArrayI32,
-    &funcByteArrayU32,
-  };
   size_t i;
   ObjClass *cls;
 
@@ -318,7 +362,28 @@ void initByteArrayClass() {
 
   for (i = 0; i < sizeof(methods) / sizeof(CFunction*); i++) {
     tmpstr = copyCString(methods[i]->name);
-    methods[i]->receiverType.type = TYPE_PATTERN_BYTE_ARRAY;
+    methods[i]->receiverType.type = TYPE_PATTERN_BYTE_ARRAY_OR_VIEW;
+    push(OBJ_VAL(tmpstr));
+    tableSet(
+      &cls->methods, tmpstr, CFUNCTION_VAL(methods[i]));
+    pop();
+  }
+}
+
+void initByteArrayViewClass() {
+  ObjString *tmpstr;
+  size_t i;
+  ObjClass *cls;
+
+  tmpstr = copyCString("ByteArrayView");
+  push(OBJ_VAL(tmpstr));
+  cls = vm.byteArrayViewClass = newClass(tmpstr);
+  cls->isBuiltinClass = UTRUE;
+  pop();
+
+  for (i = 0; i < sizeof(methods) / sizeof(CFunction*); i++) {
+    tmpstr = copyCString(methods[i]->name);
+    methods[i]->receiverType.type = TYPE_PATTERN_BYTE_ARRAY_OR_VIEW;
     push(OBJ_VAL(tmpstr));
     tableSet(
       &cls->methods, tmpstr, CFUNCTION_VAL(methods[i]));

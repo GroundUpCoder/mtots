@@ -161,6 +161,8 @@ ubool typePatternMatch(TypePattern pattern, Value value) {
       /* fallthrough */
     case TYPE_PATTERN_STRING: return IS_STRING(value);
     case TYPE_PATTERN_BYTE_ARRAY: return IS_BYTE_ARRAY(value);
+    case TYPE_PATTERN_BYTE_ARRAY_OR_VIEW:
+      return IS_BYTE_ARRAY(value) || IS_BYTE_ARRAY_VIEW(value);
     case TYPE_PATTERN_BOOL: return IS_BOOL(value);
     case TYPE_PATTERN_NUMBER: return IS_NUMBER(value);
     case TYPE_PATTERN_LIST_OR_NIL:
@@ -190,6 +192,7 @@ const char *getTypePatternName(TypePattern pattern) {
     case TYPE_PATTERN_STRING_OR_NIL: return "(string|nil)";
     case TYPE_PATTERN_STRING: return "string";
     case TYPE_PATTERN_BYTE_ARRAY: return "ByteArray";
+    case TYPE_PATTERN_BYTE_ARRAY_OR_VIEW: return "(ByteArray|ByteArrayView)";
     case TYPE_PATTERN_BOOL: return "bool";
     case TYPE_PATTERN_NUMBER: return "number";
     case TYPE_PATTERN_LIST_OR_NIL: return "(list|nil)";

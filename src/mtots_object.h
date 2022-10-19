@@ -19,6 +19,7 @@
 #define IS_INSTANCE(value) isObjType(value, OBJ_INSTANCE)
 #define IS_STRING(value) isObjType(value, OBJ_STRING)
 #define IS_BYTE_ARRAY(value) isObjType(value, OBJ_BYTE_ARRAY)
+#define IS_BYTE_ARRAY_VIEW(value) isObjType(value, OBJ_BYTE_ARRAY_VIEW)
 #define IS_LIST(value) isObjType(value, OBJ_LIST)
 #define IS_TUPLE(value) isObjType(value, OBJ_TUPLE)
 #define IS_DICT(value) isObjType(value, OBJ_DICT)
@@ -32,6 +33,7 @@
 #define AS_INSTANCE(value) ((ObjInstance*)AS_OBJ(value))
 #define AS_STRING(value) ((ObjString*)AS_OBJ(value))
 #define AS_BYTE_ARRAY(value) ((ObjByteArray*)AS_OBJ(value))
+#define AS_BYTE_ARRAY_VIEW(value) ((ObjByteArrayView*)AS_OBJ(value))
 #define AS_CSTRING(value) (((ObjString*)AS_OBJ(value))->chars)
 #define AS_LIST(value) ((ObjList*)AS_OBJ(value))
 #define AS_TUPLE(value) ((ObjTuple*)AS_OBJ(value))
@@ -59,6 +61,7 @@ typedef enum {
   OBJ_INSTANCE,
   OBJ_STRING,
   OBJ_BYTE_ARRAY,
+  OBJ_BYTE_ARRAY_VIEW,
   OBJ_LIST,
   OBJ_TUPLE,
   OBJ_DICT,
@@ -103,6 +106,13 @@ typedef struct ObjByteArray {
   size_t length;
   unsigned char *buffer;
 } ObjByteArray;
+
+/* NOTE: The fields in ObjByteArrayView should always match ObjByteArray
+ * In some cases, ObjByteArrayViews will be cast as ObjByteArray */
+typedef struct ObjByteArrayView {
+  ObjByteArray obj;
+  ObjByteArray *array;    /* for GC to keep underlying array alive */
+} ObjByteArrayView;
 
 typedef struct ObjList {
   Obj obj;
@@ -226,6 +236,8 @@ ObjString *copyCString(const char *chars);
 ObjByteArray *newByteArray(size_t size);
 ObjByteArray *takeByteArray(unsigned char *buffer, size_t size);
 ObjByteArray *copyByteArray(const unsigned char *buffer, size_t size);
+ObjByteArrayView *newByteArrayView(
+    size_t length, unsigned char *buffer, ObjByteArray *array);
 ObjList *newList(size_t size);
 ObjTuple *copyTuple(Value *buffer, size_t length);
 ObjDict *newDict();

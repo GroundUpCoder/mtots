@@ -221,7 +221,7 @@ static ubool implCreateRGBSurfaceFrom(i16 argCount, Value *args, Value *out) {
 }
 
 static TypePattern argsCreateRGBSurfaceFrom[] = {
-  { TYPE_PATTERN_BYTE_ARRAY },
+  { TYPE_PATTERN_BYTE_ARRAY_OR_VIEW },
   { TYPE_PATTERN_NUMBER },
   { TYPE_PATTERN_NUMBER },
   { TYPE_PATTERN_NUMBER },

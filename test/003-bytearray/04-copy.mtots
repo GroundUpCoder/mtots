@@ -1,7 +1,7 @@
 
 final ba1 = ByteArray([1, 2, 3])
-print('repr(str(ba1)) = %s' % [repr(str(ba1))])
+print('repr(ba1.raw()) = %s' % [repr(ba1.raw())])
 final ba2 = ByteArray(ba1)
-print('repr(str(ba2)) = %s' % [repr(str(ba2))])
+print('repr(ba2.raw()) = %s' % [repr(ba2.raw())])
 print('ba1 == ba2 = %s' % [ba1 == ba2])
 

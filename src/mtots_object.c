@@ -246,6 +246,31 @@ ObjByteArray *copyByteArray(const unsigned char *buffer, size_t length) {
   return takeByteArray(newBuffer, length);
 }
 
+static ObjByteArray *getUnderlyingByteArray(ObjByteArray *arrayOrView) {
+  while (arrayOrView->obj.type == OBJ_BYTE_ARRAY_VIEW) {
+    arrayOrView = ((ObjByteArrayView*)arrayOrView)->array;
+  }
+  if (arrayOrView->obj.type != OBJ_BYTE_ARRAY) {
+    abort(); /* some other type of object? needs to be handled */
+  }
+  return arrayOrView;
+}
+
+ObjByteArrayView *newByteArrayView(
+    size_t length, unsigned char *buffer, ObjByteArray *array) {
+  ObjByteArrayView *view = ALLOCATE_OBJ(ObjByteArrayView, OBJ_BYTE_ARRAY_VIEW);
+  view->obj.length = length;
+  view->obj.buffer = buffer;
+  view->array = getUnderlyingByteArray(array);
+  if (view->obj.buffer < array->buffer ||
+      view->obj.buffer >= array->buffer + array->length ||
+      view->obj.buffer + view->obj.length > array->buffer + array->length) {
+    /* Invalid view */
+    abort();
+  }
+  return view;
+}
+
 ObjList *newList(size_t size) {
   ObjList *list = ALLOCATE_OBJ(ObjList, OBJ_LIST);
   list->capacity = 0;
@@ -362,6 +387,7 @@ ObjClass *getClass(Value value) {
         case OBJ_INSTANCE: return AS_INSTANCE(value)->klass;
         case OBJ_STRING: return vm.stringClass;
         case OBJ_BYTE_ARRAY: return vm.byteArrayClass;
+        case OBJ_BYTE_ARRAY_VIEW: return vm.byteArrayViewClass;
         case OBJ_LIST: return vm.listClass;
         case OBJ_TUPLE: return vm.tupleClass;
         case OBJ_DICT: return vm.dictClass;
@@ -445,6 +471,7 @@ const char *getObjectTypeName(ObjType type) {
   case OBJ_INSTANCE: return "OBJ_INSTANCE";
   case OBJ_STRING: return "OBJ_STRING";
   case OBJ_BYTE_ARRAY: return "OBJ_BYTE_ARRAY";
+  case OBJ_BYTE_ARRAY_VIEW: return "OBJ_BYTE_ARRAY_VIEW";
   case OBJ_LIST: return "OBJ_LIST";
   case OBJ_TUPLE: return "OBJ_TUPLE";
   case OBJ_DICT: return "OBJ_DICT";

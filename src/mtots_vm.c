@@ -198,6 +198,7 @@ void initVM() {
   vm.numberClass = NULL;
   vm.stringClass = NULL;
   vm.byteArrayClass = NULL;
+  vm.byteArrayViewClass = NULL;
   vm.listClass = NULL;
   vm.tupleClass = NULL;
   vm.dictClass = NULL;
@@ -233,6 +234,7 @@ void initVM() {
   initNoMethodClass(&vm.numberClass, "Number");
   initStringClass();
   initByteArrayClass();
+  initByteArrayViewClass();
   initListClass();
   initNoMethodClass(&vm.tupleClass, "Tuple");
   initDictClass();

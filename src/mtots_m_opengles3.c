@@ -16,13 +16,13 @@ static ubool implBufferData(i16 argCount, Value *args, Value *out) {
   GLenum target = AS_U32(args[0]);
   ObjByteArray *ba = AS_BYTE_ARRAY(args[1]);
   GLenum usage = AS_U32(args[2]);
-  glBufferData(target, ba->size, ba->buffer, usage);
+  glBufferData(target, ba->length, ba->buffer, usage);
   return UTRUE;
 }
 
 static TypePattern argsBufferData[] = {
   { TYPE_PATTERN_NUMBER },
-  { TYPE_PATTERN_BYTE_ARRAY },
+  { TYPE_PATTERN_BYTE_ARRAY_OR_VIEW },
   { TYPE_PATTERN_NUMBER },
 };
 

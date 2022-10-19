@@ -54,6 +54,7 @@ typedef struct {
   ObjClass *numberClass;
   ObjClass *stringClass;
   ObjClass *byteArrayClass;
+  ObjClass *byteArrayViewClass;
   ObjClass *listClass;
   ObjClass *tupleClass;
   ObjClass *dictClass;

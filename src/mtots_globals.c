@@ -207,7 +207,7 @@ ubool implRepr(i16 argCount, Value *args, Value *out) {
 
           /* account for characters that need to be escaped */
           for (i = 0; i < str->length; i++) {
-            char c = str->chars[i];
+            unsigned char c = (unsigned char) str->chars[i];
             if ((c >= 1 && c <= 31) || c >= 127) {
               charCount += 3; /* explicit hex escape */
             } else {
@@ -224,12 +224,12 @@ ubool implRepr(i16 argCount, Value *args, Value *out) {
           charsTop = chars = ALLOCATE(char, charCount + 1);
           *charsTop++ = '"';
           for (i = 0; i < str->length; i++) {
-            char c = str->chars[i];
+            unsigned char c = (unsigned char) str->chars[i];
             if ((c >= 1 && c <= 31) || c >= 127) {
               u8 digit1 = c / 16, digit2 = c % 16;
               *charsTop++ = '\\';
               *charsTop++ = 'x';
-              *charsTop++ = '0' + digit1;
+              *charsTop++ = c < 127 ? '0' + digit1 : 'A' + digit1 - 10;
               if (digit2 < 10) {
                 *charsTop++ = '0' + digit2;
               } else {
@@ -277,6 +277,14 @@ ubool implRepr(i16 argCount, Value *args, Value *out) {
           ObjByteArray *byteArray = AS_BYTE_ARRAY(args[0]);
           snprintf(buffer, 128,
             "<ByteArray (%lu)>", (unsigned long)byteArray->length);
+          *out = OBJ_VAL(copyCString(buffer));
+          break;
+        }
+        case OBJ_BYTE_ARRAY_VIEW: {
+          char buffer[128];
+          ObjByteArray *byteArray = AS_BYTE_ARRAY(args[0]);
+          snprintf(buffer, 128,
+            "<ByteArrayView (%lu)>", (unsigned long)byteArray->length);
           *out = OBJ_VAL(copyCString(buffer));
           break;
         }
@@ -419,11 +427,6 @@ ubool implStr(i16 argCount, Value *args, Value *out) {
     *out = *args;
     return UTRUE;
   }
-  if (IS_BYTE_ARRAY(*args)) {
-    ObjByteArray *ba = AS_BYTE_ARRAY(*args);
-    *out = OBJ_VAL(copyString((const char*)ba->buffer, ba->length));
-    return UTRUE;
-  }
   return implRepr(argCount, args, out);
 }
 
@@ -457,7 +460,7 @@ static ubool implOrd(i16 argCount, Value *args, Value *out) {
       (long) str->length);
     return UFALSE;
   }
-  *out = NUMBER_VAL(str->chars[0]);
+  *out = NUMBER_VAL((unsigned char)str->chars[0]);
   return UTRUE;
 }
 
@@ -790,6 +793,7 @@ void defineDefaultGlobals() {
   tableSet(&vm.globals, vm.numberClass->name, OBJ_VAL(vm.numberClass));
   tableSet(&vm.globals, vm.stringClass->name, OBJ_VAL(vm.stringClass));
   tableSet(&vm.globals, vm.byteArrayClass->name, OBJ_VAL(vm.byteArrayClass));
+  tableSet(&vm.globals, vm.byteArrayViewClass->name, OBJ_VAL(vm.byteArrayViewClass));
   tableSet(&vm.globals, vm.listClass->name, OBJ_VAL(vm.listClass));
   tableSet(&vm.globals, vm.tupleClass->name, OBJ_VAL(vm.tupleClass));
   tableSet(&vm.globals, vm.dictClass->name, OBJ_VAL(vm.dictClass));
