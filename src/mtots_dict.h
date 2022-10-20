@@ -5,12 +5,17 @@
 
 struct ObjTuple;
 
-typedef struct {
+typedef struct DictEntry {
   Value key;
   Value value;
+  struct DictEntry *prev;
+  struct DictEntry *next;
 } DictEntry;
 
-typedef struct {
+/* TODO: Do what Python does with Dict layout
+ * https://mail.python.org/pipermail/python-dev/2012-December/123028.html
+ */
+typedef struct Dict {
   /* Count is stored for the purposes of
    * keeping track of the load factor.
    * The count used for this purpose includes
@@ -23,7 +28,13 @@ typedef struct {
   size_t capacity; /* 0 or (8 * <power of 2>) */
   size_t size;     /* actual number of active elements */
   DictEntry *entries;
+  DictEntry *first;
+  DictEntry *last;
 } Dict;
+
+typedef struct DictIterator {
+  DictEntry *entry;
+} DictIterator;
 
 u32 hashval(Value value);
 
@@ -39,5 +50,8 @@ struct ObjTuple *dictFindTuple(
     u32 hash);
 void dictRemoveWhite(Dict *dict);
 void markDict(Dict *dict);
+
+void initDictIterator(DictIterator *di, Dict *dict);
+ubool dictIteratorNext(DictIterator *di, Value *out);
 
 #endif/*mtots_dict_h*/

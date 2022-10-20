@@ -11,6 +11,8 @@ void initDict(Dict *dict) {
   dict->capacity = 0;
   dict->size = 0;
   dict->entries = NULL;
+  dict->first = NULL;
+  dict->last = NULL;
 }
 
 void freeDict(Dict *dict) {
@@ -90,25 +92,39 @@ ubool dictGet(Dict *dict, Value key, Value *value) {
 static void adjustCapacity(Dict *dict, size_t capacity) {
   size_t i;
   DictEntry *entries = ALLOCATE(DictEntry, capacity);
+  DictEntry *p, *first = NULL, *last = NULL;
   for (i = 0; i < capacity; i++) {
     entries[i].key = EMPTY_KEY_VAL();
     entries[i].value = NIL_VAL();
   }
 
   dict->count = 0;
-  for (i = 0; i < dict->capacity; i++) {
-    DictEntry *entry = &dict->entries[i], *dest;
-    if (IS_EMPTY_KEY(entry->key)) continue;
+  for (p = dict->first; p; p = p->next) {
+    DictEntry *dest;
 
-    dest = findEntry(entries, capacity, entry->key);
-    dest->key = entry->key;
-    dest->value = entry->value;
+    dest = findEntry(entries, capacity, p->key);
+    dest->key = p->key;
+    dest->value = p->value;
+
+    if (first == NULL) {
+      dest->prev = NULL;
+      dest->next = NULL;
+      first = last = dest;
+    } else {
+      dest->prev = last;
+      dest->next = NULL;
+      last->next = dest;
+      last = dest;
+    }
+
     dict->count++;
   }
 
   FREE_ARRAY(DictEntry, dict->entries, dict->capacity);
   dict->entries = entries;
   dict->capacity = capacity;
+  dict->first = first;
+  dict->last = last;
 }
 
 ubool dictSet(Dict *dict, Value key, Value value) {
@@ -132,6 +148,16 @@ ubool dictSet(Dict *dict, Value key, Value value) {
       dict->count++;
     }
     dict->size++;
+
+    if (dict->last == NULL) {
+      dict->first = dict->last = entry;
+      entry->prev = entry->next = NULL;
+    } else {
+      entry->prev = dict->last;
+      entry->next = NULL;
+      dict->last->next = entry;
+      dict->last = entry;
+    }
   }
   entry->key = key;
   entry->value = value;
@@ -149,6 +175,19 @@ ubool dictDelete(Dict *dict, Value key) {
   if (IS_EMPTY_KEY(entry->key)) {
     return UFALSE;
   }
+
+  /* Update linked list */
+  if (entry->prev == NULL) {
+    dict->first = entry->next;
+  } else {
+    entry->prev->next = entry->next;
+  }
+  if (entry->next == NULL) {
+    dict->last = entry->prev;
+  } else {
+    entry->next->prev = entry->prev;
+  }
+  entry->prev = entry->next = NULL;
 
   /* Place a tombstone in the entry */
   entry->key = EMPTY_KEY_VAL();
@@ -217,4 +256,21 @@ void markDict(Dict *dict) {
       markValue(entry->value);
     }
   }
+}
+
+void initDictIterator(DictIterator *di, Dict *dict) {
+  di->entry = dict->first;
+}
+
+ubool dictIteratorDone(DictIterator *di) {
+  return di->entry == NULL;
+}
+
+ubool dictIteratorNext(DictIterator *di, Value *out) {
+  if (di->entry) {
+    *out = di->entry->key;
+    di->entry = di->entry->next;
+    return UTRUE;
+  }
+  return UFALSE;
 }

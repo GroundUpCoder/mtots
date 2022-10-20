@@ -66,18 +66,14 @@ static CFunction funcDictContains = { implDictContains, "__contains__", 1 };
 typedef struct {
   ObjNativeClosure obj;
   ObjDict *dict;
-  size_t index;
+  DictIterator di;
 } ObjDictIterator;
 
 static ubool implDictIterator(
     void *it, i16 argCount, Value *args, Value *out) {
   ObjDictIterator *iter = (ObjDictIterator*)it;
-  while (iter->index < iter->dict->dict.capacity) {
-    DictEntry *entry = &iter->dict->dict.entries[iter->index++];
-    if (!IS_EMPTY_KEY(entry->key)) {
-      *out = entry->key;
-      return UTRUE;
-    }
+  if (dictIteratorNext(&iter->di, out)) {
+    return UTRUE;
   }
   *out = STOP_ITERATION_VAL();
   return UTRUE;
@@ -104,7 +100,7 @@ static ubool implDictIter(i16 argCount, Value *args, Value *out) {
     NULL,
     "DictIterator", 0, 0);
   iter->dict = dict;
-  iter->index = 0;
+  initDictIterator(&iter->di, &dict->dict);
   *out = OBJ_VAL(iter);
   return UTRUE;
 }
