@@ -802,11 +802,11 @@ loop:
         break;
       }
       case OP_GET_FIELD: {
-        ObjInstance *instance;
         ObjString *name;
         Value value = NIL_VAL();
 
         if (IS_INSTANCE(peek(0))) {
+          ObjInstance *instance;
           instance = AS_INSTANCE(peek(0));
           name = READ_STRING();
           if (tableGet(&instance->fields, name, &value)) {
@@ -814,8 +814,21 @@ loop:
             push(value);
             break;
           }
+          runtimeError(
+            "Field '%s' not found in %s",
+            name->chars, instance->klass->name->chars);
+          RETURN_RUNTIME_ERROR();
+        }
 
-          runtimeError("Undefined field '%s'", name->chars);
+        if (IS_DICT(peek(0))) {
+          ObjDict *d = AS_DICT(peek(0));
+          name = READ_STRING();
+          if (dictGet(&d->dict, OBJ_VAL(name), &value)) {
+            pop(); /* Instance */
+            push(value);
+            break;
+          }
+          runtimeError("Field '%s' not found in Dict", name->chars);
           RETURN_RUNTIME_ERROR();
         }
 
@@ -829,7 +842,7 @@ loop:
               break;
             } else {
               runtimeError(
-                "Field %s not found on %s",
+                "Field '%s' not found in native type %s",
                 name->chars,
                 getKindName(peek(0)));
               RETURN_RUNTIME_ERROR();
@@ -843,11 +856,20 @@ loop:
       }
       case OP_SET_FIELD: {
         Value value;
-        ObjInstance *instance;
 
         if (IS_INSTANCE(peek(1))) {
+          ObjInstance *instance;
           instance = AS_INSTANCE(peek(1));
           tableSet(&instance->fields, READ_STRING(), peek(0));
+          value = pop();
+          pop();
+          push(value);
+          break;
+        }
+
+        if (IS_DICT(peek(1))) {
+          ObjDict *d = AS_DICT(peek(1));
+          dictSet(&d->dict, OBJ_VAL(READ_STRING()), peek(0));
           value = pop();
           pop();
           push(value);
@@ -874,7 +896,7 @@ loop:
         }
 
         runtimeError(
-          "%s values do not have have fields", getKindName(peek(0)));
+          "%s values do not have have fields", getKindName(peek(1)));
         RETURN_RUNTIME_ERROR();
         break;
       }
