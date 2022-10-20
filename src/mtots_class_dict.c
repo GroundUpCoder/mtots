@@ -47,7 +47,7 @@ static ubool implDictDelete(i16 argCount, Value *args, Value *out) {
   return UTRUE;
 }
 
-static CFunction funcDictRemove = { implDictDelete, "delete", 1 };
+static CFunction funcDictDelete = { implDictDelete, "delete", 1 };
 
 static ubool implDictContains(i16 argCount, Value *args, Value *out) {
   Value receiver = args[-1], dummy;
@@ -112,7 +112,7 @@ void initDictClass() {
   CFunction *methods[] = {
     &funcDictGetItem,
     &funcDictSetItem,
-    &funcDictRemove,
+    &funcDictDelete,
     &funcDictContains,
     &funcDictIter,
   };
