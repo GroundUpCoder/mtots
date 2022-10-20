@@ -266,7 +266,16 @@ ubool dictIteratorDone(DictIterator *di) {
   return di->entry == NULL;
 }
 
-ubool dictIteratorNext(DictIterator *di, Value *out) {
+ubool dictIteratorNext(DictIterator *di, DictEntry **out) {
+  if (di->entry) {
+    *out = di->entry;
+    di->entry = di->entry->next;
+    return UTRUE;
+  }
+  return UFALSE;
+}
+
+ubool dictIteratorNextValue(DictIterator *di, Value *out) {
   if (di->entry) {
     *out = di->entry->key;
     di->entry = di->entry->next;

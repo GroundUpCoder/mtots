@@ -298,15 +298,17 @@ ubool implRepr(i16 argCount, Value *args, Value *out) {
         }
         case OBJ_DICT: {
           ObjDict *dict = AS_DICT(*args);
-          size_t i, j, charCount = 0;
+          size_t j, charCount = 0;
           Value *stackStart = vm.stackTop, *stackptr = vm.stackTop;
           char *chars, *charsTop;
+          DictIterator di;
+          DictEntry *entry;
 
           /* stringify all entries in the dict and push them on the stack
            * (for GC reasons) */
-          for (i = j = 0; i < dict->dict.capacity; i++) {
+          initDictIterator(&di, &dict->dict);
+          for (j = 0; dictIteratorNext(&di, &entry);) {
             Value strkey, strval;
-            DictEntry *entry = &dict->dict.entries[i];
             if (IS_EMPTY_KEY(entry->key)) {
               continue;
             }
@@ -346,8 +348,8 @@ ubool implRepr(i16 argCount, Value *args, Value *out) {
           charsTop = chars = ALLOCATE(char, charCount + 1);
           *charsTop++ = '{';
 
-          for (i = j = 0; i < dict->dict.capacity; i++) {
-            DictEntry *entry = &dict->dict.entries[i];
+          initDictIterator(&di, &dict->dict);
+          for (j = 0; dictIteratorNext(&di, &entry);) {
             ObjString *itemstr;
             if (IS_EMPTY_KEY(entry->key)) {
               continue;

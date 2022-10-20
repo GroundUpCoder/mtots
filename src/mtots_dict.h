@@ -52,6 +52,7 @@ void dictRemoveWhite(Dict *dict);
 void markDict(Dict *dict);
 
 void initDictIterator(DictIterator *di, Dict *dict);
-ubool dictIteratorNext(DictIterator *di, Value *out);
+ubool dictIteratorNext(DictIterator *di, DictEntry **out);
+ubool dictIteratorNextValue(DictIterator *di, Value *out);
 
 #endif/*mtots_dict_h*/

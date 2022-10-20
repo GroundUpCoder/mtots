@@ -65,12 +65,13 @@ ubool valuesEqual(Value a, Value b) {
         }
         case OBJ_DICT: {
           ObjDict *dictA = (ObjDict*)objA, *dictB = (ObjDict*)objB;
-          size_t i;
+          DictIterator di;
+          DictEntry *entry;
           if (dictA->dict.size != dictB->dict.size) {
             return UFALSE;
           }
-          for (i = 0; i < dictA->dict.capacity; i++) {
-            DictEntry *entry = &dictA->dict.entries[i];
+          initDictIterator(&di, &dictA->dict);
+          while (dictIteratorNext(&di, &entry)) {
             Value key = entry->key;
             if (!IS_EMPTY_KEY(key)) {
               Value value1 = entry->value, value2;
