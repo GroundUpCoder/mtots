@@ -78,6 +78,45 @@ static ubool implDictIter(i16 argCount, Value *args, Value *out) {
 
 static CFunction funcDictIter = { implDictIter, "__iter__", 0 };
 
+/**
+ * "Reverse Get" or inverse lookup
+ *
+ * Find a key with the given value
+ * If more than one entry has the same value, this function
+ * will return the first matching key that would've been returned
+ * in an iteration of the dictionary
+ *
+ * Implementation is a slow linear search, but a method like this
+ * is still handy sometimes.
+ */
+static ubool implDictRget(i16 argCount, Value *args, Value *out) {
+  ObjDict *dict = AS_DICT(args[-1]);
+  Value value = args[0];
+  DictIterator di;
+  DictEntry *entry;
+
+  initDictIterator(&di, &dict->dict);
+  while (dictIteratorNext(&di, &entry)) {
+    if (valuesEqual(entry->value, value)) {
+      *out = entry->key;
+      return UTRUE;
+    }
+  }
+
+  if (argCount > 1) {
+    /* If the optional second argument is provided, we return that
+     * when a matching entry is not found */
+    *out = args[1];
+    return UTRUE;
+  }
+  /* If no entry is found, and no optional argument is provided
+   * we throw an error */
+  runtimeError("No entry with given value found in Dict");
+  return UFALSE;
+}
+
+static CFunction funcDictRget = { implDictRget, "rget", 1, 2 };
+
 void initDictClass() {
   ObjString *tmpstr;
   CFunction *methods[] = {
@@ -86,6 +125,7 @@ void initDictClass() {
     &funcDictDelete,
     &funcDictContains,
     &funcDictIter,
+    &funcDictRget,
   };
   size_t i;
   ObjClass *cls;
