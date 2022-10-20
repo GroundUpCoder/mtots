@@ -310,7 +310,6 @@ static void markRoots() {
   markObject((Obj*)vm.operatorClass);
   markObject((Obj*)vm.classClass);
   markObject((Obj*)vm.fileClass);
-  markObject((Obj*)vm.tableClass);
   markObject((Obj*)vm.stdinFile);
   markObject((Obj*)vm.stdoutFile);
   markObject((Obj*)vm.stderrFile);

@@ -63,10 +63,6 @@ typedef struct {
   ObjClass *classClass;
   ObjClass *fileClass;
 
-  /* Class to use when we want to an instance as
-   * a bag of values */
-  ObjClass *tableClass;
-
   ObjFile *stdinFile;
   ObjFile *stdoutFile;
   ObjFile *stderrFile;

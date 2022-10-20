@@ -805,7 +805,6 @@ void defineDefaultGlobals() {
   tableSet(&vm.globals, vm.operatorClass->name, OBJ_VAL(vm.operatorClass));
   tableSet(&vm.globals, vm.classClass->name, OBJ_VAL(vm.classClass));
   tableSet(&vm.globals, vm.fileClass->name, OBJ_VAL(vm.fileClass));
-  tableSet(&vm.globals, vm.tableClass->name, OBJ_VAL(vm.tableClass));
 
   defineStandardIOGlobals();
 }

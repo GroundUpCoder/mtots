@@ -8,7 +8,6 @@
 #include "mtots_class_file.h"
 #include "mtots_class_str.h"
 #include "mtots_class_dict.h"
-#include "mtots_class_table.h"
 #include "mtots_class_ba.h"
 #include "mtots_class_class.h"
 #include "mtots_import.h"
@@ -206,7 +205,6 @@ void initVM() {
   vm.operatorClass = NULL;
   vm.classClass = NULL;
   vm.fileClass = NULL;
-  vm.tableClass = NULL;
   vm.stdinFile = NULL;
   vm.stdoutFile = NULL;
   vm.stderrFile = NULL;
@@ -242,7 +240,6 @@ void initVM() {
   initNoMethodClass(&vm.operatorClass, "Operator");
   initClassClass();
   initFileClass();
-  initTableClass();
 
   defineDefaultGlobals();
   addNativeModules();
