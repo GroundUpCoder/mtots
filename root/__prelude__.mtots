@@ -29,6 +29,13 @@ def set(iterable):
   return s
 
 
+def dict(iterable):
+  final d = {}
+  for key in iterable:
+    d[key] = iterable[key]
+  return d
+
+
 def sorted(iterable, key=nil):
   final items = []
   for item in iterable:
