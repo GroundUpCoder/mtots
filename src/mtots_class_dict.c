@@ -72,7 +72,7 @@ typedef struct {
 static ubool implDictIterator(
     void *it, i16 argCount, Value *args, Value *out) {
   ObjDictIterator *iter = (ObjDictIterator*)it;
-  if (dictIteratorNextValue(&iter->di, out)) {
+  if (dictIteratorNextKey(&iter->di, out)) {
     return UTRUE;
   }
   *out = STOP_ITERATION_VAL();

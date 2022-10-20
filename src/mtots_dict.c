@@ -275,7 +275,7 @@ ubool dictIteratorNext(DictIterator *di, DictEntry **out) {
   return UFALSE;
 }
 
-ubool dictIteratorNextValue(DictIterator *di, Value *out) {
+ubool dictIteratorNextKey(DictIterator *di, Value *out) {
   if (di->entry) {
     *out = di->entry->key;
     di->entry = di->entry->next;

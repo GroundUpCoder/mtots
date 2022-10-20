@@ -53,6 +53,6 @@ void markDict(Dict *dict);
 
 void initDictIterator(DictIterator *di, Dict *dict);
 ubool dictIteratorNext(DictIterator *di, DictEntry **out);
-ubool dictIteratorNextValue(DictIterator *di, Value *out);
+ubool dictIteratorNextKey(DictIterator *di, Value *out);
 
 #endif/*mtots_dict_h*/
