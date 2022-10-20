@@ -164,6 +164,27 @@ ubool dictSet(Dict *dict, Value key, Value value) {
   return isNewKey;
 }
 
+/* Like dictSet, but a version that's more convenient for use in
+ * native code in two ways:
+ *   1) the key parameter is a C-string that is automatically be converted
+ *      to an ObjString and properly retained and released using the stack
+ *   2) the value parameter will retained and popped from the stack, so that
+ *      even if dictSet or copyCString triggers a reallocation, the value
+ *      will not be collected.
+ */
+ubool dictSetN(Dict *dict, const char *key, Value value) {
+  ubool result;
+  ObjString *keystr;
+
+  push(value);
+  keystr = copyCString(key);
+  push(OBJ_VAL(keystr));
+  result = dictSet(dict, OBJ_VAL(keystr), value);
+  pop(); /* keystr */
+  pop(); /* value */
+  return result;
+}
+
 ubool dictDelete(Dict *dict, Value key) {
   DictEntry *entry;
 

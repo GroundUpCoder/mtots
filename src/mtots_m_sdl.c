@@ -22,8 +22,8 @@
 static ubool impl(i16 argCount, Value *args, Value *out) {
   ObjInstance *module = AS_INSTANCE(args[0]);
   size_t i;
-  ObjInstance *inst;
   ObjInstance *sdlglModule;
+  ObjDict *dict;
 
   audioTracksetMutex = SDL_CreateMutex();
 
@@ -54,25 +54,25 @@ static ubool impl(i16 argCount, Value *args, Value *out) {
   tableSetN(&module->fields, "gl", OBJ_VAL(sdlglModule));
   pop(); /* sdlglModule */
 
-  inst = newInstance(vm.tableClass);
-  tableSetN(&module->fields, "key", OBJ_VAL(inst));
+  dict = newDict();
+  tableSetN(&module->fields, "key", OBJ_VAL(dict));
   for (i = 0; i < sizeof(keyConstants)/sizeof(KeyConstant); i++) {
     KeyConstant c = keyConstants[i];
-    tableSetN(&inst->fields, c.name, NUMBER_VAL(c.value));
+    dictSetN(&dict->dict, c.name, NUMBER_VAL(c.value));
   }
 
-  inst = newInstance(vm.tableClass);
-  tableSetN(&module->fields, "scancode", OBJ_VAL(inst));
+  dict = newDict();
+  tableSetN(&module->fields, "scancode", OBJ_VAL(dict));
   for (i = 0; i < sizeof(scanConstants)/sizeof(KeyConstant); i++) {
     KeyConstant c = scanConstants[i];
-    tableSetN(&inst->fields, c.name, NUMBER_VAL(c.value));
+    dictSetN(&dict->dict, c.name, NUMBER_VAL(c.value));
   }
 
-  inst = newInstance(vm.tableClass);
-  tableSetN(&module->fields, "button", OBJ_VAL(inst));
+  dict = newDict();
+  tableSetN(&module->fields, "button", OBJ_VAL(dict));
   for (i = 0; i < sizeof(buttonConstants)/sizeof(KeyConstant); i++) {
     KeyConstant c = buttonConstants[i];
-    tableSetN(&inst->fields, c.name, NUMBER_VAL(c.value));
+    dictSetN(&dict->dict, c.name, NUMBER_VAL(c.value));
   }
 
   for (i = 0; i < sizeof(numericConstants)/sizeof(NumericConstant); i++) {
