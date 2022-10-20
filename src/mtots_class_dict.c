@@ -5,13 +5,7 @@
 #include "mtots_memory.h"
 
 static ubool implDictGetItem(i16 argCount, Value *args, Value *out) {
-  Value receiver = args[-1];
-  ObjDict *dict;
-  if (!IS_DICT(receiver)) {
-    runtimeError("Expected dict as receiver to Dict.__getitem__()");
-    return UFALSE;
-  }
-  dict = AS_DICT(receiver);
+  ObjDict *dict = AS_DICT(args[-1]);
   if (!dictGet(&dict->dict, args[0], out)) {
     runtimeError("Key not found in dict");
     return UFALSE;
@@ -22,13 +16,7 @@ static ubool implDictGetItem(i16 argCount, Value *args, Value *out) {
 static CFunction funcDictGetItem = { implDictGetItem, "__getitem__", 1 };
 
 static ubool implDictSetItem(i16 argCount, Value *args, Value *out) {
-  Value receiver = args[-1];
-  ObjDict *dict;
-  if (!IS_DICT(receiver)) {
-    runtimeError("Expected dict as receiver to Dict.__setitem__()");
-    return UFALSE;
-  }
-  dict = AS_DICT(receiver);
+  ObjDict *dict = AS_DICT(args[-1]);
   *out = BOOL_VAL(dictSet(&dict->dict, args[0], args[1]));
   return UTRUE;
 }
@@ -36,13 +24,7 @@ static ubool implDictSetItem(i16 argCount, Value *args, Value *out) {
 static CFunction funcDictSetItem = { implDictSetItem, "__setitem__", 2 };
 
 static ubool implDictDelete(i16 argCount, Value *args, Value *out) {
-  Value receiver = args[-1];
-  ObjDict *dict;
-  if (!IS_DICT(receiver)) {
-    runtimeError("Expected dict as receiver to Dict.delete()");
-    return UFALSE;
-  }
-  dict = AS_DICT(receiver);
+  ObjDict *dict = AS_DICT(args[-1]);
   *out = BOOL_VAL(dictDelete(&dict->dict, args[0]));
   return UTRUE;
 }
@@ -50,13 +32,8 @@ static ubool implDictDelete(i16 argCount, Value *args, Value *out) {
 static CFunction funcDictDelete = { implDictDelete, "delete", 1 };
 
 static ubool implDictContains(i16 argCount, Value *args, Value *out) {
-  Value receiver = args[-1], dummy;
-  ObjDict *dict;
-  if (!IS_DICT(receiver)) {
-    runtimeError("Expected dict as receiver to Dict.__contains__()");
-    return UFALSE;
-  }
-  dict = AS_DICT(receiver);
+  Value dummy;
+  ObjDict *dict = AS_DICT(args[-1]);
   *out = BOOL_VAL(dictGet(&dict->dict, args[0], &dummy));
   return UTRUE;
 }
@@ -85,14 +62,8 @@ static void blackenDictIterator(void *it) {
 }
 
 static ubool implDictIter(i16 argCount, Value *args, Value *out) {
-  Value receiver = args[-1];
-  ObjDict *dict;
+  ObjDict *dict = AS_DICT(args[-1]);
   ObjDictIterator *iter;
-  if (!IS_DICT(receiver)) {
-    runtimeError("Expected dict as receiver to Dict.__iter__()");
-    return UFALSE;
-  }
-  dict = AS_DICT(receiver);
   iter = NEW_NATIVE_CLOSURE(
     ObjDictIterator,
     implDictIterator,
@@ -126,10 +97,7 @@ void initDictClass() {
   pop();
 
   for (i = 0; i < sizeof(methods) / sizeof(CFunction*); i++) {
-    tmpstr = copyCString(methods[i]->name);
-    push(OBJ_VAL(tmpstr));
-    tableSet(
-      &cls->methods, tmpstr, CFUNCTION_VAL(methods[i]));
-    pop();
+    methods[i]->receiverType.type = TYPE_PATTERN_DICT;
+    tableSetN(&cls->methods, methods[i]->name, CFUNCTION_VAL(methods[i]));
   }
 }
