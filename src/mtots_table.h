@@ -7,8 +7,6 @@
 typedef struct Entry {
   ObjString *key;
   Value value;
-  struct Entry *prev;
-  struct Entry *next;
 } Entry;
 
 typedef struct {
@@ -16,12 +14,12 @@ typedef struct {
   size_t capacity; /* 0 or (8 * <power of 2>) */
   size_t size;     /* actual number of active elements */
   Entry *entries;
-  Entry *first;
-  Entry *last;
 } Table;
 
 typedef struct TableIterator {
-  Entry *entry;
+  size_t capacity;
+  size_t index;
+  Entry *entries;
 } TableIterator;
 
 void initTable(Table *table);

@@ -14,8 +14,6 @@ void initTable(Table *table) {
   table->capacity = 0;
   table->size = 0;
   table->entries = NULL;
-  table->first = NULL;
-  table->last = NULL;
 }
 
 void freeTable(Table *table) {
@@ -70,39 +68,25 @@ ubool tableGet(Table *table, ObjString *key, Value *value) {
 static void adjustCapacity(Table *table, size_t capacity) {
   size_t i;
   Entry *entries = ALLOCATE(Entry, capacity);
-  Entry *p, *first = NULL, *last = NULL;
   for (i = 0; i < capacity; i++) {
     entries[i].key = NULL;
     entries[i].value = NIL_VAL();
   }
 
   table->count = 0;
-  for (p = table->first; p != NULL; p = p->next) {
-    Entry *dest;
+  for (i = 0; i < table->capacity; i++) {
+    Entry *entry = &table->entries[i], *dest;
+    if (entry->key == NULL) continue;
 
-    dest = findEntry(entries, capacity, p->key);
-    dest->key = p->key;
-    dest->value = p->value;
-
-    if (first == NULL) {
-      dest->prev = NULL;
-      dest->next = NULL;
-      first = last = dest;
-    } else {
-      dest->prev = last;
-      dest->next = NULL;
-      last->next = dest;
-      last = dest;
-    }
-
+    dest = findEntry(entries, capacity, entry->key);
+    dest->key = entry->key;
+    dest->value = entry->value;
     table->count++;
   }
 
   FREE_ARRAY(Entry, table->entries, table->capacity);
   table->entries = entries;
   table->capacity = capacity;
-  table->first = first;
-  table->last = last;
 }
 
 ubool tableSet(Table *table, ObjString *key, Value value) {
@@ -126,16 +110,6 @@ ubool tableSet(Table *table, ObjString *key, Value value) {
       table->count++;
     }
     table->size++;
-
-    if (table->last == NULL) {
-      table->first = table->last = entry;
-      entry->prev = entry->next = NULL;
-    } else {
-      entry->prev = table->last;
-      entry->next = NULL;
-      table->last->next = entry;
-      table->last = entry;
-    }
   }
   entry->key = key;
   entry->value = value;
@@ -174,19 +148,6 @@ ubool tableDelete(Table *table, ObjString *key) {
   if (entry->key == NULL) {
     return UFALSE;
   }
-
-  /* Update linked list */
-  if (entry->prev == NULL) {
-    table->first = entry->next;
-  } else {
-    entry->prev->next = entry->next;
-  }
-  if (entry->next == NULL) {
-    table->last = entry->prev;
-  } else {
-    entry->next->prev = entry->prev;
-  }
-  entry->prev = entry->next = NULL;
 
   /* Place a tombstone in the entry */
   entry->key = NULL;
@@ -254,13 +215,17 @@ void markTable(Table *table) {
 }
 
 void initTableIterator(TableIterator *ti, Table *table) {
-  ti->entry = table->first;
+  ti->capacity = table->capacity;
+  ti->index = 0;
+  ti->entries = table->entries;
 }
 
 ubool tableIteratorNext(TableIterator *ti, Entry **out) {
-  if (ti->entry) {
-    *out = ti->entry;
-    ti->entry = ti->entry->next;
+  for (; ti->index < ti->capacity; ti->index++) {
+    Entry *entry = &ti->entries[ti->index];
+    if (entry->key == NULL) continue;
+    *out = entry;
+    ti->index++;
     return UTRUE;
   }
   return UFALSE;
