@@ -50,7 +50,9 @@ static ubool implTableGetKeys(i16 argCount, Value *args, Value *out) {
   Value receiver = args[-1];
   ObjInstance *table;
   ObjList *list;
-  size_t i, j, len;
+  size_t j, len;
+  TableIterator ti;
+  Entry *entry;
   if (!IS_INSTANCE(receiver)) {
     runtimeError(
       "Expected instance as receiver to Table.getKeys() but got %s",
@@ -60,14 +62,14 @@ static ubool implTableGetKeys(i16 argCount, Value *args, Value *out) {
   table = AS_INSTANCE(receiver);
   len = table->fields.size;
   list = newList(len);
-  for (i = j = 0; i < table->fields.capacity; i++) {
-    Entry *entry = &table->fields.entries[i];
-    if (entry->key != NULL) {
-      if (j >= len) {
-        panic("ASSERTION FAILED, invalid table size");
-      }
-      list->buffer[j++] = OBJ_VAL(entry->key);
+
+  initTableIterator(&ti, &table->fields);
+  j = 0;
+  while (tableIteratorNext(&ti, &entry)) {
+    if (j >= len) {
+      panic("ASSERTION FAILED, invalid table size");
     }
+    list->buffer[j++] = OBJ_VAL(entry->key);
   }
   if (j != len) {
     panic("ASSERTION FAILED, invalid table size");
@@ -89,7 +91,8 @@ static CFunction funcTableGetKeys = { implTableGetKeys, "getKeys", 0 };
 static ubool implTableRget(i16 argCount, Value *args, Value *out) {
   Value receiver = args[-1], targetValue = args[0];
   ObjInstance *table;
-  size_t i;
+  TableIterator ti;
+  Entry *entry;
   if (!IS_INSTANCE(receiver)) {
     runtimeError(
       "Expected instance as receiver to Table.rget() but got %s",
@@ -97,15 +100,15 @@ static ubool implTableRget(i16 argCount, Value *args, Value *out) {
     return UFALSE;
   }
   table = AS_INSTANCE(receiver);
-  for (i = 0; i < table->fields.capacity; i++) {
-    Entry *entry = &table->fields.entries[i];
-    if (entry->key != NULL) {
-      if (valuesEqual(entry->value, targetValue)) {
-        *out = OBJ_VAL(entry->key);
-        return UTRUE;
-      }
+
+  initTableIterator(&ti, &table->fields);
+  while (tableIteratorNext(&ti, &entry)) {
+    if (valuesEqual(entry->value, targetValue)) {
+      *out = OBJ_VAL(entry->key);
+      return UTRUE;
     }
   }
+
   if (argCount > 1) {
     /* If the optional second argument is provided, we return that
      * when a matching entry is not found */

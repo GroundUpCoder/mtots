@@ -4,17 +4,25 @@
 #include "mtots_common.h"
 #include "mtots_value.h"
 
-typedef struct {
+typedef struct Entry {
   ObjString *key;
   Value value;
+  struct Entry *prev;
+  struct Entry *next;
 } Entry;
 
 typedef struct {
-  size_t count;
+  size_t count;    /* (implementation detail) */
   size_t capacity; /* 0 or (8 * <power of 2>) */
   size_t size;     /* actual number of active elements */
   Entry *entries;
+  Entry *first;
+  Entry *last;
 } Table;
+
+typedef struct TableIterator {
+  Entry *entry;
+} TableIterator;
 
 void initTable(Table *table);
 void freeTable(Table *table);
@@ -27,5 +35,8 @@ ObjString *tableFindString(
   Table *table, const char *chars, size_t length, u32 hash);
 void tableRemoveWhite(Table *table);
 void markTable(Table *table);
+
+void initTableIterator(TableIterator *ti, Table *table);
+ubool tableIteratorNext(TableIterator *ti, Entry **out);
 
 #endif/*mtots_table_h*/

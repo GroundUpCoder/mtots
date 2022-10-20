@@ -1228,28 +1228,27 @@ static void prepPrelude() {
   /* Copy over values from __prelude__ into global */
   {
     ObjInstance *prelude = AS_INSTANCE(peek(0));
-    size_t i, j;
+    TableIterator ti, tj;
+    Entry *entry, *e;
 
-    for (i = 0; i < prelude->fields.capacity; i++) {
-      Entry *entry = prelude->fields.entries + i;
-      if (entry->key != NULL) {
-        if (strcmp(entry->key->chars, "sorted") == 0 ||
-            strcmp(entry->key->chars, "list") == 0 ||
-            strcmp(entry->key->chars, "tuple") == 0 ||
-            strcmp(entry->key->chars, "set") == 0) {
-          tableSet(&vm.globals, entry->key, entry->value);
-        } else if (strcmp(entry->key->chars, "__List__") == 0) {
-          ObjClass *mixinListClass;
-          if (!IS_CLASS(entry->value)) {
-            panic("__prelude__.__List__ is not a class");
-          }
-          mixinListClass = AS_CLASS(entry->value);
-          for (j = 0; j < mixinListClass->methods.capacity; j++) {
-            Entry *e = mixinListClass->methods.entries + j;
-            if (e->key != NULL) {
-              if (strcmp(e->key->chars, "sort") == 0) {
-                tableSet(&vm.listClass->methods, e->key, e->value);
-              }
+    initTableIterator(&ti, &prelude->fields);
+    while (tableIteratorNext(&ti, &entry)) {
+      if (strcmp(entry->key->chars, "sorted") == 0 ||
+          strcmp(entry->key->chars, "list") == 0 ||
+          strcmp(entry->key->chars, "tuple") == 0 ||
+          strcmp(entry->key->chars, "set") == 0) {
+        tableSet(&vm.globals, entry->key, entry->value);
+      } else if (strcmp(entry->key->chars, "__List__") == 0) {
+        ObjClass *mixinListClass;
+        if (!IS_CLASS(entry->value)) {
+          panic("__prelude__.__List__ is not a class");
+        }
+        mixinListClass = AS_CLASS(entry->value);
+        initTableIterator(&tj, &mixinListClass->methods);
+        while (tableIteratorNext(&tj, &e)) {
+          if (e->key != NULL) {
+            if (strcmp(e->key->chars, "sort") == 0) {
+              tableSet(&vm.listClass->methods, e->key, e->value);
             }
           }
         }
