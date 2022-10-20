@@ -696,6 +696,8 @@ InterpretResult run(i16 returnFrameCount) {
     vm.frameCount = snap->frameCount; \
     frame = &vm.frames[vm.frameCount - 1]; \
     frame->ip = snap->ip; \
+    free(vm.errorString); \
+    vm.errorString = NULL; \
     goto loop; \
   } while(0)
 #define BINARY_OP(valueType, op) \

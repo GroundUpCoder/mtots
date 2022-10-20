@@ -60,6 +60,8 @@ int main(int argc, const char *argv[]) {
     if (!status) {
       if (vm.errorString) {
         fprintf(stderr, "%s", vm.errorString);
+      } else {
+        fprintf(stderr, "(runtime-error, but no error message set)\n");
       }
       exit(MTOTS_EXIT_CODE_RUNTIME_ERROR);
     }

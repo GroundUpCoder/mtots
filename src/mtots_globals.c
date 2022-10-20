@@ -229,12 +229,8 @@ ubool implRepr(i16 argCount, Value *args, Value *out) {
               u8 digit1 = c / 16, digit2 = c % 16;
               *charsTop++ = '\\';
               *charsTop++ = 'x';
-              *charsTop++ = c < 127 ? '0' + digit1 : 'A' + digit1 - 10;
-              if (digit2 < 10) {
-                *charsTop++ = '0' + digit2;
-              } else {
-                *charsTop++ = 'A' + digit2 - 10;
-              }
+              *charsTop++ = digit1 < 10 ? '0' + digit1 : 'A' + digit1 - 10;
+              *charsTop++ = digit2 < 10 ? '0' + digit2 : 'A' + digit2 - 10;
             } else {
               switch (c) {
                 case '\\':
