@@ -2,6 +2,7 @@
 #include "mtots_compiler.h"
 #include "mtots_scanner.h"
 #include "mtots_memory.h"
+#include "mtots_str.h"
 
 #if DEBUG_PRINT_CODE
 #include "mtots_debug.h"
@@ -662,99 +663,24 @@ static void tripleQuoteRawString(ubool canAssign) {
     parser.previous.length - 7)));
 }
 
-static ubool getHexDigit(char hex, int *out) {
-  if ('0' <= hex && hex <= '9') {
-    *out = hex - '0';
-    return UTRUE;
-  }
-  if ('A' <= hex && hex <= 'F') {
-    *out = hex - 'A' + 10;
-    return UTRUE;
-  }
-  if ('a' <= hex && hex <= 'f') {
-    *out = hex - 'a' + 10;
-    return UTRUE;
-  }
-  panic("Invalid hex digit %c", hex);
-  return UFALSE;
-}
-
 static ObjString *stringTokenToObjString() {
-  size_t i, size = 0;
-  const char *p = parser.previous.start + 1;
-  char *s, *sp;
-  for (i = 0; i < parser.previous.length - 2; i++) {
-    switch (p[i]) {
-      case '\\':
-        i++;
-        switch (p[i]) {
-          case 'x':
-            i += 2;
-            size++;
-            break;
-          case '\\':
-          case 'n':
-          case 't':
-          case '"':
-          case '\'':
-            size++;
-            break;
-          default: {
-            char buffer[32];
-            sprintf(buffer, "Invalid string escape '\\%c'", p[i]);
-            error(buffer);
-            return NULL;
-          }
-        }
-        break;
-      default:
-        size++;
-    }
+  size_t size = 0;
+  char *s;
+  char quote = parser.previous.start[0];
+
+  if (!unescapeString(parser.previous.start + 1, quote, &size, NULL)) {
+    char *errorMessage = malloc(size + 1);
+    unescapeString(parser.previous.start + 1, quote, NULL, errorMessage);
+    errorMessage[size] = '\0';
+    error(errorMessage);
+    free(errorMessage);
+    return NULL;
   }
-  sp = s = ALLOCATE(char, size + 1);
-  for (i = 0; i < parser.previous.length - 2; i++) {
-    switch (p[i]) {
-      case '\\':
-        i++;
-        switch (p[i]) {
-          case 'x': {
-            u8 value;
-            int digitval;
-            i++;
-            if (!getHexDigit(p[i], &digitval)) {
-              char buffer[32];
-              sprintf(buffer, "Invalid hex digit %c", p[i]);
-              error(buffer);
-              return NULL;
-            }
-            i++;
-            value = 16 * digitval;
-            if (!getHexDigit(p[i], &digitval)) {
-              char buffer[32];
-              sprintf(buffer, "Invalid hex digit %c", p[i]);
-              error(buffer);
-              return NULL;
-            }
-            value += digitval;
-            *sp++ = value;
-            break;
-          }
-          case '\\': *sp++ = '\\'; break;
-          case 'n': *sp++ = '\n'; break;
-          case 't': *sp++ = '\t'; break;
-          case '"': *sp++ = '"'; break;
-          case '\'': *sp++ = '\''; break;
-          default: abort(); /* should be unreachable */
-        }
-        break;
-      default:
-        *sp++ = p[i];
-    }
-  }
-  if (sp - s != size) {
-    abort(); /* size calculations were invalid */
-  }
-  *sp = '\0';
+
+  s = ALLOCATE(char, size + 1);
+  unescapeString(parser.previous.start + 1, quote, NULL, s);
+  s[size] = '\0';
+
   return takeString(s, size);
 }
 
