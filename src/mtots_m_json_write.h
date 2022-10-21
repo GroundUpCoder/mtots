@@ -41,7 +41,6 @@ static ubool writeJSON(Value value, size_t *outLen, char *out) {
     initStringEscapeOptions(&opts);
     opts.jsonSafe = UTRUE;
     if (!escapeString(str->chars, str->length, &opts, &len, out ? out + 1 : NULL)) {
-      if (outLen) *outLen = len;
       return UFALSE;
     }
     if (outLen) *outLen = len + 2; /* open and close quotes */

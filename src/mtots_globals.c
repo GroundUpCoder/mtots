@@ -207,11 +207,6 @@ ubool implRepr(i16 argCount, Value *args, Value *out) {
           char *chars;
 
           if (!escapeString(str->chars, str->length, NULL, &len, NULL)) {
-            chars = malloc(len + 1);
-            escapeString(str->chars, str->length, NULL, NULL, chars);
-            chars[len] = '\0';
-            runtimeError("%s", chars);
-            free(chars);
             return UFALSE;
           }
 
@@ -237,13 +232,6 @@ ubool implRepr(i16 argCount, Value *args, Value *out) {
           if (!escapeString(
               (const char*)byteArray->buffer, byteArray->length,
               &opts, &len, NULL)) {
-            chars = malloc(len + 1);
-            escapeString(
-              (const char*)byteArray->buffer, byteArray->length,
-              &opts, NULL, chars);
-            chars[len] = '\0';
-            runtimeError("%s", chars);
-            free(chars);
             return UFALSE;
           }
 

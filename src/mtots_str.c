@@ -1,6 +1,7 @@
 #include "mtots_str.h"
 
 #include "mtots_unicode.h"
+#include "mtots_error.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,11 +54,7 @@ ubool escapeString(
       /* invalid UTF-8 code sequence */
       if (opts.jsonSafe) {
         /* if we need to be JSON safe, we emit an error */
-        len = snprintf(
-          NULL, 0, "invalid unicode escape at %lu", (unsigned long)pos);
-        if (outLen) *outLen = len;
-        if (outBytes) snprintf(
-          outBytes, len, "invalid unicode escape at %lu", (unsigned long)pos);
+        runtimeError("invalid unicode escape at %lu", (unsigned long)pos);
         return UFALSE;
       } else {
         /* otherwise, we can just emit a single byte */
@@ -160,12 +157,7 @@ ubool escapeString(
       }
     } else if (opts.jsonSafe) {
       /* At this point, the codepoint is not valid, so we can't be json safe */
-      len = snprintf(
-        NULL, 0, "invalid unicode codepoint %lu at %lu",
-        (unsigned long) codePoint, (unsigned long)pos);
-      if (outLen) *outLen = len;
-      if (outBytes) snprintf(
-        outBytes, len, "invalid unicode codepoint %lu at %lu",
+      runtimeError("invalid unicode codepoint %lu at %lu",
         (unsigned long) codePoint, (unsigned long)pos);
       return UFALSE;
     } else {
@@ -217,13 +209,7 @@ ubool unescapeString(const char *str, char quote, size_t *outLen, char *outBytes
         if (evalHex(str[0]) == INVALID_HEX ||
             evalHex(str[1]) == INVALID_HEX) {
           char invalid = evalHex(str[0]) == INVALID_HEX ? str[0] : str[1];
-          *outLen = snprintf(NULL, 0,
-            "in string unescape, invalid hex digit '%c'", invalid);
-          if (outBytes) {
-            snprintf(
-              outBytes, *outLen + 1,
-              "in string unescape, invalid hex digit '%c'", invalid);
-          }
+          runtimeError("in string unescape, invalid hex digit '%c'", invalid);
           return UFALSE;
         }
         byte = evalHex(str[0]) << 4 | evalHex(str[1]);
@@ -244,14 +230,7 @@ ubool unescapeString(const char *str, char quote, size_t *outLen, char *outBytes
             evalHex(str[0]) == INVALID_HEX ? str[0] :
             evalHex(str[1]) == INVALID_HEX ? str[1] :
             evalHex(str[2]) == INVALID_HEX ? str[2] : str[3];
-          len = snprintf(NULL, 0,
-              "in string unescape, invalid hex digit '%c'", invalid);
-          if (outLen) *outLen = len;
-          if (outBytes) {
-            snprintf(
-              outBytes, len + 1,
-              "in string unescape, invalid hex digit '%c'", invalid);
-          }
+          runtimeError("in string unescape, invalid hex digit '%c'", invalid);
           return UFALSE;
         }
         codePoint =

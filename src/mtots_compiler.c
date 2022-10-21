@@ -669,11 +669,7 @@ static ObjString *stringTokenToObjString() {
   char quote = parser.previous.start[0];
 
   if (!unescapeString(parser.previous.start + 1, quote, &size, NULL)) {
-    char *errorMessage = malloc(size + 1);
-    unescapeString(parser.previous.start + 1, quote, NULL, errorMessage);
-    errorMessage[size] = '\0';
-    error(errorMessage);
-    free(errorMessage);
+    error("Failed to escape string");
     return NULL;
   }
 

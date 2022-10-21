@@ -6,6 +6,7 @@
 #include "mtots_table.h"
 #include "mtots_object.h"
 #include "mtots_ops.h"
+#include "mtots_error.h"
 
 #define FRAMES_MAX 64
 #define STACK_MAX (FRAMES_MAX * U8_COUNT)
@@ -93,7 +94,6 @@ InterpretResult interpret(const char *source, ObjInstance *module);
 void push(Value value);
 Value pop();
 NORETURN void panic(const char *format, ...);
-void runtimeError(const char *format, ...);
 void defineGlobal(const char *name, Value value);
 
 /* Native module bodies should be a CFunction that accepts
