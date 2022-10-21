@@ -232,6 +232,49 @@ static TypePattern argsStrStrip[] = {
 
 static CFunction funcStrStrip = { implStrStrip, "strip", 0, 1, argsStrStrip };
 
+static size_t cStrReplace(
+    const char *s, const char *oldstr, const char *newstr, char *out) {
+  char *outp = out;
+  size_t len = 0, oldstrlen = strlen(oldstr), newstrlen = strlen(newstr);
+
+  while (*s) {
+    if (strncmp(s, oldstr, oldstrlen) == 0) {
+      len += newstrlen;
+      if (outp) {
+        memcpy(outp, newstr, newstrlen);
+        outp += newstrlen;
+      }
+      s += oldstrlen;
+    } else {
+      len++;
+      if (outp) *outp++ = *s;
+      s++;
+    }
+  }
+
+  return len;
+}
+
+static ubool implStrReplace(i16 argCount, Value *args, Value *out) {
+  ObjString *orig = AS_STRING(args[-1]);
+  ObjString *oldstr = AS_STRING(args[0]);
+  ObjString *newstr = AS_STRING(args[1]);
+  size_t len = cStrReplace(orig->chars, oldstr->chars, newstr->chars, NULL);
+  char *chars = ALLOCATE(char, len + 1);
+  cStrReplace(orig->chars, oldstr->chars, newstr->chars, chars);
+  chars[len] = '\0';
+  *out = OBJ_VAL(takeString(chars, len));
+  return UTRUE;
+}
+
+static TypePattern argsStrReplace[] = {
+  { TYPE_PATTERN_STRING },
+  { TYPE_PATTERN_STRING },
+};
+
+static CFunction funcStrReplace = { implStrReplace, "replace", 2, 0,
+  argsStrReplace };
+
 void initStringClass() {
   ObjString *tmpstr;
   CFunction *methods[] = {
@@ -239,6 +282,7 @@ void initStringClass() {
     &funcStrSlice,
     &funcStrMod,
     &funcStrStrip,
+    &funcStrReplace,
   };
   size_t i;
   ObjClass *cls;
