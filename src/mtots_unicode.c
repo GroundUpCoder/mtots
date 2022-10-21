@@ -28,22 +28,22 @@ int encodeUTF8Char(u32 codePoint, char *outBytes) {
      */
     switch (nbytes) {
       case 1:
-        outBytes[0] = (char)(unsigned char)codePoint;
+        outBytes[0] = (char)(u8)codePoint;
         break;
       case 2:
-        outBytes[0] = (char)(unsigned char)(0xC0|(codePoint>>6));
-        outBytes[1] = (char)(unsigned char)(0x80|(codePoint&0x3F));
+        outBytes[0] = (char)(u8)(0xC0|(codePoint>>6));
+        outBytes[1] = (char)(u8)(0x80|(codePoint&0x3F));
         break;
       case 3:
-        outBytes[0] = (char)(unsigned char)(0xE0|(codePoint>>12));
-        outBytes[1] = (char)(unsigned char)(0x80|((codePoint>>6)&0x3F));
-        outBytes[2] = (char)(unsigned char)(0x80|(codePoint&0x3F));
+        outBytes[0] = (char)(u8)(0xE0|(codePoint>>12));
+        outBytes[1] = (char)(u8)(0x80|((codePoint>>6)&0x3F));
+        outBytes[2] = (char)(u8)(0x80|(codePoint&0x3F));
         break;
       case 4:
-        outBytes[0] = (char)(unsigned char)(0xF0|(codePoint>>18));
-        outBytes[1] = (char)(unsigned char)(0x80|((codePoint>>12)&0x3F));
-        outBytes[2] = (char)(unsigned char)(0x80|((codePoint>>6)&0x3F));
-        outBytes[3] = (char)(unsigned char)(0x80|(codePoint&0x3F));
+        outBytes[0] = (char)(u8)(0xF0|(codePoint>>18));
+        outBytes[1] = (char)(u8)(0x80|((codePoint>>12)&0x3F));
+        outBytes[2] = (char)(u8)(0x80|((codePoint>>6)&0x3F));
+        outBytes[3] = (char)(u8)(0x80|(codePoint&0x3F));
         break;
     }
   }

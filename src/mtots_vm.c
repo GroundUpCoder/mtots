@@ -453,7 +453,7 @@ static ubool callByteArrayClass(i16 argCount) {
   if (IS_STRING(arg)) {
     ObjString *str = AS_STRING(arg);
     ObjByteArray *ba = copyByteArray(
-      (const unsigned char*)str->chars, str->length);
+      (const u8*)str->chars, str->length);
     pop(); /* arg */
     pop(); /* ByeArray class */
     push(OBJ_VAL(ba));
@@ -462,10 +462,10 @@ static ubool callByteArrayClass(i16 argCount) {
   if (IS_LIST(arg)) {
     ObjList *list = AS_LIST(arg);
     size_t len = list->length, i;
-    unsigned char *buffer = ALLOCATE(unsigned char, len);
+    u8 *buffer = ALLOCATE(u8, len);
     for (i = 0; i < len; i++) {
       Value item = list->buffer[i];
-      unsigned char b;
+      u8 b;
       if (!IS_NUMBER(item)) {
         runtimeError(
           "ByteArray() requires a list of numbers, "

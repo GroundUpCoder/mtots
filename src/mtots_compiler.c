@@ -718,7 +718,7 @@ static ObjString *stringTokenToObjString() {
         i++;
         switch (p[i]) {
           case 'x': {
-            unsigned char value;
+            u8 value;
             int digitval;
             i++;
             if (!getHexDigit(p[i], &digitval)) {

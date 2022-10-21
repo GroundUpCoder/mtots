@@ -104,7 +104,7 @@ struct ObjString {
 typedef struct ObjByteArray {
   Obj obj;
   size_t length;
-  unsigned char *buffer;
+  u8 *buffer;
 } ObjByteArray;
 
 /* NOTE: The fields in ObjByteArrayView should always match ObjByteArray
@@ -234,10 +234,10 @@ ObjString *takeString(char *chars, size_t length);
 ObjString *copyString(const char *chars, size_t length);
 ObjString *copyCString(const char *chars);
 ObjByteArray *newByteArray(size_t size);
-ObjByteArray *takeByteArray(unsigned char *buffer, size_t size);
-ObjByteArray *copyByteArray(const unsigned char *buffer, size_t size);
+ObjByteArray *takeByteArray(u8 *buffer, size_t size);
+ObjByteArray *copyByteArray(const u8 *buffer, size_t size);
 ObjByteArrayView *newByteArrayView(
-    size_t length, unsigned char *buffer, ObjByteArray *array);
+    size_t length, u8 *buffer, ObjByteArray *array);
 ObjList *newList(size_t size);
 ObjTuple *copyTuple(Value *buffer, size_t length);
 ObjDict *newDict();

@@ -220,7 +220,7 @@ static void freeObject(Obj *object) {
     }
     case OBJ_BYTE_ARRAY: {
       ObjByteArray *byteArray = (ObjByteArray*)object;
-      FREE_ARRAY(unsigned char, byteArray->buffer, byteArray->length);
+      FREE_ARRAY(u8, byteArray->buffer, byteArray->length);
       FREE(ObjByteArray, object);
       break;
     }

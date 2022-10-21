@@ -225,7 +225,7 @@ ObjString *copyCString(const char *chars) {
 }
 
 ObjByteArray *newByteArray(size_t length) {
-  unsigned char *newBuffer = ALLOCATE(unsigned char, length);
+  u8 *newBuffer = ALLOCATE(u8, length);
   ObjByteArray *byteArray = ALLOCATE_OBJ(ObjByteArray, OBJ_BYTE_ARRAY);
   memset(newBuffer, 0, length);
   byteArray->buffer = newBuffer;
@@ -233,15 +233,15 @@ ObjByteArray *newByteArray(size_t length) {
   return byteArray;
 }
 
-ObjByteArray *takeByteArray(unsigned char *buffer, size_t length) {
+ObjByteArray *takeByteArray(u8 *buffer, size_t length) {
   ObjByteArray *byteArray = ALLOCATE_OBJ(ObjByteArray, OBJ_BYTE_ARRAY);
   byteArray->buffer = buffer;
   byteArray->length = length;
   return byteArray;
 }
 
-ObjByteArray *copyByteArray(const unsigned char *buffer, size_t length) {
-  unsigned char *newBuffer = ALLOCATE(unsigned char, length);
+ObjByteArray *copyByteArray(const u8 *buffer, size_t length) {
+  u8 *newBuffer = ALLOCATE(u8, length);
   memcpy(newBuffer, buffer, length);
   return takeByteArray(newBuffer, length);
 }
@@ -257,7 +257,7 @@ static ObjByteArray *getUnderlyingByteArray(ObjByteArray *arrayOrView) {
 }
 
 ObjByteArrayView *newByteArrayView(
-    size_t length, unsigned char *buffer, ObjByteArray *array) {
+    size_t length, u8 *buffer, ObjByteArray *array) {
   ObjByteArrayView *view = ALLOCATE_OBJ(ObjByteArrayView, OBJ_BYTE_ARRAY_VIEW);
   view->obj.length = length;
   view->obj.buffer = buffer;

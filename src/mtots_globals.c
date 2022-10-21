@@ -207,7 +207,7 @@ ubool implRepr(i16 argCount, Value *args, Value *out) {
 
           /* account for characters that need to be escaped */
           for (i = 0; i < str->length; i++) {
-            unsigned char c = (unsigned char) str->chars[i];
+            u8 c = (u8) str->chars[i];
             if ((c >= 1 && c <= 31) || c >= 127) {
               charCount += 3; /* explicit hex escape */
             } else {
@@ -224,7 +224,7 @@ ubool implRepr(i16 argCount, Value *args, Value *out) {
           charsTop = chars = ALLOCATE(char, charCount + 1);
           *charsTop++ = '"';
           for (i = 0; i < str->length; i++) {
-            unsigned char c = (unsigned char) str->chars[i];
+            u8 c = (u8) str->chars[i];
             if ((c >= 1 && c <= 31) || c >= 127) {
               u8 digit1 = c / 16, digit2 = c % 16;
               *charsTop++ = '\\';
@@ -458,7 +458,7 @@ static ubool implOrd(i16 argCount, Value *args, Value *out) {
       (long) str->length);
     return UFALSE;
   }
-  *out = NUMBER_VAL((unsigned char)str->chars[0]);
+  *out = NUMBER_VAL((u8)str->chars[0]);
   return UTRUE;
 }
 
