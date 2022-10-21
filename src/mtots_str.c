@@ -27,6 +27,8 @@ void initStringEscapeOptions(StringEscapeOptions *opts) {
   opts->tryUnicode = UTRUE;
 }
 
+/* TODO: Refactor to avoid passsing error messages back the same way
+ * output is passed back. */
 ubool escapeString(
     const char *str,
     size_t length,
