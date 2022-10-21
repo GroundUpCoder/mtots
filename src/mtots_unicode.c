@@ -51,9 +51,10 @@ int encodeUTF8Char(u32 codePoint, char *outBytes) {
   return nbytes;
 }
 
-int decodeUTF8Char(const char *bytes, u32 *outCodePoint) {
+int decodeUTF8Char(const char *bytes, const char *limit, u32 *outCodePoint) {
   int nbytes = 0;
   u32 byte1 = (u32)(u8)bytes[0], byte2, byte3, byte4;
+  size_t i;
 
   /* NOTE:
    *   0b01111111 = 0x7F (1-byte, lower limit is 0)
@@ -77,6 +78,17 @@ int decodeUTF8Char(const char *bytes, u32 *outCodePoint) {
     nbytes = 4;
   } else {
     return 0; /* Invalid leading byte */
+  }
+
+  if (bytes + nbytes > limit) {
+    return 0; /* Not enough bytes to be a valid sequence */
+  }
+
+  for (i = 1; i < nbytes; i++) {
+    /* continuation bytes must all start with bits '10' */
+    if ((u8)bytes[i] >> 6 != 2) {
+      return 0;
+    }
   }
 
   if (outCodePoint) {

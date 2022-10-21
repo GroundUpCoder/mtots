@@ -3,6 +3,7 @@
 #include "mtots_vm.h"
 #include "mtots_object.h"
 #include "mtots_memory.h"
+#include "mtots_str.h"
 
 #include <time.h>
 #include <stdio.h>
@@ -202,78 +203,60 @@ ubool implRepr(i16 argCount, Value *args, Value *out) {
         }
         case OBJ_STRING: {
           ObjString *str = AS_STRING(*args);
-          size_t i, charCount = str->length + 2; /* account for the '"'s */
-          char *chars, *charsTop;
+          size_t len;
+          char *chars;
 
-          /* account for characters that need to be escaped */
-          for (i = 0; i < str->length; i++) {
-            u8 c = (u8) str->chars[i];
-            if ((c >= 1 && c <= 31) || c >= 127) {
-              charCount += 3; /* explicit hex escape */
-            } else {
-              switch (str->chars[i]) {
-                case '\\':
-                case '"':
-                case '\n':
-                case '\0':
-                  charCount++;
-              }
-            }
+          if (!escapeString(str->chars, str->length, NULL, &len, NULL)) {
+            chars = malloc(len + 1);
+            escapeString(str->chars, str->length, NULL, NULL, chars);
+            chars[len] = '\0';
+            runtimeError("%s", chars);
+            free(chars);
+            return UFALSE;
           }
 
-          charsTop = chars = ALLOCATE(char, charCount + 1);
-          *charsTop++ = '"';
-          for (i = 0; i < str->length; i++) {
-            u8 c = (u8) str->chars[i];
-            if ((c >= 1 && c <= 31) || c >= 127) {
-              u8 digit1 = c / 16, digit2 = c % 16;
-              *charsTop++ = '\\';
-              *charsTop++ = 'x';
-              *charsTop++ = digit1 < 10 ? '0' + digit1 : 'A' + digit1 - 10;
-              *charsTop++ = digit2 < 10 ? '0' + digit2 : 'A' + digit2 - 10;
-            } else {
-              switch (c) {
-                case '\\':
-                  *charsTop++ = '\\';
-                  *charsTop++ = '\\';
-                  break;
-                case '"':
-                  *charsTop++ = '\\';
-                  *charsTop++ = '"';
-                  break;
-                case '\n':
-                  *charsTop++ = '\\';
-                  *charsTop++ = 'n';
-                  break;
-                case '\0':
-                  *charsTop++ = '\\';
-                  *charsTop++ = '0';
-                  break;
-                default:
-                  *charsTop++ = c;
-                  break;
-              }
-            }
-          }
-          *charsTop++ = '"';
-          *charsTop++ = '\0';
+          chars = ALLOCATE(char, len + 3);
+          escapeString(str->chars, str->length, NULL, NULL, chars + 1);
+          chars[0] = '"';
+          chars[len + 1] = '"';
+          chars[len + 2] = '\0';
 
-          if (charsTop - chars != charCount + 1) {
-            runtimeError("Assertion failed in repr(str), %ld != %ld",
-              (long)(charsTop - chars),
-              (long)(charCount + 1));
-            abort();
-          }
-
-          *out = OBJ_VAL(takeString(chars, charCount));
+          *out = OBJ_VAL(takeString(chars, len + 2));
           break;
         }
         case OBJ_BYTE_ARRAY: {
-          char buffer[128];
           ObjByteArray *byteArray = AS_BYTE_ARRAY(args[0]);
-          snprintf(buffer, 128,
-            "<ByteArray (%lu)>", (unsigned long)byteArray->length);
-          *out = OBJ_VAL(copyCString(buffer));
+          char *chars;
+          size_t len;
+          StringEscapeOptions opts;
+
+          initStringEscapeOptions(&opts);
+          opts.shorthandControlCodes = UFALSE;
+          opts.tryUnicode = UFALSE;
+
+          if (!escapeString(
+              (const char*)byteArray->buffer, byteArray->length,
+              &opts, &len, NULL)) {
+            chars = malloc(len + 1);
+            escapeString(
+              (const char*)byteArray->buffer, byteArray->length,
+              &opts, NULL, chars);
+            chars[len] = '\0';
+            runtimeError("%s", chars);
+            free(chars);
+            return UFALSE;
+          }
+
+          chars = ALLOCATE(char, len + 4);
+          escapeString(
+            (const char*)byteArray->buffer, byteArray->length,
+            &opts, NULL, chars + 2);
+          chars[0] = 'b';
+          chars[1] = '"';
+          chars[len + 2] = '"';
+          chars[len + 3] = '\0';
+
+          *out = OBJ_VAL(takeString(chars, len + 3));
           break;
         }
         case OBJ_BYTE_ARRAY_VIEW: {

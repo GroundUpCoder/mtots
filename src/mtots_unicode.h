@@ -22,6 +22,6 @@ int encodeUTF8Char(u32 codePoint, char *outBytes);
  *
  * if 'bytes' is not the start of a valid UTF-8 sequence, returns 0.
  */
-int decodeUTF8Char(const char *bytes, u32 *outCodePoint);
+int decodeUTF8Char(const char *bytes, const char *limit, u32 *outCodePoint);
 
 #endif/*mtots_unicode_h*/

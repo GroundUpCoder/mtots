@@ -1,5 +1,5 @@
 "hello"
-"hello \xE6\x97\xA5\xE6\x9C\xAC"
+"hello \u65E5\u672C"
 nil
 7
 7000000000
