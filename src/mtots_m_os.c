@@ -56,22 +56,24 @@ static CFunction funcBasename = {
   implBasename, "basename", 1, 0, argsBasename,
 };
 
+/* TODO: For now, this is basically just a simple join, but in
+ * the future, this function will have to evolve to match the
+ * behaviors you would expect from a path join */
 static ubool implJoin(i16 argCount, Value *args, Value *out) {
-  ObjList *list = AS_LIST(args[0]);
-  size_t i, len = list->length - 1;
+  size_t i, len = argCount - 1;
   char *chars, *p;
-  for (i = 0; i < list->length; i++) {
-    if (!IS_STRING(list->buffer[i])) {
+  for (i = 0; i < argCount; i++) {
+    if (!IS_STRING(args[i])) {
       runtimeError(
-        "os.join() requires a list of strings, but found %s in list",
-        getKindName(list->buffer[i]));
+        "os.join() requires strings, but found %s",
+        getKindName(args[i]));
       return UFALSE;
     }
-    len += AS_STRING(list->buffer[i])->length;
+    len += AS_STRING(args[i])->length;
   }
   p = chars = ALLOCATE(char, len + 1);
-  for (i = 0; i < list->length; i++) {
-    ObjString *s = AS_STRING(list->buffer[i]);
+  for (i = 0; i < argCount; i++) {
+    ObjString *s = AS_STRING(args[i]);
     if (i > 0) {
       *p++ = PATH_SEP;
     }
@@ -86,12 +88,8 @@ static ubool implJoin(i16 argCount, Value *args, Value *out) {
   return UTRUE;
 }
 
-static TypePattern argsJoin[] = {
-  { TYPE_PATTERN_LIST },
-};
-
 static CFunction funcJoin = {
-  implJoin, "join", 1, 0, argsJoin,
+  implJoin, "join", 1, MAX_ARG_COUNT,
 };
 
 static ubool impl(i16 argCount, Value *args, Value *out) {

@@ -20,6 +20,10 @@
 #define MTOTS_EXIT_CODE_PANIC 23
 #define U8_MAX  255
 #define U16_MAX 65535
+#define I16_MIN (-32768)
+#define I16_MAX 32767
+#define I32_MIN (-2147483648)
+#define I32_MAX 2147483647
 
 #define UTRUE 1
 #define UFALSE 0

@@ -29,9 +29,29 @@ static ubool writeJSON(Value value, size_t *outLen, char *out) {
   }
   if (IS_NUMBER(value)) {
     double x = AS_NUMBER(value);
-    size_t len = snprintf(NULL, 0, "%f", x);
+    char buffer[32];
+    size_t i, len = snprintf(buffer, 32, "%f", x);
+    ubool hasDot = UFALSE;
+    if (len + 1 > 32) {
+      /* a float required more than 31 characters */
+      panic("internal error in json.dumps()");
+    }
+    for (i = 0; i < len; i++) {
+      if (buffer[i] == '.') {
+        hasDot = UTRUE;
+        break;
+      }
+    }
+    if (hasDot) {
+      while (len > 0 && buffer[len - 1] == '0') {
+        buffer[--len] = '\0';
+      }
+      if (len > 0 && buffer[len - 1] == '.') {
+        buffer[--len] = '\0';
+      }
+    }
     if (outLen) *outLen = len;
-    if (out) snprintf(out, len + 1, "%f", x);
+    if (out) memcpy(out, buffer, len);
     return UTRUE;
   }
   if (IS_STRING(value)) {
