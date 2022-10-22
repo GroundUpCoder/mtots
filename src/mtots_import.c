@@ -51,9 +51,15 @@ ubool importModuleWithPath(ObjString *moduleName, const char *path) {
   ObjFunction *function;
   i16 returnFrameCount = vm.frameCount;
   ObjInstance *module;
+  ObjString *pathStr;
 
   module = newModule(moduleName, UTRUE);
   push(OBJ_VAL(module));
+
+  pathStr = copyCString(path);
+  push(OBJ_VAL(pathStr));
+  tableSetN(&module->fields, "__path__", OBJ_VAL(pathStr));
+  pop(); /* pathStr */
 
   function = compile(source, moduleName);
   if (function == NULL) {

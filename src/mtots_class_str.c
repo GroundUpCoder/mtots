@@ -275,6 +275,46 @@ static TypePattern argsStrReplace[] = {
 static CFunction funcStrReplace = { implStrReplace, "replace", 2, 0,
   argsStrReplace };
 
+static ubool implStrJoin(i16 argCount, Value *args, Value *out) {
+  ObjString *sep = AS_STRING(args[-1]);
+  ObjList *list = AS_LIST(args[0]);
+  size_t i, len = (list->length - 1) * sep->length;
+  char *chars, *p;
+  for (i = 0; i < list->length; i++) {
+    if (!IS_STRING(list->buffer[i])) {
+      runtimeError(
+        "String.join() requires a list of strings, but found %s in the list",
+        getKindName(list->buffer[i]));
+      return UFALSE;
+    }
+    len += AS_STRING(list->buffer[i])->length;
+  }
+  chars = p = ALLOCATE(char, len + 1);
+  for (i = 0; i < list->length; i++) {
+    ObjString *item = AS_STRING(list->buffer[i]);
+    if (i > 0) {
+      memcpy(p, sep->chars, sep->length);
+      p += sep->length;
+    }
+    memcpy(p, item->chars, item->length);
+    p += item->length;
+  }
+  *p = '\0';
+  if (p - chars != len) {
+    panic("Consistency error in String.join()");
+  }
+  *out = OBJ_VAL(takeString(chars, len));
+  return UTRUE;
+}
+
+static TypePattern argsStrJoin[] = {
+  { TYPE_PATTERN_LIST },
+};
+
+static CFunction funcStrJoin = {
+  implStrJoin, "join", 1, 0, argsStrJoin,
+};
+
 void initStringClass() {
   ObjString *tmpstr;
   CFunction *methods[] = {
@@ -283,6 +323,7 @@ void initStringClass() {
     &funcStrMod,
     &funcStrStrip,
     &funcStrReplace,
+    &funcStrJoin,
   };
   size_t i;
   ObjClass *cls;
