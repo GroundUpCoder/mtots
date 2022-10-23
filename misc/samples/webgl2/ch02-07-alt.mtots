@@ -1,0 +1,100 @@
+r"""
+An alternative version of ch02-07-cone that uses BasicDrawable3D
+"""
+import glu
+import opengles3 as gl
+import sdl
+import bytearray
+import glmatrix
+import os
+import json
+
+final coneFilePath = os.join(
+  os.dirname(__path__),
+  'models',
+  'cone1.json')
+
+print(coneFilePath)
+final coneFile = open(coneFilePath)
+final coneData = json.loads(coneFile.read())
+coneFile.close()
+print(coneFile)
+print(json.dumps(coneData))
+
+final app = glu.App()
+app.width = 640
+app.height = 640
+app.init()
+
+final VS = r"""
+#version 300 es
+precision mediump float;
+
+// We will discuss these matrices in later chapters
+uniform mat4 uModelViewMatrix;
+uniform mat4 uProjectionMatrix;
+
+in vec3 aVertexPosition;
+
+void main(void) {
+  gl_Position = uProjectionMatrix * uModelViewMatrix * vec4(aVertexPosition, 1.0);
+}
+""".strip()
+
+final FS = r"""
+#version 300 es
+precision mediump float;
+
+out vec4 fragColor;
+
+void main(void) {
+  fragColor = vec4(0.5, 0.9, 0.2, 1.0);
+}
+""".strip()
+
+final coneDrawable = glu.BasicDrawable3D(
+  glu.compileProgram(VS, FS),
+  coneData.vertices,
+  coneData.indices)
+
+final projectionMatrix = glmatrix.Mat4()
+final modelViewMatrix = glmatrix.Mat4()
+
+projectionMatrix.setPerspective(
+  45, app.viewport_width / app.viewport_height, 0.1, 10000)
+modelViewMatrix.setIdentity()
+modelViewMatrix.setTranslate(modelViewMatrix, [0, 0, -5])
+
+coneDrawable.setProjectionMatrix(projectionMatrix)
+
+var x = 0
+var y = 0
+var z = -5
+var dx = 0.007
+var dz = 0.005
+var dy = 0.008
+
+@app.onDraw
+def():
+  modelViewMatrix.setIdentity()
+  modelViewMatrix.setTranslate(modelViewMatrix, [x, y, z])
+  coneDrawable.setModelViewMatrix(modelViewMatrix)
+  x = x + dx
+  z = z + dz
+  y = y + dy
+  if z > -4 or z < -5:
+    dz = -dz
+  if y > 1 or y < 0:
+    dy = -dy
+  if x > 1 or x < -1:
+    dx = -dx
+
+  gl.clearColor(0, 0.2, 0, 1)
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+  gl.viewport(0, 0, app.viewport_width, app.viewport_height)
+
+  coneDrawable.draw()
+
+  sdl.gl.swapWindow(app.window)
+
+app.run()
