@@ -23,14 +23,12 @@ app.run()
 import sdl
 import opengles3 as gl
 import glu_libshader as libshader
-import glu_drawable
 
 final DEFAULT_TITLE = 'app'
 final DEFAULT_WIDTH = 640
 final DEFAULT_HEIGHT = 480
 
 final compileProgram = libshader.compileProgram
-final BasicDrawable3D = glu_drawable.BasicDrawable3D
 
 def _nopDraw():
   pass
