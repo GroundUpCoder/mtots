@@ -3,10 +3,10 @@ import bytearray
 
 
 class BasicDrawable3D:
-  def __init__(program, vertices, indices):
-    this.program = program    # a shader program
+  def __init__(vertices, indices, program):
     this.vertices = vertices  # a list of numbers representing vertices
     this.indices = indices    # a list of numbers representing indices
+    this.program = program    # a shader program
     this.verticesBuffer = gl.genBuffer()
     this.indicesBuffer = gl.genBuffer()
     this.vao = gl.genVertexArray()

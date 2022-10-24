@@ -53,9 +53,9 @@ void main(void) {
 """.strip()
 
 final coneDrawable = glu.BasicDrawable3D(
-  glu.compileProgram(VS, FS),
   coneData.vertices,
-  coneData.indices)
+  coneData.indices,
+  glu.compileProgram(VS, FS))
 
 final projectionMatrix = glmatrix.Mat4()
 final modelViewMatrix = glmatrix.Mat4()
