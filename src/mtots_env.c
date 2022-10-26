@@ -38,7 +38,7 @@ static const char *root;
 
 static char modulePath[MAX_PATH_LENGTH];
 
-const char *getHome() {
+const char *getHome(void) {
   if (!homeLoaded) {
     const char *env;
     homeLoaded = UTRUE;
@@ -58,7 +58,7 @@ const char *getHome() {
   return homeBuffer;
 }
 
-static const char *getStdlibRoot() {
+static const char *getStdlibRoot(void) {
   if (!stdlibRootLoaded) {
     const char *env;
     stdlibRootLoaded = UTRUE;
@@ -79,7 +79,7 @@ static const char *getStdlibRoot() {
   return stdlibRootBuffer;
 }
 
-static const char *getLibRoot() {
+static const char *getLibRoot(void) {
   if (!libRootLoaded) {
     const char *env;
     libRootLoaded = UTRUE;
@@ -93,7 +93,7 @@ static const char *getLibRoot() {
   return libRoot;
 }
 
-static const char *getAuxRoot() {
+static const char *getAuxRoot(void) {
   if (!auxRootLoaded) {
     const char *env;
     auxRootLoaded = UTRUE;
@@ -107,7 +107,7 @@ static const char *getAuxRoot() {
   return auxRoot;
 }
 
-static const char *getRoot() {
+static const char *getRoot(void) {
   if (!rootLoaded) {
     const char *env;
     rootLoaded = UTRUE;

@@ -29,7 +29,8 @@
  * C version
  ****************************************************************/
 
-#if __cplusplus >= 201103L || (defined(_MSC_VER) && _MSC_VER >= 1900)
+/* #if __cplusplus >= 201103L || (defined(_MSC_VER) && _MSC_VER >= 1900) */
+#if __cplusplus >= 201103L
 
 /* ##### C++11 and above ##### */
 #define NORETURN [[ noreturn ]]

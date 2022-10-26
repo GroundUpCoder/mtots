@@ -104,20 +104,25 @@ ubool implRepr(i16 argCount, Value *args, Value *out) {
       char buffer[64];
       ubool hasDot = UFALSE;
       size_t i;
-      snprintf(buffer, 64, "%f", AS_NUMBER(*args));
-      for (i = 0; buffer[i] != '\0'; i++) {
-        if (buffer[i] == '.') {
-          hasDot = UTRUE;
-          break;
+      double x = AS_NUMBER(*args);
+      if (x != x) {
+        sprintf(buffer, "nan");
+      } else {
+        snprintf(buffer, 64, "%f", x);
+        for (i = 0; buffer[i] != '\0'; i++) {
+          if (buffer[i] == '.') {
+            hasDot = UTRUE;
+            break;
+          }
         }
-      }
-      if (hasDot) {
-        size_t len = strlen(buffer);
-        while (len > 0 && buffer[len - 1] == '0') {
-          buffer[--len] = '\0';
-        }
-        if (len > 0 && buffer[len - 1] == '.') {
-          buffer[--len] = '\0';
+        if (hasDot) {
+          size_t len = strlen(buffer);
+          while (len > 0 && buffer[len - 1] == '0') {
+            buffer[--len] = '\0';
+          }
+          if (len > 0 && buffer[len - 1] == '.') {
+            buffer[--len] = '\0';
+          }
         }
       }
       *out = OBJ_VAL(copyCString(buffer));
@@ -734,8 +739,18 @@ static void defineStandardIOGlobals() {
 
 void defineDefaultGlobals() {
   defineGlobal("PI", NUMBER_VAL(PI));
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  {
+    double one = 1.0;
+    double zero = one - one;
+    defineGlobal("NAN", NUMBER_VAL(zero / zero));
+    defineGlobal("INFINITY", NUMBER_VAL(one / zero));
+  }
+#else
   defineGlobal("NAN", NUMBER_VAL(0.0/0.0));
   defineGlobal("INFINITY", NUMBER_VAL(1.0/0.0));
+#endif
 
   defineGlobal("len", OPERATOR_VAL(OperatorLen));
 
