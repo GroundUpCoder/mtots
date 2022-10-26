@@ -14,8 +14,13 @@
 #define FREAD_BUFFER_SIZE      8192
 
 
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+#define PATH_SEP '\\'
+#define PATH_SEP_STR "\\"
+#else
 #define PATH_SEP '/'
 #define PATH_SEP_STR "/"
+#endif
 
 #define MTOTS_FILE_EXTENSION ".mtots"
 
@@ -57,9 +62,6 @@
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 
 #define OS_NAME "windows"
-
-#define PATH_SEP '\\'
-#define PATH_SEP_STR "\\"
 
 #elif __APPLE__
 
