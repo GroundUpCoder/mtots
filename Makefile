@@ -2,7 +2,6 @@
 
 out/macos: src/* scripts/*
 	mkdir -p out/macos
-	cp lib/angle/targets/macos/*.dylib out/macos
 	cc -std=c89 \
 		-Wall -Werror -Wpedantic \
 		-framework AudioToolbox \
@@ -24,8 +23,6 @@ out/macos: src/* scripts/*
 		-Ilib/angle/include \
 		src/*.c \
 		lib/sdl/targets/macos/libSDL2.a \
-		lib/angle/targets/macos/libEGL.dylib \
-		lib/angle/targets/macos/libGLESv2.dylib \
 		-fsanitize=address \
 		-O0 -g \
 		-flto \
