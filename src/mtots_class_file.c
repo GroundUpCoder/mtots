@@ -23,6 +23,7 @@ static ubool implFileWrite(i16 argCount, Value *args, Value *out) {
   }
   str = AS_STRING(arg);
   writeSize = fwrite(str->chars, sizeof(char), str->length, file->file);
+  *out = NUMBER_VAL(writeSize);
   return UTRUE;
 }
 

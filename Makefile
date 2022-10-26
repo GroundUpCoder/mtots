@@ -34,9 +34,8 @@ out/c89: src/*
 		-Wall -Werror -Wpedantic \
 		-Isrc \
 		src/*.c \
-		-fsanitize=address \
+		-fsanitize-undefined-trap-on-error \
 		-O0 -g \
-		-flto \
 		-o out/c89/mtots
 
 test: out/c89 scripts/run-tests.py

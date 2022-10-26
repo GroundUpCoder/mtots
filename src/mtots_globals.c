@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #include <math.h>
 
+#define PI   3.14159265358979323846264338327950288
+
 static ubool implClock(i16 argCount, Value *args, Value *out) {
   *out = NUMBER_VAL((double) clock() / CLOCKS_PER_SEC);
   return UTRUE;
@@ -731,7 +733,7 @@ static void defineStandardIOGlobals() {
 }
 
 void defineDefaultGlobals() {
-  defineGlobal("PI", NUMBER_VAL(M_PI));
+  defineGlobal("PI", NUMBER_VAL(PI));
   defineGlobal("NAN", NUMBER_VAL(0.0/0.0));
   defineGlobal("INFINITY", NUMBER_VAL(1.0/0.0));
 

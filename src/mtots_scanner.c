@@ -473,9 +473,11 @@ Token scanToken() {
        * empty blank lines
        */
       scanner.line++;
-      while (peek() == '\n') {
+      while (peek() == '\n' || peek() == '\r') {
+        if (peek() == '\n') {
+          scanner.line++;
+        }
         advance();
-        scanner.line++;
       }
 
       /* Handle indentation */
