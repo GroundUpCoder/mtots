@@ -76,7 +76,7 @@ static void audioCallback(void *userdata, Uint8 *rawBuffer, int streamLen) {
       }
     }
     sum = sum < -1 ? -1 : sum > 1 ? 1 : sum;
-    buffer[i] = (Sint8) (INT8_MAX * sum);
+    buffer[i] = (Sint8) (I8_MAX * sum);
   }
 }
 

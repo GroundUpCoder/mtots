@@ -61,6 +61,9 @@ def buildDesktop():
             '/Fo' + join(mtotsDir, 'out', 'desktop') + '\\',
             '/Fe' + join(mtotsDir, 'out', 'desktop', 'mtots'),
             '/Zi',
+            '/DMTOTS_ENABLE_SDL=1',
+            '/Ilib\\sdl\\include',
+            'lib\\sdl\\targets\\windows\\SDL2.lib',
             '/fsanitize=address',
         ] + getSources())
     elif sys.platform.startswith('darwin'):
@@ -82,7 +85,6 @@ def buildDesktop():
             "-framework", "CoreHaptics",
             "-framework", "Metal",
             "-DMTOTS_ENABLE_SDL=1",
-            "-DMTOTS_ENABLE_OPENGLES3=1",
             "-Isrc",
             "-Ilib/sdl/include",
             "-Ilib/angle/include",
