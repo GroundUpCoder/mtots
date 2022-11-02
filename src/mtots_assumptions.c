@@ -28,7 +28,7 @@ void checkAssumptions() {
     exit(1);
   }
   if (sizeof(void*) != 4 && sizeof(void*) != 8) {
-    fprintf(stderr, "void* is not 4 or 8 bytes (got %lu)", sizeof(void*));
+    fprintf(stderr, "void* is neither 4 nor 8 bytes (got %lu)", sizeof(void*));
     exit(1);
   }
   if (sizeof(void*) != sizeof(size_t)) {

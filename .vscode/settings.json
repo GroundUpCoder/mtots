@@ -52,7 +52,8 @@
         "mtots_m_sdl_aspec.h": "c",
         "string.h": "c",
         "climits": "c",
-        "mtots_assumptions.h": "c"
+        "mtots_assumptions.h": "c",
+        "mtots_ops.h": "c"
     },
     "C_Cpp.default.defines": [
         "MTOTS_ENABLE_SDL=1",
