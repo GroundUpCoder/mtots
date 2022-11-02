@@ -49,6 +49,25 @@ def run(args):
         sys.exit(1)
 
 
+def buildWeb():
+    os.makedirs(join(mtotsDir, 'out', 'web'), exist_ok=True)
+    run([
+        'emcc',
+        '-g',
+        '-Isrc',
+        '-o', 'out/web/index.html',
+        '-sUSE_SDL=2',
+        # '-sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2', # For WebGL
+        '-sASYNCIFY',
+        '-O3',
+        '-DMTOTS_ENABLE_SDL=1',
+        '-DMTOTS_WEB_START_SCRIPT="/home/web_user/apps/music-keyboard.mtots"',
+        '--preload-file', 'misc/samples@/homeweb_user/samples',
+        '--preload-file', 'misc/apps@/home/web_user/apps',
+        '--preload-file', 'root@/home/web_user/git/mtots/root',
+    ] + getSources())
+
+
 def buildDesktop():
     os.makedirs(join(mtotsDir, 'out', 'desktop'), exist_ok=True)
     if sys.platform.startswith('win32'):
@@ -114,6 +133,8 @@ if target == 'clean':
     shutil.rmtree(join(mtotsDir, 'out'), ignore_errors=True)
 elif target == 'desktop':
     buildDesktop()
+elif target == 'web':
+    buildWeb()
 elif target == 'test':
     buildDesktop()
     runTests()
