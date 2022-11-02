@@ -1020,9 +1020,13 @@ static void classDeclaration() {
     if (!match(TOKEN_RIGHT_PAREN)) {
       expression();
 
+      /* TODO: add a 'full-name' check instead - we should check
+       * both the class name and module the class is from */
+      /*
       if (identifiersEqual(&className, &parser.previous)) {
         error("A class can't inherit from itself");
       }
+      */
 
       beginScope();
       addLocal(syntheticToken("super"));
@@ -1041,6 +1045,11 @@ static void classDeclaration() {
   while (match(TOKEN_NEWLINE));
   consume(TOKEN_INDENT, "Expect INDENT before class body");
   while (match(TOKEN_NEWLINE));
+  if (match(TOKEN_STRING) ||
+      match(TOKEN_RAW_STRING) ||
+      match(TOKEN_TRIPLE_QUOTE_RAW_STRING)) {
+    while (match(TOKEN_NEWLINE));
+  }
   while (!check(TOKEN_DEDENT) && !check(TOKEN_EOF)) {
     method();
     while (match(TOKEN_NEWLINE));
