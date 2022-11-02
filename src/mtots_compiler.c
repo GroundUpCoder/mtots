@@ -3,6 +3,7 @@
 #include "mtots_scanner.h"
 #include "mtots_memory.h"
 #include "mtots_str.h"
+#include "mtots_panic.h"
 
 #if DEBUG_PRINT_CODE
 #include "mtots_debug.h"
@@ -11,10 +12,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-/* TODO: factor this out into a header somewhere
- * instead of copying over from "mtots_vm.h" */
-NORETURN void panic(const char *format, ...);
 
 typedef struct {
   Token current;
