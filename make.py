@@ -6,7 +6,6 @@ import shutil
 import sys
 import subprocess
 
-print(sys.argv[0])
 join = os.path.join
 mtotsDir = os.path.dirname(os.path.realpath(__file__))
 
