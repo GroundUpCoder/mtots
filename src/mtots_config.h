@@ -34,7 +34,6 @@
 
 /* ##### C++11 and above ##### */
 #define NORETURN [[ noreturn ]]
-#define STATIC_INLINE static inline
 
 #else /* __cplusplus */
 
@@ -42,13 +41,11 @@
 
 /* ##### C99 and above ##### */
 #define NORETURN _Noreturn
-#define STATIC_INLINE static inline
 
 #else /* __STDC_VERSION__ */
 
 /* ##### Assume C89 only ##### */
 #define NORETURN
-#define STATIC_INLINE
 
 #endif /* __STDC_VERSION__ */
 
