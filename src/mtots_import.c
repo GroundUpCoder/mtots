@@ -14,8 +14,7 @@ static char *readFile(const char *path) {
   FILE *file = fopen(path, "rb");
 
   if (file == NULL) {
-    fprintf(stderr, "Could not open file \"%s\"\n", path);
-    exit(MTOTS_EXIT_CODE_COULD_NOT_OPEN_SCRIPT_FILE);
+    panic("Could not open file \"%s\"\n", path);
   }
 
   /* NOTE: This might not actually be standards
@@ -27,13 +26,11 @@ static char *readFile(const char *path) {
 
   buffer = (char*)malloc(fileSize + 1);
   if (buffer == NULL) {
-    fprintf(stderr, "Not enough memory to read \"%s\"\n", path);
-    exit(MTOTS_EXIT_CODE_NOT_ENOUGH_MEMORY_FOR_SCRIPT_FILE);
+    panic("Not enough memory to read \"%s\"\n", path);
   }
   bytesRead = fread(buffer, sizeof(char), fileSize, file);
   if (bytesRead < fileSize) {
-    fprintf(stderr, "Could not read file \"%s\"\n", path);
-    exit(MTOTS_EXIT_CODE_COULD_NOT_READ_SCRIPT_FILE);
+    panic("Could not read file \"%s\"\n", path);
   }
   buffer[bytesRead] = '\0';
 

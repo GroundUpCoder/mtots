@@ -67,7 +67,7 @@ int main(int argc, const char *argv[]) {
       } else {
         fprintf(stderr, "(runtime-error, but no error message set)\n");
       }
-      exit(MTOTS_EXIT_CODE_RUNTIME_ERROR);
+      exit(1);
     }
   } else {
     fprintf(stderr, "Usage: mtots [path]\n");

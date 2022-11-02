@@ -115,7 +115,7 @@ NORETURN void panic(const char *format, ...) {
   va_end(args);
   fputs("\n", stderr);
   printStack();
-  exit(MTOTS_EXIT_CODE_PANIC);
+  exit(1);
 }
 
 void runtimeError(const char *format, ...) {
@@ -269,7 +269,7 @@ void freeVM() {
 
 void push(Value value) {
   if (vm.stackTop + 1 > vm.stack + STACK_MAX) {
-    exit(MTOTS_EXIT_CODE_STACK_OVERFLOW);
+    panic("stack overflow");
   }
   *vm.stackTop = value;
   vm.stackTop++;
@@ -277,7 +277,7 @@ void push(Value value) {
 
 Value pop() {
   if (vm.stackTop <= vm.stack) {
-    exit(MTOTS_EXIT_CODE_STACK_UNDERFLOW);
+    panic("stack underflow");
   }
   vm.stackTop--;
   return *vm.stackTop;

@@ -33,7 +33,7 @@ void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
 
   result = realloc(pointer, newSize);
   if (result == NULL) {
-    exit(MTOTS_EXIT_CODE_OOM);
+    panic("out of memory");
   }
   return result;
 }
@@ -54,7 +54,7 @@ void markObject(Obj *object) {
     vm.grayStack = (Obj**)realloc(
       vm.grayStack, sizeof(Obj*) * vm.grayCapacity);
     if (vm.grayStack == NULL) {
-      exit(MTOTS_EXIT_CODE_OOM_GC);
+      panic("out of memory (during gc)");
     }
   }
   vm.grayStack[vm.grayCount++] = object;
