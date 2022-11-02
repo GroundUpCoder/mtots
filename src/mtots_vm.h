@@ -8,6 +8,10 @@
 #include "mtots_ops.h"
 #include "mtots_error.h"
 
+/* headers with prototypes whose function definitions are in mtots_vm.c */
+#include "mtots_panic.h"
+#include "mtots_stack.h"
+
 #define FRAMES_MAX 64
 #define STACK_MAX (FRAMES_MAX * U8_COUNT)
 #define TRY_SNAPSHOTS_MAX 64
@@ -91,9 +95,6 @@ extern VM vm;
 void initVM();
 void freeVM();
 InterpretResult interpret(const char *source, ObjInstance *module);
-void push(Value value);
-Value pop();
-NORETURN void panic(const char *format, ...);
 void defineGlobal(const char *name, Value value);
 
 /* Native module bodies should be a CFunction that accepts

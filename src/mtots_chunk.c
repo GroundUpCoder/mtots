@@ -1,6 +1,6 @@
 #include "mtots_chunk.h"
 #include "mtots_memory.h"
-#include "mtots_vm.h"
+#include "mtots_stack.h"
 #include "mtots_ops.h"
 
 #include <stdlib.h>

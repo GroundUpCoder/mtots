@@ -2,7 +2,9 @@
 #include "mtots_memory.h"
 #include "mtots_object.h"
 #include "mtots_value.h"
-#include "mtots_vm.h"
+#include "mtots_stack.h"
+#include "mtots_panic.h"
+#include "mtots_ops.h"
 
 #define DICT_MAX_LOAD 0.75
 

@@ -2,7 +2,7 @@
 #include "mtots_memory.h"
 #include "mtots_object.h"
 #include "mtots_value.h"
-#include "mtots_vm.h"
+#include "mtots_stack.h"
 
 #include <stdlib.h>
 #include <string.h>
