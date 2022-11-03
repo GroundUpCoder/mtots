@@ -10,7 +10,7 @@ typedef struct Entry {
 } Entry;
 
 typedef struct {
-  size_t count;    /* (implementation detail) */
+  size_t occupied; /* (implementation detail) */
   size_t capacity; /* 0 or (8 * <power of 2>) */
   size_t size;     /* actual number of active elements */
   Entry *entries;

@@ -10,7 +10,7 @@
 #define TABLE_MAX_LOAD 0.75
 
 void initTable(Table *table) {
-  table->count = 0;
+  table->occupied = 0;
   table->capacity = 0;
   table->size = 0;
   table->entries = NULL;
@@ -52,7 +52,7 @@ static Entry *findEntry(Entry *entries, size_t capacity, ObjString *key) {
 ubool tableGet(Table *table, ObjString *key, Value *value) {
   Entry *entry;
 
-  if (table->count == 0) {
+  if (table->occupied == 0) {
     return UFALSE;
   }
 
@@ -73,7 +73,7 @@ static void adjustCapacity(Table *table, size_t capacity) {
     entries[i].value = NIL_VAL();
   }
 
-  table->count = 0;
+  table->occupied = 0;
   for (i = 0; i < table->capacity; i++) {
     Entry *entry = &table->entries[i], *dest;
     if (entry->key == NULL) continue;
@@ -81,7 +81,7 @@ static void adjustCapacity(Table *table, size_t capacity) {
     dest = findEntry(entries, capacity, entry->key);
     dest->key = entry->key;
     dest->value = entry->value;
-    table->count++;
+    table->occupied++;
   }
 
   FREE_ARRAY(Entry, table->entries, table->capacity);
@@ -93,7 +93,7 @@ ubool tableSet(Table *table, ObjString *key, Value value) {
   Entry *entry;
   ubool isNewKey;
 
-  if (table->count + 1 > table->capacity * TABLE_MAX_LOAD) {
+  if (table->occupied + 1 > table->capacity * TABLE_MAX_LOAD) {
     size_t capacity = GROW_CAPACITY(table->capacity);
     adjustCapacity(table, capacity);
   }
@@ -107,7 +107,7 @@ ubool tableSet(Table *table, ObjString *key, Value value) {
     * We include tombstones in the count so that the loadfactor
     * is sensitive to slots occupied by tombstones */
     if (IS_NIL(entry->value)) {
-      table->count++;
+      table->occupied++;
     }
     table->size++;
   }
@@ -140,7 +140,7 @@ ubool tableSetN(Table *table, const char *key, Value value) {
 ubool tableDelete(Table *table, ObjString *key) {
   Entry *entry;
 
-  if (table->count == 0) {
+  if (table->occupied == 0) {
     return UFALSE;
   }
 
@@ -172,7 +172,7 @@ ObjString *tableFindString(
     size_t length,
     u32 hash) {
   u32 index;
-  if (table->count == 0) {
+  if (table->occupied == 0) {
     return NULL;
   }
   /* OPT: hash % table->capacity */
