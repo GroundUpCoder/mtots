@@ -16,15 +16,13 @@ typedef struct DictEntry {
  * https://mail.python.org/pipermail/python-dev/2012-December/123028.html
  */
 typedef struct Dict {
-  /* Count is stored for the purposes of
-   * keeping track of the load factor.
-   * The count used for this purpose includes
-   * tombstones, so the number here may not actually
-   * be the number of live entries in this Dict.
+  /* `occupied` is stored to keep track of the load factor.
+   * `occupied` is the number of entries that are either
+   * contain a live entry or a tombstone.
    * To get the actual number of entries in this Dict,
    * see field 'size'.
    */
-  size_t count;
+  size_t occupied; /* size + tombstones */
   size_t capacity; /* 0 or (8 * <power of 2>) */
   size_t size;     /* actual number of active elements */
   DictEntry *entries;

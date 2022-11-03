@@ -9,7 +9,7 @@
 #define DICT_MAX_LOAD 0.75
 
 void initDict(Dict *dict) {
-  dict->count = 0;
+  dict->occupied = 0;
   dict->capacity = 0;
   dict->size = 0;
   dict->entries = NULL;
@@ -78,7 +78,7 @@ static DictEntry *findEntry(DictEntry *entries, size_t capacity, Value key) {
 ubool dictGet(Dict *dict, Value key, Value *value) {
   DictEntry *entry;
 
-  if (dict->count == 0) {
+  if (dict->occupied == 0) {
     return UFALSE;
   }
 
@@ -100,7 +100,7 @@ static void adjustCapacity(Dict *dict, size_t capacity) {
     entries[i].value = NIL_VAL();
   }
 
-  dict->count = 0;
+  dict->occupied = 0;
   for (p = dict->first; p; p = p->next) {
     DictEntry *dest;
 
@@ -119,7 +119,7 @@ static void adjustCapacity(Dict *dict, size_t capacity) {
       last = dest;
     }
 
-    dict->count++;
+    dict->occupied++;
   }
 
   FREE_ARRAY(DictEntry, dict->entries, dict->capacity);
@@ -133,7 +133,7 @@ ubool dictSet(Dict *dict, Value key, Value value) {
   DictEntry *entry;
   ubool isNewKey;
 
-  if (dict->count + 1 > dict->capacity * DICT_MAX_LOAD) {
+  if (dict->occupied + 1 > dict->capacity * DICT_MAX_LOAD) {
     size_t capacity = GROW_CAPACITY(dict->capacity);
     adjustCapacity(dict, capacity);
   }
@@ -147,7 +147,7 @@ ubool dictSet(Dict *dict, Value key, Value value) {
     * We include tombstones in the count so that the loadfactor
     * is sensitive to slots occupied by tombstones */
     if (IS_NIL(entry->value)) {
-      dict->count++;
+      dict->occupied++;
     }
     dict->size++;
 
@@ -190,7 +190,7 @@ ubool dictSetN(Dict *dict, const char *key, Value value) {
 ubool dictDelete(Dict *dict, Value key) {
   DictEntry *entry;
 
-  if (dict->count == 0) {
+  if (dict->occupied == 0) {
     return UFALSE;
   }
 
@@ -225,7 +225,7 @@ ObjTuple *dictFindTuple(
     size_t length,
     u32 hash) {
   u32 index;
-  if (dict->count == 0) {
+  if (dict->occupied == 0) {
     return NULL;
   }
   /* OPT: hash % dict->capacity */
