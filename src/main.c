@@ -4,7 +4,6 @@
 #include "mtots_vm.h"
 #include "mtots_compiler.h"
 #include "mtots_import.h"
-#include "mtots_assumptions.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -49,7 +48,6 @@ int main(int argc, const char *argv[]) {
   argv = fakeArgv;
 #endif
 
-  checkAssumptions();
   initRules();
   initVM();
 

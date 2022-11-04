@@ -1,3 +1,4 @@
+#include "mtots_assumptions.h"
 #include "mtots_vm.h"
 #include "mtots_debug.h"
 #include "mtots_compiler.h"
@@ -171,6 +172,7 @@ static void initNoMethodClass(ObjClass **clsptr, const char *name) {
 }
 
 void initVM() {
+  checkAssumptions();
   resetStack();
   vm.objects = NULL;
   vm.bytesAllocated = 0;
