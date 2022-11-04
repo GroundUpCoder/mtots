@@ -26,33 +26,20 @@
 
 
 /****************************************************************
- * C version
+ * Language version
  ****************************************************************/
 
 /* #if __cplusplus >= 201103L || (defined(_MSC_VER) && _MSC_VER >= 1900) */
-#if __cplusplus >= 201103L
-
-/* ##### C++11 and above ##### */
+#if __cplusplus >= 201103L /* C++11 and above */
 #define NORETURN [[ noreturn ]]
-
-#else /* __cplusplus */
-
-#if __STDC_VERSION__ >= 199901L
-
-/* ##### C99 and above ##### */
+#elif __STDC_VERSION__ >= 199901L /* C99 and above  */
 #define NORETURN _Noreturn
-
-#else /* __STDC_VERSION__ */
-
-/* ##### Assume C89 only ##### */
+#else /* Assume C89 only */
 #define NORETURN
-
-#endif /* __STDC_VERSION__ */
-
 #endif /* __cplusplus */
 
 /****************************************************************
- * OS version
+ * OS
  ****************************************************************/
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
