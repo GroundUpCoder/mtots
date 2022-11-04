@@ -1,5 +1,12 @@
-import glu
+import sdlu
 
-final app = glu.App()
-app.init()
-app.run()
+
+class App(sdlu.App):
+  def draw():
+    final r = this.renderer
+
+    r.setDrawColor(0, 100, 200, 255)
+    r.clear()
+
+
+sdlu.runApp(App())

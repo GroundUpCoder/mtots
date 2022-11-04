@@ -1,0 +1,76 @@
+r"""SDL Utilities
+"""
+import sdl
+
+
+class App:
+  r"""Base class for Apps
+  Not strictly necessary, but will set required
+  field values to sensible defaults and
+  define nop implementations of required methods
+  """
+
+  def __init__():
+    # to be set before 'init' is called
+    this.window = nil
+    this.renderer = nil
+
+    # configuration
+    this.title = 'app'
+    this.screenWidth = 640
+    this.screenHeight = 480
+    this.sdlInitFlags = sdl.INIT_VIDEO|sdl.INIT_AUDIO
+    this.fps = 60
+
+  def init():
+    pass
+
+  def update():
+    pass
+
+  def draw():
+    pass
+
+  def keyDown(event):
+    pass
+
+
+def runApp(app):
+  sdl.init(app.sdlInitFlags)
+  final window = sdl.createWindow(
+    app.title,
+    sdl.WINDOWPOS_CENTERED, sdl.WINDOWPOS_CENTERED,
+    app.screenWidth, app.screenHeight,
+    sdl.WINDOW_ALLOW_HIGHDPI)
+  final renderer = sdl.createRenderer(window, -1, 0)
+
+  # 1 tick <-> 1 millisecond
+  final fps = app.fps
+  final ticksPerFrame = (1 / fps) * 1000
+
+  app.window = window
+  app.renderer = renderer
+  app.init()
+
+  final event = sdl.Event()
+
+  while true:
+    final startTicks = sdl.getTicks()
+
+    while sdl.pollEvent(event):
+      if event.type == sdl.QUIT:
+        sdl.quit()
+        return 0
+      elif event.type == sdl.KEYDOWN:
+        if event.repeat:
+          pass # for now ignore repeats
+        else:
+          app.keyDown(event)
+
+    app.update()
+    app.draw()
+    renderer.present()
+    final endTicks = sdl.getTicks()
+    final elapsedTicks = endTicks - startTicks
+    if 0 < elapsedTicks and elapsedTicks < ticksPerFrame:
+      sdl.delay((ticksPerFrame - elapsedTicks) // 1)
