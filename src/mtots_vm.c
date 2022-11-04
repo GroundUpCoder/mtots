@@ -681,7 +681,7 @@ static void concatenate() {
   push(OBJ_VAL(result));
 }
 
-InterpretResult run(i16 returnFrameCount) {
+ubool run(i16 returnFrameCount) {
   CallFrame *frame = &vm.frames[vm.frameCount - 1];
 
 #define READ_BYTE() (*frame->ip++)
@@ -693,7 +693,7 @@ InterpretResult run(i16 returnFrameCount) {
 #define RETURN_RUNTIME_ERROR() \
   do { \
     TrySnapshot *snap; \
-    if (vm.trySnapshotsCount == 0) return INTERPRET_RUNTIME_ERROR; \
+    if (vm.trySnapshotsCount == 0) return UFALSE; \
     snap = &vm.trySnapshots[--vm.trySnapshotsCount]; \
     vm.stackTop = snap->stackTop; \
     vm.frameCount = snap->frameCount; \
@@ -1156,7 +1156,7 @@ loop:
             frame = &vm.frames[vm.frameCount - 1];
           }
 
-          return INTERPRET_OK;
+          return UTRUE;
         }
 
         vm.stackTop = frame->slots;
@@ -1223,11 +1223,12 @@ loop:
 #undef BINARY_OP
 }
 
-InterpretResult interpret(const char *source, ObjInstance *module) {
+/* Runs true on success, false otherwise */
+ubool interpret(const char *source, ObjInstance *module) {
   ObjClosure *closure;
   ObjFunction *function = compile(source, module->klass->name);
   if (function == NULL) {
-    return INTERPRET_COMPILE_ERROR;
+    return UFALSE;
   }
 
   push(OBJ_VAL(function));

@@ -84,17 +84,11 @@ typedef struct {
   char *errorString;
 } VM;
 
-typedef enum {
-  INTERPRET_OK,
-  INTERPRET_COMPILE_ERROR,
-  INTERPRET_RUNTIME_ERROR
-} InterpretResult;
-
 extern VM vm;
 
 void initVM();
 void freeVM();
-InterpretResult interpret(const char *source, ObjInstance *module);
+ubool interpret(const char *source, ObjInstance *module);
 void defineGlobal(const char *name, Value value);
 
 /* Native module bodies should be a CFunction that accepts
@@ -103,7 +97,7 @@ void defineGlobal(const char *name, Value value);
 void addNativeModule(CFunction *func);
 
 /* semi-private functions */
-InterpretResult run(i16 returnFrameCount);
+ubool run(i16 returnFrameCount);
 ubool call(ObjClosure *closure, i16 argCount);
 
 #endif/*mtots_vm_h*/

@@ -23,7 +23,7 @@ static void repl() {
       break;
     }
 
-    if (interpret(line, module) == INTERPRET_RUNTIME_ERROR) {
+    if (!interpret(line, module)) {
       fprintf(stderr, "%s", vm.errorString);
     }
     pop(); /* return value */

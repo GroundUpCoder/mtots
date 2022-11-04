@@ -72,7 +72,7 @@ ubool importModuleWithPath(ObjString *moduleName, const char *path) {
 
   call(closure, 0);
 
-  if (run(returnFrameCount) == INTERPRET_OK) {
+  if (run(returnFrameCount)) {
     pop(); /* return value from run */
 
     push(OBJ_VAL(module));
