@@ -814,7 +814,7 @@ static ParseRule newRule(ParseFn prefix, ParseFn infix, Precedence prec) {
   return rule;
 }
 
-void initRules() {
+void initParseRules() {
   int i;
   for (i = 0; i <= TOKEN_EOF; i++) {
     rules[i].infix = rules[i].prefix = NULL;

@@ -1,8 +1,5 @@
 #include "mtots_common.h"
-#include "mtots_chunk.h"
-#include "mtots_debug.h"
 #include "mtots_vm.h"
-#include "mtots_compiler.h"
 #include "mtots_import.h"
 
 #include <stdio.h>
@@ -48,7 +45,6 @@ int main(int argc, const char *argv[]) {
   argv = fakeArgv;
 #endif
 
-  initRules();
   initVM();
 
   if (argc == 1) {

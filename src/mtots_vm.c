@@ -173,6 +173,7 @@ static void initNoMethodClass(ObjClass **clsptr, const char *name) {
 
 void initVM() {
   checkAssumptions();
+  initParseRules();
   resetStack();
   vm.objects = NULL;
   vm.bytesAllocated = 0;

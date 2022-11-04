@@ -4,7 +4,7 @@
 #include "mtots_chunk.h"
 #include "mtots_object.h"
 
-void initRules();
+void initParseRules();
 
 ObjFunction *compile(const char *source, ObjString *moduleName);
 void markCompilerRoots();
