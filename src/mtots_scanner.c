@@ -59,23 +59,23 @@ static ubool isAtEnd() {
   return *scanner.current == '\0';
 }
 
-static char advance() {
+static char advanceScanner() {
   scanner.current++;
   return scanner.current[-1];
 }
 
-static char peek() {
+static char peekScanner() {
   return *scanner.current;
 }
 
-static char peekNext() {
+static char peekNextInScanner() {
   if (isAtEnd()) {
     return '\0';
   }
   return scanner.current[1];
 }
 
-static ubool match(char expected) {
+static ubool matchScanner(char expected) {
   if (isAtEnd()) {
     return UFALSE;
   }
@@ -95,7 +95,7 @@ static Token makeToken(TokenType type) {
   return token;
 }
 
-static char errorMessageBuffer[512];
+static char scannerErrorMessageBuffer[512];
 
 static Token errorToken(const char *message) {
   Token token;
@@ -108,27 +108,27 @@ static Token errorToken(const char *message) {
 
 static void skipWhitespace() {
   for (;;) {
-    char c = peek();
+    char c = peekScanner();
     switch (c) {
       case ' ':
       case '\r':
       case '\t':
-        advance();
+        advanceScanner();
         break;
       case '\n':
         /* If we are nested inside (), [] or {}, we
          * skip newlines */
         if (scanner.groupingDepth > 0) {
           scanner.line++;
-          advance();
+          advanceScanner();
           break;
         }
         /* Otherwise, we cannot skip newlines */
         return;
       case '#':
         /* A comment goes until the end of the line */
-        while (peek() != '\n' && !isAtEnd()) {
-          advance();
+        while (peekScanner() != '\n' && !isAtEnd()) {
+          advanceScanner();
         }
         break;
       default:
@@ -146,7 +146,7 @@ static TokenType checkKeyword(
   return TOKEN_IDENTIFIER;
 }
 
-static TokenType identifierType() {
+static TokenType scanIdentifierType() {
   switch (scanner.current - scanner.start) {
     case 0:
     case 1:
@@ -267,106 +267,106 @@ static TokenType identifierType() {
   return TOKEN_IDENTIFIER;
 }
 
-static Token identifier() {
-  while (isAlpha(peek()) || isDigit(peek())) {
-    advance();
+static Token scanIdentifier() {
+  while (isAlpha(peekScanner()) || isDigit(peekScanner())) {
+    advanceScanner();
   }
   if (scanner.current - scanner.start > MAX_IDENTIFIER_LENGTH) {
     snprintf(
-      errorMessageBuffer,
-      sizeof(errorMessageBuffer),
+      scannerErrorMessageBuffer,
+      sizeof(scannerErrorMessageBuffer),
       "An identifier may not exceed %d characters",
       MAX_IDENTIFIER_LENGTH);
-    return errorToken(errorMessageBuffer);
+    return errorToken(scannerErrorMessageBuffer);
   }
-  return makeToken(identifierType());
+  return makeToken(scanIdentifierType());
 }
 
-static Token number() {
+static Token scanNumber() {
   if (scanner.start[0] == '0') {
-    if (match('x')) {
+    if (matchScanner('x')) {
       /* hex number */
-      while (isDigit(peek()) ||
-          (peek() >= 'A' && peek() <= 'F') ||
-          (peek() >= 'a' && peek() <= 'f')) {
-        advance();
+      while (isDigit(peekScanner()) ||
+          (peekScanner() >= 'A' && peekScanner() <= 'F') ||
+          (peekScanner() >= 'a' && peekScanner() <= 'f')) {
+        advanceScanner();
       }
       return makeToken(TOKEN_NUMBER_HEX);
     }
-    if (match('b')) {
+    if (matchScanner('b')) {
       /* binary number */
-      while (peek() == '0' || peek() == '1') {
-        advance();
+      while (peekScanner() == '0' || peekScanner() == '1') {
+        advanceScanner();
       }
       return makeToken(TOKEN_NUMBER_BIN);
     }
   }
 
-  while (isDigit(peek())) {
-    advance();
+  while (isDigit(peekScanner())) {
+    advanceScanner();
   }
 
   /* Look for a fractional part */
-  if (peek() == '.' && isDigit(peekNext())) {
-    advance(); /* consume the '.' */
-    while (isDigit(peek())) {
-      advance();
+  if (peekScanner() == '.' && isDigit(peekNextInScanner())) {
+    advanceScanner(); /* consume the '.' */
+    while (isDigit(peekScanner())) {
+      advanceScanner();
     }
   }
 
   return makeToken(TOKEN_NUMBER);
 }
 
-static Token string(char quote, TokenType type) {
-  while (peek() != quote && !isAtEnd()) {
-    if (peek() == '\n') {
+static Token scanString(char quote, TokenType type) {
+  while (peekScanner() != quote && !isAtEnd()) {
+    if (peekScanner() == '\n') {
       scanner.line++;
     }
-    if (peek() == '\\') {
-      advance();
+    if (peekScanner() == '\\') {
+      advanceScanner();
       if (isAtEnd()) {
         return errorToken("Expected string escape but got EOF");
       }
     }
-    advance();
+    advanceScanner();
   }
 
   if (isAtEnd()) {
     return errorToken("Unterminated string");
   }
 
-  advance(); /* The closing quote */
+  advanceScanner(); /* The closing quote */
   return makeToken(type);
 }
 
-static Token rawString(char quote) {
-  while (peek() != quote && !isAtEnd()) {
-    if (peek() == '\n') {
+static Token scanRawString(char quote) {
+  while (peekScanner() != quote && !isAtEnd()) {
+    if (peekScanner() == '\n') {
       scanner.line++;
     }
-    advance();
+    advanceScanner();
   }
 
   if (isAtEnd()) {
     return errorToken("Unterminated string");
   }
 
-  advance(); /* The closing quote */
+  advanceScanner(); /* The closing quote */
   return makeToken(TOKEN_RAW_STRING);
 }
 
-static Token rawTripleQuoteString(char quote) {
+static Token scanRawTripleQuoteString(char quote) {
   size_t quoteRun = 0;
   while (quoteRun < 3 && !isAtEnd()) {
-    if (peek() == '\n') {
+    if (peekScanner() == '\n') {
       scanner.line++;
     }
-    if (peek() == quote) {
+    if (peekScanner() == quote) {
       quoteRun++;
     } else {
       quoteRun = 0;
     }
-    advance();
+    advanceScanner();
   }
 
   if (isAtEnd()) {
@@ -401,28 +401,28 @@ Token scanToken() {
     return makeToken(TOKEN_EOF);
   }
 
-  c = advance();
+  c = advanceScanner();
 
-  if (c == 'r' && (peek() == '"' || peek() == '\'')) {
-    char quote = advance();
-    if (peek() == quote) {
-      advance();
-      if (peek() == quote) {
-        advance();
-        return rawTripleQuoteString(quote);
+  if (c == 'r' && (peekScanner() == '"' || peekScanner() == '\'')) {
+    char quote = advanceScanner();
+    if (peekScanner() == quote) {
+      advanceScanner();
+      if (peekScanner() == quote) {
+        advanceScanner();
+        return scanRawTripleQuoteString(quote);
       } else {
         return makeToken(TOKEN_RAW_STRING);
       }
     }
-    return rawString(quote);
+    return scanRawString(quote);
   }
 
   if (isAlpha(c)) {
-    return identifier();
+    return scanIdentifier();
   }
 
   if (isDigit(c)) {
-    return number();
+    return scanNumber();
   }
 
   switch (c) {
@@ -438,7 +438,7 @@ Token scanToken() {
     case '.': return makeToken(TOKEN_DOT);
     case '-': return makeToken(TOKEN_MINUS);
     case '+': return makeToken(TOKEN_PLUS);
-    case '/': return makeToken(match('/') ? TOKEN_SLASH_SLASH : TOKEN_SLASH);
+    case '/': return makeToken(matchScanner('/') ? TOKEN_SLASH_SLASH : TOKEN_SLASH);
     case '%': return makeToken(TOKEN_PERCENT);
     case '*': return makeToken(TOKEN_STAR);
     case '@': return makeToken(TOKEN_AT);
@@ -448,20 +448,20 @@ Token scanToken() {
     case '~': return makeToken(TOKEN_TILDE);
     case '!':
       return makeToken(
-        match('=') ? TOKEN_BANG_EQUAL : TOKEN_BANG);
+        matchScanner('=') ? TOKEN_BANG_EQUAL : TOKEN_BANG);
     case '=':
       return makeToken(
-        match('=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);
+        matchScanner('=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);
     case '<':
       return makeToken(
-        match('<') ? TOKEN_SHIFT_LEFT :
-        match('=') ? TOKEN_LESS_EQUAL : TOKEN_LESS);
+        matchScanner('<') ? TOKEN_SHIFT_LEFT :
+        matchScanner('=') ? TOKEN_LESS_EQUAL : TOKEN_LESS);
     case '>':
       return makeToken(
-        match('>') ? TOKEN_SHIFT_RIGHT :
-        match('=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
-    case '"': return string('"', TOKEN_STRING);
-    case '\'': return string('\'', TOKEN_STRING);
+        matchScanner('>') ? TOKEN_SHIFT_RIGHT :
+        matchScanner('=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
+    case '"': return scanString('"', TOKEN_STRING);
+    case '\'': return scanString('\'', TOKEN_STRING);
     case '\n': {
       Token newlineToken;
       i32 spaceCount = 0, newIndentationLevel;
@@ -473,16 +473,16 @@ Token scanToken() {
        * empty blank lines
        */
       scanner.line++;
-      while (peek() == '\n' || peek() == '\r') {
-        if (peek() == '\n') {
+      while (peekScanner() == '\n' || peekScanner() == '\r') {
+        if (peekScanner() == '\n') {
           scanner.line++;
         }
-        advance();
+        advanceScanner();
       }
 
       /* Handle indentation */
-      while (peek() == ' ') {
-        advance();
+      while (peekScanner() == ' ') {
+        advanceScanner();
         spaceCount++;
       }
       if (spaceCount % 2 == 1) {
