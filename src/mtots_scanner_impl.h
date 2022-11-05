@@ -1,3 +1,5 @@
+#ifndef mtots_scanner_impl_h
+#define mtots_scanner_impl_h
 #include "mtots_scanner.h"
 #include "mtots_common.h"
 
@@ -499,3 +501,4 @@ Token scanToken() {
 
   return errorToken("Unexpected character");
 }
+#endif/*mtots_scanner_impl_h*/
