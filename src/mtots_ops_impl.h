@@ -15,6 +15,7 @@ ubool valuesIs(Value a, Value b) {
     case VAL_BOOL: return AS_BOOL(a) == AS_BOOL(b);
     case VAL_NIL: return UTRUE;
     case VAL_NUMBER: return AS_NUMBER(a) == AS_NUMBER(b);
+    case VAL_CFUNC: return AS_CFUNC(a) == AS_CFUNC(b);
     case VAL_CFUNCTION: return AS_CFUNCTION(a) == AS_CFUNCTION(b);
     case VAL_OPERATOR: return AS_OPERATOR(a) == AS_OPERATOR(b);
     case VAL_SENTINEL: return AS_SENTINEL(a) == AS_SENTINEL(b);
@@ -32,6 +33,7 @@ ubool valuesEqual(Value a, Value b) {
     case VAL_BOOL: return AS_BOOL(a) == AS_BOOL(b);
     case VAL_NIL: return UTRUE;
     case VAL_NUMBER: return AS_NUMBER(a) == AS_NUMBER(b);
+    case VAL_CFUNC: return AS_CFUNC(a) == AS_CFUNC(b);
     case VAL_CFUNCTION: return AS_CFUNCTION(a) == AS_CFUNCTION(b);
     case VAL_OPERATOR: return AS_OPERATOR(a) == AS_OPERATOR(b);
     case VAL_SENTINEL: return AS_SENTINEL(a) == AS_SENTINEL(b);
@@ -105,6 +107,7 @@ ubool valueLessThan(Value a, Value b) {
     case VAL_BOOL: return AS_BOOL(a) < AS_BOOL(b);
     case VAL_NIL: return UFALSE;
     case VAL_NUMBER: return AS_NUMBER(a) < AS_NUMBER(b);
+    case VAL_CFUNC: break;
     case VAL_CFUNCTION: break;
     case VAL_OPERATOR: break;
     case VAL_SENTINEL: break;

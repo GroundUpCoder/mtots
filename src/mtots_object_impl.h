@@ -376,6 +376,7 @@ ObjClass *getClass(Value value) {
     case VAL_BOOL: return vm.boolClass;
     case VAL_NIL: return vm.nilClass;
     case VAL_NUMBER: return vm.numberClass;
+    case VAL_CFUNC: return vm.functionClass;
     case VAL_CFUNCTION: return vm.functionClass;
     case VAL_OPERATOR: return vm.operatorClass;
     case VAL_SENTINEL: return vm.sentinelClass;

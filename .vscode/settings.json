@@ -1,7 +1,8 @@
 {
     "files.eol": "\n",
     "files.associations": {
-        "*.h": "c"
+        "*.h": "c",
+        "typeinfo": "c"
     },
     "C_Cpp.default.defines": [
         "MTOTS_ENABLE_SDL=1",

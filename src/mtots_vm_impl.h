@@ -303,6 +303,67 @@ static ubool isIterator(Value value) {
   return UFALSE;
 }
 
+static ubool callCFunc(CFunc *cfunc, i16 argCount) {
+  Value *argsStart;
+  ubool status;
+  Ref argsStartRef, resultRef;
+  if (cfunc->arity != argCount) {
+    /* not an exact match for the arity
+     * We need further checks */
+    if (cfunc->maxArity) {
+      /* we have optional args */
+      if (argCount < cfunc->arity) {
+        runtimeError(
+          "Function %s expects at least %d arguments but got %d",
+          cfunc->name, cfunc->arity, argCount);
+        return UFALSE;
+      } else if (argCount > cfunc->maxArity) {
+        runtimeError(
+          "Function %s expects at most %d arguments but got %d",
+          cfunc->name, cfunc->maxArity, argCount);
+        return UFALSE;
+      }
+      /* At this point we have argCount between
+       * cfunc->arity and cfunc->maxArity */
+    } else {
+      runtimeError(
+        "Function %s expects %d arguments but got %d",
+        cfunc->name, cfunc->arity, argCount);
+      return UFALSE;
+    }
+  }
+  argsStart = vm.stackTop - argCount;
+  argsStartRef.i = argsStart - vm.stack;
+  resultRef.i = argsStartRef.i - 1;
+  /* NOTE: Every call always has a value in the receiver slot -
+   * In particular, normal function calls will have the function
+   * itself in the receiver slot */
+  if (!typePatternMatch(cfunc->receiverType, argsStart[-1])) {
+    runtimeError(
+      "Invalid receiver passed to method %s()",
+      cfunc->name);
+    return UFALSE;
+  }
+  if (cfunc->argTypes != NULL) {
+    size_t i;
+    for (i = 0; i < argCount; i++) {
+      if (!typePatternMatch(cfunc->argTypes[i], argsStart[i])) {
+        runtimeError(
+          "%s() expects %s for argument %d, but got %s",
+          cfunc->name, getTypePatternName(cfunc->argTypes[i]),
+          i, getKindName(argsStart[i]));
+        return UFALSE;
+      }
+    }
+  }
+  status = cfunc->body(argCount, argsStartRef, resultRef);
+  if (!status) {
+    return UFALSE;
+  }
+  vm.stackTop -= argCount;
+  return UTRUE;
+}
+
 static ubool callCFunction(CFunction *cfunc, i16 argCount) {
   Value result = NIL_VAL(), *argsStart;
   ubool status;
@@ -572,7 +633,10 @@ static ubool callOperator(Operator op, i16 argCount) {
 }
 
 static ubool callValue(Value callee, i16 argCount) {
-  if (IS_CFUNCTION(callee)) {
+  if (IS_CFUNC(callee)) {
+    CFunc *cfunc = AS_CFUNC(callee);
+    return callCFunc(cfunc, argCount);
+  } else if (IS_CFUNCTION(callee)) {
     CFunction *cfunc = AS_CFUNCTION(callee);
     return callCFunction(cfunc, argCount);
   } else if (IS_OBJ(callee)) {

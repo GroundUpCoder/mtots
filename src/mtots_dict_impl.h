@@ -36,6 +36,7 @@ u32 hashval(Value value) {
         return (u32) ix;
       }
     }
+    case VAL_CFUNC: break;
     case VAL_CFUNCTION: break;
     case VAL_OPERATOR: break;
     case VAL_SENTINEL: return (u32) AS_SENTINEL(value);

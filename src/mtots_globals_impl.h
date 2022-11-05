@@ -6,6 +6,7 @@
 #include "mtots_object.h"
 #include "mtots_memory.h"
 #include "mtots_str.h"
+#include "mtots.h"
 
 #include <time.h>
 #include <stdio.h>
@@ -38,12 +39,12 @@ static ubool implExit(i16 argCount, Value *args, Value *out) {
 
 static CFunction cfunctionExit = { implExit, "exit", 0, 1 };
 
-static ubool implType(i16 argCount, Value *args, Value *out) {
-  *out = OBJ_VAL(getClass(args[0]));
+static ubool implType(i16 argc, Ref argv, Ref out) {
+  refGetClass(out, argv);
   return UTRUE;
 }
 
-static CFunction cfunctionType = { implType, "type", 1};
+static CFunc cfuncType = { implType, "type", 1};
 
 static ubool reprList(
     Value *buffer, size_t length, char open, char close, Value *out) {
@@ -127,6 +128,13 @@ ubool implRepr(i16 argCount, Value *args, Value *out) {
           }
         }
       }
+      *out = OBJ_VAL(copyCString(buffer));
+      break;
+    }
+    case VAL_CFUNC: {
+      char buffer[MAX_IDENTIFIER_LENGTH + 16];
+      snprintf(buffer, MAX_IDENTIFIER_LENGTH + 16, "<function %s>",
+        AS_CFUNC(*args)->name);
       *out = OBJ_VAL(copyCString(buffer));
       break;
     }
@@ -758,7 +766,7 @@ void defineDefaultGlobals() {
 
   defineGlobal("clock", CFUNCTION_VAL(&cfunctionClock));
   defineGlobal("exit", CFUNCTION_VAL(&cfunctionExit));
-  defineGlobal("type", CFUNCTION_VAL(&cfunctionType));
+  defineGlobal("type", CFUNC_VAL(&cfuncType));
   defineGlobal("repr", CFUNCTION_VAL(&cfunctionRepr));
   defineGlobal("str", CFUNCTION_VAL(&cfunctionStr));
   defineGlobal("chr", CFUNCTION_VAL(&cfunctionChr));
