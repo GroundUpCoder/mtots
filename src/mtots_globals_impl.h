@@ -23,21 +23,16 @@ static ubool implClock(i16 argCount, Value *args, Value *out) {
 
 static CFunction cfunctionClock = { implClock, "clock", 0 };
 
-static ubool implExit(i16 argCount, Value *args, Value *out) {
+static ubool implExit(i16 argc, Ref argv, Ref out) {
   int exitCode = 0;
-  if (argCount > 0) {
-    if (!IS_NUMBER(args[0])) {
-      runtimeError("exit() requires a number but got %s",
-        getKindName(args[0]));
-      return UFALSE;
-    }
-    exitCode = (int) AS_NUMBER(args[0]);
+  if (argc > 0) {
+    exitCode = getNumber(argv);
   }
   exit(exitCode);
   return UTRUE;
 }
 
-static CFunction cfunctionExit = { implExit, "exit", 0, 1 };
+static CFunc cfuncExit = { implExit, "exit", 0, 1 };
 
 static ubool implType(i16 argc, Ref argv, Ref out) {
   refGetClass(out, argv);
@@ -765,7 +760,7 @@ void defineDefaultGlobals() {
   defineGlobal("len", OPERATOR_VAL(OperatorLen));
 
   defineGlobal("clock", CFUNCTION_VAL(&cfunctionClock));
-  defineGlobal("exit", CFUNCTION_VAL(&cfunctionExit));
+  defineGlobal("exit", CFUNC_VAL(&cfuncExit));
   defineGlobal("type", CFUNC_VAL(&cfuncType));
   defineGlobal("repr", CFUNCTION_VAL(&cfunctionRepr));
   defineGlobal("str", CFUNCTION_VAL(&cfunctionStr));

@@ -5,6 +5,8 @@
 
 #include "mtots_vm.h"
 
+#define DEREF(x) ((vm.stack[(x).i]))
+
 Ref allocRefs(i16 n) {
   Ref ret;
   if (n <= 0) {
@@ -36,6 +38,50 @@ void restoreStackState(StackState state) {
   vm.stackTop = vm.stack + state.size;
 }
 
+ubool isNil(Ref r) {
+  return IS_NIL(DEREF(r));
+}
+
+ubool isBool(Ref r) {
+  return IS_BOOL(DEREF(r));
+}
+
+ubool isNumber(Ref r) {
+  return IS_NUMBER(DEREF(r));
+}
+
+ubool isCFunc(Ref r) {
+  return IS_CFUNC(DEREF(r));
+}
+
+ubool isObj(Ref r) {
+  return IS_OBJ(DEREF(r));
+}
+
+ubool isClass(Ref r) {
+  return IS_OBJ(DEREF(r)) && IS_CLASS(DEREF(r));
+}
+
+ubool isClosure(Ref r) {
+  return IS_OBJ(DEREF(r)) && IS_CLOSURE(DEREF(r));
+}
+
+ubool isString(Ref r) {
+  return IS_OBJ(DEREF(r)) && IS_STRING(DEREF(r));
+}
+
+ubool isList(Ref r) {
+  return IS_OBJ(DEREF(r)) && IS_LIST(DEREF(r));
+}
+
+ubool isTuple(Ref r) {
+  return IS_OBJ(DEREF(r)) && IS_TUPLE(DEREF(r));
+}
+
+ubool isFile(Ref r) {
+  return IS_OBJ(DEREF(r)) && IS_FILE(DEREF(r));
+}
+
 void setNil(Ref out) {
   vm.stack[out.i] = NIL_VAL();
 }
@@ -54,6 +100,34 @@ void setString(Ref out, const char *value) {
 
 void refGetClass(Ref out, Ref value) {
   vm.stack[out.i] = OBJ_VAL(getClass(vm.stack[value.i]));
+}
+
+ubool getBool(Ref r) {
+  if (!IS_BOOL(DEREF(r))) {
+    panic("Expected bool but got %s", getKindName(DEREF(r)));
+  }
+  return AS_BOOL(DEREF(r));
+}
+
+double getNumber(Ref r) {
+  if (!IS_NUMBER(DEREF(r))) {
+    panic("Expected number but got %s", getKindName(DEREF(r)));
+  }
+  return AS_NUMBER(DEREF(r));
+}
+
+const char *getString(Ref r) {
+  if (!IS_STRING(DEREF(r))) {
+    panic("Expected string but got %s", getKindName(DEREF(r)));
+  }
+  return AS_STRING(DEREF(r))->chars;
+}
+
+size_t getStringByteLength(Ref r) {
+  if (!IS_STRING(DEREF(r))) {
+    panic("Expected string but got %s", getKindName(DEREF(r)));
+  }
+  return AS_STRING(DEREF(r))->length;
 }
 
 #endif/*mtots_ref_impl_h*/
