@@ -42,6 +42,8 @@ ubool dictGet(Dict *dict, Value key, Value *value);
 ubool dictSet(Dict *dict, Value key, Value value);
 ubool dictSetN(Dict *dict, const char *key, Value value);
 ubool dictDelete(Dict *dict, Value key);
+ObjString *dictFindString(
+  Dict *dict, const char *chars, size_t length, u32 hash);
 struct ObjTuple *dictFindTuple(
     Dict *dict,
     Value *buffer,

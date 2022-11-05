@@ -221,6 +221,34 @@ ubool dictDelete(Dict *dict, Value key) {
   return UTRUE;
 }
 
+ObjString *dictFindString(
+    Dict *dict, const char *chars, size_t length, u32 hash) {
+  u32 index;
+  if (dict->occupied == 0) {
+    return NULL;
+  }
+  /* OPT: hash % dict->capacity */
+  index = hash & (dict->capacity - 1);
+  for (;;) {
+    DictEntry *entry = &dict->entries[index];
+    if (IS_EMPTY_KEY(entry->key)) {
+      /* Stop if we find an empty non-tombstone entry */
+      if (IS_NIL(entry->value)) {
+        return NULL;
+      }
+    } else if (IS_STRING(entry->key)) {
+      ObjString *key = AS_STRING(entry->key);
+      if (key->length == length &&
+          key->hash == hash &&
+          memcmp(key->chars, chars, length) == 0) {
+        return key; /* We found it */
+      }
+    }
+    /* OPT: (index + 1) % dict->capacity */
+    index = (index + 1) & (dict->capacity - 1);
+  }
+}
+
 ObjTuple *dictFindTuple(
     Dict *dict,
     Value *buffer,
