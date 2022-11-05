@@ -1,3 +1,5 @@
+#ifndef mtots_class_dict_impl_h
+#define mtots_class_dict_impl_h
 #include "mtots_dict.h"
 #include "mtots_object.h"
 #include "mtots_vm.h"
@@ -141,3 +143,4 @@ void initDictClass() {
     tableSetN(&cls->methods, methods[i]->name, CFUNCTION_VAL(methods[i]));
   }
 }
+#endif/*mtots_class_dict_impl_h*/

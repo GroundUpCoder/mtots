@@ -1,3 +1,5 @@
+#ifndef mtots_table_impl_h
+#define mtots_table_impl_h
 #include "mtots_table.h"
 #include "mtots_memory.h"
 #include "mtots_object.h"
@@ -22,11 +24,11 @@ void freeTable(Table *table) {
 }
 
 /* NOTE: capacity should always be non-zero.
- * If findEntry was a non-static function, I probably would do the check
+ * If findTableEntry was a non-static function, I probably would do the check
  * in the function itself. But since it is static, all places where
  * it can be called are within this file.
  */
-static Entry *findEntry(Entry *entries, size_t capacity, ObjString *key) {
+static Entry *findTableEntry(Entry *entries, size_t capacity, ObjString *key) {
   /* OPT: key->hash % capacity */
   u32 index = key->hash & (capacity - 1);
   Entry *tombstone = NULL;
@@ -56,7 +58,7 @@ ubool tableGet(Table *table, ObjString *key, Value *value) {
     return UFALSE;
   }
 
-  entry = findEntry(table->entries, table->capacity, key);
+  entry = findTableEntry(table->entries, table->capacity, key);
   if (entry->key == NULL) {
     return UFALSE;
   }
@@ -65,7 +67,7 @@ ubool tableGet(Table *table, ObjString *key, Value *value) {
   return UTRUE;
 }
 
-static void adjustCapacity(Table *table, size_t capacity) {
+static void adjustTableCapacity(Table *table, size_t capacity) {
   size_t i;
   Entry *entries = ALLOCATE(Entry, capacity);
   for (i = 0; i < capacity; i++) {
@@ -78,7 +80,7 @@ static void adjustCapacity(Table *table, size_t capacity) {
     Entry *entry = &table->entries[i], *dest;
     if (entry->key == NULL) continue;
 
-    dest = findEntry(entries, capacity, entry->key);
+    dest = findTableEntry(entries, capacity, entry->key);
     dest->key = entry->key;
     dest->value = entry->value;
     table->occupied++;
@@ -95,9 +97,9 @@ ubool tableSet(Table *table, ObjString *key, Value value) {
 
   if (table->occupied + 1 > table->capacity * TABLE_MAX_LOAD) {
     size_t capacity = GROW_CAPACITY(table->capacity);
-    adjustCapacity(table, capacity);
+    adjustTableCapacity(table, capacity);
   }
-  entry = findEntry(table->entries, table->capacity, key);
+  entry = findTableEntry(table->entries, table->capacity, key);
   isNewKey = entry->key == NULL;
 
   if (isNewKey) {
@@ -144,7 +146,7 @@ ubool tableDelete(Table *table, ObjString *key) {
     return UFALSE;
   }
 
-  entry = findEntry(table->entries, table->capacity, key);
+  entry = findTableEntry(table->entries, table->capacity, key);
   if (entry->key == NULL) {
     return UFALSE;
   }
@@ -230,3 +232,4 @@ ubool tableIteratorNext(TableIterator *ti, Entry **out) {
   }
   return UFALSE;
 }
+#endif/*mtots_table_impl_h*/

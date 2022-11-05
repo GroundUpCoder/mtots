@@ -1,3 +1,5 @@
+#ifndef mtots_vm_impl_h
+#define mtots_vm_impl_h
 #include "mtots_assumptions.h"
 #include "mtots_vm.h"
 #include "mtots_debug.h"
@@ -1282,3 +1284,4 @@ static void prepPrelude() {
     }
   }
 }
+#endif/*mtots_vm_impl_h*/

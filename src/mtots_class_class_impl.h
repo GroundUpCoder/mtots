@@ -1,3 +1,5 @@
+#ifndef mtots_class_class_impl_h
+#define mtots_class_class_impl_h
 #include "mtots_class_class.h"
 
 #include "mtots_vm.h"
@@ -33,3 +35,4 @@ void initClassClass() {
     pop();
   }
 }
+#endif/*mtots_class_class_impl_h*/

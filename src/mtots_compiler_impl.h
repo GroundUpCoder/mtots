@@ -1,3 +1,5 @@
+#ifndef mtots_compiler_impl_h
+#define mtots_compiler_impl_h
 #include "mtots_common.h"
 #include "mtots_compiler.h"
 #include "mtots_scanner.h"
@@ -499,7 +501,7 @@ static void binary(ubool canAssign) {
   }
 }
 
-static void call(ubool canAssign) {
+static void parseCall(ubool canAssign) {
   u8 argCount = argumentList();
   emitBytes(OP_CALL, argCount);
 }
@@ -820,7 +822,7 @@ void initParseRules() {
     rules[i].infix = rules[i].prefix = NULL;
     rules[i].precedence = PREC_NONE;
   }
-  rules[TOKEN_LEFT_PAREN] = newRule(grouping, call, PREC_CALL);
+  rules[TOKEN_LEFT_PAREN] = newRule(grouping, parseCall, PREC_CALL);
   rules[TOKEN_LEFT_BRACE] = newRule(dictDisplay, NULL, PREC_NONE);
   rules[TOKEN_LEFT_BRACKET] = newRule(listDisplay, subscript, PREC_CALL);
   rules[TOKEN_DOT] = newRule(NULL, dot, PREC_CALL);
@@ -1412,3 +1414,4 @@ void markCompilerRoots() {
     compiler = compiler->enclosing;
   }
 }
+#endif/*mtots_compiler_impl_h*/

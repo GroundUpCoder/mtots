@@ -1,3 +1,5 @@
+#ifndef mtots_object_impl_h
+#define mtots_object_impl_h
 #include "mtots_object.h"
 #include "mtots_memory.h"
 #include "mtots_value.h"
@@ -485,3 +487,4 @@ const char *getObjectTypeName(ObjType type) {
 ubool isNative(Value value, NativeObjectDescriptor *descriptor) {
   return IS_NATIVE(value) && AS_NATIVE(value)->descriptor == descriptor;
 }
+#endif/*mtots_object_impl_h*/

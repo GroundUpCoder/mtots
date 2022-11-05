@@ -1,3 +1,5 @@
+#ifndef mtots_import_impl_h
+#define mtots_import_impl_h
 #include "mtots_import.h"
 #include "mtots_object.h"
 #include "mtots_vm.h"
@@ -161,3 +163,4 @@ ubool importModule(ObjString *moduleName) {
   tableSet(&vm.modules, moduleName, vm.stackTop[-1]);
   return UTRUE;
 }
+#endif/*mtots_import_impl_h*/

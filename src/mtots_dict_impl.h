@@ -1,3 +1,5 @@
+#ifndef mtots_dict_impl_h
+#define mtots_dict_impl_h
 #include "mtots_dict.h"
 #include "mtots_memory.h"
 #include "mtots_object.h"
@@ -48,11 +50,11 @@ u32 hashval(Value value) {
 }
 
 /* NOTE: capacity should always be non-zero.
- * If findEntry was a non-static function, I probably would do the check
+ * If findDictEntry was a non-static function, I probably would do the check
  * in the function itself. But since it is static, all places where
  * it can be called are within this file.
  */
-static DictEntry *findEntry(DictEntry *entries, size_t capacity, Value key) {
+static DictEntry *findDictEntry(DictEntry *entries, size_t capacity, Value key) {
   /* OPT: key->hash % capacity */
   u32 index = hashval(key) & (capacity - 1);
   DictEntry *tombstone = NULL;
@@ -82,7 +84,7 @@ ubool dictGet(Dict *dict, Value key, Value *value) {
     return UFALSE;
   }
 
-  entry = findEntry(dict->entries, dict->capacity, key);
+  entry = findDictEntry(dict->entries, dict->capacity, key);
   if (IS_EMPTY_KEY(entry->key)) {
     return UFALSE;
   }
@@ -91,7 +93,7 @@ ubool dictGet(Dict *dict, Value key, Value *value) {
   return UTRUE;
 }
 
-static void adjustCapacity(Dict *dict, size_t capacity) {
+static void adjustDictCapacity(Dict *dict, size_t capacity) {
   size_t i;
   DictEntry *entries = ALLOCATE(DictEntry, capacity);
   DictEntry *p, *first = NULL, *last = NULL;
@@ -104,7 +106,7 @@ static void adjustCapacity(Dict *dict, size_t capacity) {
   for (p = dict->first; p; p = p->next) {
     DictEntry *dest;
 
-    dest = findEntry(entries, capacity, p->key);
+    dest = findDictEntry(entries, capacity, p->key);
     dest->key = p->key;
     dest->value = p->value;
 
@@ -135,9 +137,9 @@ ubool dictSet(Dict *dict, Value key, Value value) {
 
   if (dict->occupied + 1 > dict->capacity * DICT_MAX_LOAD) {
     size_t capacity = GROW_CAPACITY(dict->capacity);
-    adjustCapacity(dict, capacity);
+    adjustDictCapacity(dict, capacity);
   }
-  entry = findEntry(dict->entries, dict->capacity, key);
+  entry = findDictEntry(dict->entries, dict->capacity, key);
   isNewKey = IS_EMPTY_KEY(entry->key);
 
   if (isNewKey) {
@@ -194,7 +196,7 @@ ubool dictDelete(Dict *dict, Value key) {
     return UFALSE;
   }
 
-  entry = findEntry(dict->entries, dict->capacity, key);
+  entry = findDictEntry(dict->entries, dict->capacity, key);
   if (IS_EMPTY_KEY(entry->key)) {
     return UFALSE;
   }
@@ -306,3 +308,4 @@ ubool dictIteratorNextKey(DictIterator *di, Value *out) {
   }
   return UFALSE;
 }
+#endif/*mtots_dict_impl_h*/

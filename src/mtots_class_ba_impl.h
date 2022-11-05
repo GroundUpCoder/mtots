@@ -1,3 +1,5 @@
+#ifndef mtots_class_ba_impl_h
+#define mtots_class_ba_impl_h
 #include "mtots_class_ba.h"
 #include "mtots_vm.h"
 
@@ -390,3 +392,4 @@ void initByteArrayViewClass() {
     pop();
   }
 }
+#endif/*mtots_class_ba_impl_h*/

@@ -1,3 +1,5 @@
+#ifndef mtots_assumptions_impl_h
+#define mtots_assumptions_impl_h
 #include "mtots_assumptions.h"
 
 #include <string.h>
@@ -57,3 +59,4 @@ void checkAssumptions() {
     }
   }
 }
+#endif/*mtots_assumptions_impl_h*/
