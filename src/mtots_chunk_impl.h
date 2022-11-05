@@ -1,3 +1,5 @@
+#ifndef mtots_chunk_impl_h
+#define mtots_chunk_impl_h
 #include "mtots_chunk.h"
 #include "mtots_memory.h"
 #include "mtots_stack.h"
@@ -51,3 +53,4 @@ size_t addConstant(Chunk *chunk, Value value) {
   pop();
   return chunk->constants.count - 1;
 }
+#endif/*mtots_chunk_impl_h*/
