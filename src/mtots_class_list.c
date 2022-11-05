@@ -126,7 +126,7 @@ static ubool implListSetItem(i16 argCount, Value *args, Value *out) {
 
 static CFunction funcListSetItem = { implListSetItem, "__setitem__", 2 };
 
-typedef struct {
+typedef struct ObjListIterator {
   ObjNativeClosure obj;
   ObjList *list;
   size_t index;

@@ -79,7 +79,7 @@ struct Obj {
   struct Obj *next;
 };
 
-typedef struct {
+typedef struct ObjFunction {
   Obj obj;
   i16 arity;
   i16 upvalueCount;
@@ -129,12 +129,12 @@ typedef struct ObjTuple {
   Value *buffer;
 } ObjTuple;
 
-typedef struct {
+typedef struct ObjDict {
   Obj obj;
   Dict dict;
 } ObjDict;
 
-typedef struct {
+typedef struct NativeObjectDescriptor {
   void (*blacken)(ObjNative*);
   void (*free)(ObjNative*);
   ubool (*getField)(ObjNative*, ObjString*, Value*);
@@ -158,7 +158,7 @@ struct ObjNative {
   NativeObjectDescriptor *descriptor;
 };
 
-typedef struct {
+typedef struct ObjFile {
   Obj obj;
   FILE *file;
   ubool isOpen;
@@ -173,7 +173,7 @@ typedef struct ObjUpvalue {
   struct ObjUpvalue *next;
 } ObjUpvalue;
 
-typedef struct {
+typedef struct ObjClosure {
   Obj obj;
   ObjInstance *module;
   ObjFunction *function;

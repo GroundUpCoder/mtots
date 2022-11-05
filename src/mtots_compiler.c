@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct {
+typedef struct Parser {
   Token current;
   Token previous;
   ubool hadError;
@@ -41,19 +41,19 @@ typedef enum {
 
 typedef void (*ParseFn)(ubool canAssign);
 
-typedef struct {
+typedef struct ParseRule {
   ParseFn prefix;
   ParseFn infix;
   Precedence precedence;
 } ParseRule;
 
-typedef struct {
+typedef struct Local {
   Token name;
   i16 depth;
   ubool isCaptured;
 } Local;
 
-typedef struct {
+typedef struct Upvalue {
   u8 index;
   ubool isLocal;
 } Upvalue;

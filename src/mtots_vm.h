@@ -17,19 +17,19 @@
 #define TRY_SNAPSHOTS_MAX 64
 #define MAX_ERROR_STRING_LENGTH 2048
 
-typedef struct {
+typedef struct CallFrame {
   ObjClosure *closure;
   u8 *ip;
   Value *slots;
 } CallFrame;
 
-typedef struct {
+typedef struct TrySnapshot {
   u8 *ip;
   Value *stackTop;
   i16 frameCount;
 } TrySnapshot;
 
-typedef struct {
+typedef struct VM {
   CallFrame frames[FRAMES_MAX];
   i16 frameCount;
   Value stack[STACK_MAX];

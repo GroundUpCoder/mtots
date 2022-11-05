@@ -457,7 +457,7 @@ static ubool implPrint(i16 argCount, Value *args, Value *out) {
 
 static CFunction cfunctionPrint = { implPrint, "print", 1 };
 
-typedef struct {
+typedef struct ObjRangeIterator {
   ObjNativeClosure obj;
   double start, stop, step;
 } ObjRangeIterator;

@@ -9,7 +9,7 @@ typedef struct Entry {
   Value value;
 } Entry;
 
-typedef struct {
+typedef struct Table {
   size_t occupied; /* (implementation detail) */
   size_t capacity; /* 0 or (8 * <power of 2>) */
   size_t size;     /* actual number of active elements */

@@ -5,7 +5,7 @@
 
 #include <stdio.h>
 
-typedef struct {
+typedef struct Scanner {
   const char *start;
   const char *current;
   i32 line;

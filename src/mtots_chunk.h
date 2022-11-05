@@ -61,7 +61,7 @@ typedef enum {
   OP_METHOD
 } OpCode;
 
-typedef struct {
+typedef struct Chunk {
   i32 count;
   i32 capacity;
   u8 *code;

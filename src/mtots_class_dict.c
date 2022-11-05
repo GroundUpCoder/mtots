@@ -40,7 +40,7 @@ static ubool implDictContains(i16 argCount, Value *args, Value *out) {
 
 static CFunction funcDictContains = { implDictContains, "__contains__", 1 };
 
-typedef struct {
+typedef struct ObjDictIterator {
   ObjNativeClosure obj;
   ObjDict *dict;
   DictIterator di;

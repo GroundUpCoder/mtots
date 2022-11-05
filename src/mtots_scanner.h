@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-typedef enum {
+typedef enum TokenType {
   /* Single-character tokens. */
   TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN,
   TOKEN_LEFT_BRACE, TOKEN_RIGHT_BRACE,
@@ -41,7 +41,7 @@ typedef enum {
   TOKEN_ERROR, TOKEN_EOF
 } TokenType;
 
-typedef struct {
+typedef struct Token {
   TokenType type;
   const char *start;
   size_t length;

@@ -6,7 +6,7 @@
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 
-typedef struct {
+typedef struct KeyConstant {
   const char *name;
   double value;
 } KeyConstant;

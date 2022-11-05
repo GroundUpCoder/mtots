@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 
-typedef struct {
+typedef struct SDLGLConstant {
   const char *name;
   double value;
 } SDLGLConstant;

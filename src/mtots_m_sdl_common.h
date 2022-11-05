@@ -28,7 +28,7 @@ typedef enum WaveForm {
  * strings
  *********************************************************/
 
-typedef struct {
+typedef struct RetainedString {
   ObjString **location;
   const char *value;
 } RetainedString;

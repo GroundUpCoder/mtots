@@ -8,7 +8,7 @@
 
 #include "mtots_m_sdl_acb.h"
 
-typedef struct {
+typedef struct NumericConstant {
   const char *name;
   double value;
 } NumericConstant;
