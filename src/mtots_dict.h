@@ -40,6 +40,7 @@ void initDict(Dict *dict);
 void freeDict(Dict *dict);
 ubool dictGet(Dict *dict, Value key, Value *value);
 ubool dictSet(Dict *dict, Value key, Value value);
+ubool dictSetStr(Dict *dict, ObjString *key, Value value);
 ubool dictSetN(Dict *dict, const char *key, Value value);
 ubool dictDelete(Dict *dict, Value key);
 ObjString *dictFindString(

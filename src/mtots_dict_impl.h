@@ -168,6 +168,10 @@ ubool dictSet(Dict *dict, Value key, Value value) {
   return isNewKey;
 }
 
+ubool dictSetStr(Dict *dict, ObjString *key, Value value) {
+  return dictSet(dict, OBJ_VAL(key), value);
+}
+
 /* Like dictSet, but a version that's more convenient for use in
  * native code in two ways:
  *   1) the key parameter is a C-string that is automatically be converted
