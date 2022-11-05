@@ -53,7 +53,7 @@ typedef struct ObjNative ObjNative;
 typedef struct ObjClass ObjClass;
 typedef struct ObjInstance ObjInstance;
 
-typedef enum {
+typedef enum ObjType {
   OBJ_CLASS,
   OBJ_CLOSURE,
   OBJ_FUNCTION,

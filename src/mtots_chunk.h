@@ -4,7 +4,7 @@
 #include "mtots_common.h"
 #include "mtots_value.h"
 
-typedef enum {
+typedef enum OpCode {
   OP_CONSTANT,
   OP_NIL,
   OP_TRUE,

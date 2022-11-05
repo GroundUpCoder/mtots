@@ -7,16 +7,16 @@ typedef struct CFunction CFunction;
 typedef struct Obj Obj;
 typedef struct ObjString ObjString;
 
-typedef enum {
+typedef enum Operator {
   OperatorLen
 } Operator;
 
-typedef enum {
+typedef enum Sentinel {
   SentinelStopIteration,
   SentinelEmptyKey        /* Used internally in Dict */
 } Sentinel;
 
-typedef enum {
+typedef enum ValueType {
   VAL_BOOL,
   VAL_NIL,
   VAL_NUMBER,

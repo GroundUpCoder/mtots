@@ -20,7 +20,7 @@ typedef struct Parser {
   ubool panicMode;
 } Parser;
 
-typedef enum {
+typedef enum Precedence {
   PREC_NONE,
   PREC_ASSIGNMENT,  /* = */
   PREC_IF,          /* if and try */
@@ -58,7 +58,7 @@ typedef struct Upvalue {
   ubool isLocal;
 } Upvalue;
 
-typedef enum {
+typedef enum FunctionType {
   TYPE_FUNCTION,
   TYPE_INITIALIZER,
   TYPE_METHOD,

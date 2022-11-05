@@ -5,7 +5,7 @@
 
 #include <stdio.h>
 
-typedef enum {
+typedef enum FileMode {
   FILE_MODE_READ,
   FILE_MODE_WRITE,
   FILE_MODE_APPEND,
