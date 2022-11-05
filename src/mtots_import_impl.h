@@ -57,7 +57,7 @@ ubool importModuleWithPath(ObjString *moduleName, const char *path) {
 
   pathStr = copyCString(path);
   push(OBJ_VAL(pathStr));
-  tableSetN(&module->fields, "__path__", OBJ_VAL(pathStr));
+  dictSetN(&module->fields, "__path__", OBJ_VAL(pathStr));
   pop(); /* pathStr */
 
   function = compile(source, moduleName);
@@ -81,7 +81,7 @@ ubool importModuleWithPath(ObjString *moduleName, const char *path) {
 
     /* We need to copy all fields of the instance to the class so
      * that method calls will properly call the functions in the module */
-    tableAddAll(&module->fields, &module->klass->methods);
+    dictAddAll(&module->fields, &module->klass->methods);
 
     pop(); /* module */
 
@@ -95,7 +95,7 @@ static ubool importModuleNoCache(ObjString *moduleName) {
   Value nativeModuleThunkValue;
 
   /* Check for a native module with the given name */
-  if (tableGet(&vm.nativeModuleThunks, moduleName, &nativeModuleThunkValue)) {
+  if (dictGetStr(&vm.nativeModuleThunks, moduleName, &nativeModuleThunkValue)) {
     ObjInstance *module;
     CFunction *nativeModuleThunk;
     Value moduleValue, result = NIL_VAL(), *stackStart;
@@ -121,7 +121,7 @@ static ubool importModuleNoCache(ObjString *moduleName) {
 
     /* We need to copy all fields of the instance to the class so
      * that method calls will properly call the functions in the module */
-    tableAddAll(&module->fields, &module->klass->methods);
+    dictAddAll(&module->fields, &module->klass->methods);
 
     return UTRUE;
   } else {
@@ -144,7 +144,7 @@ static ubool importModuleNoCache(ObjString *moduleName) {
  */
 ubool importModule(ObjString *moduleName) {
   Value module = NIL_VAL();
-  if (tableGet(&vm.modules, moduleName, &module)) {
+  if (dictGetStr(&vm.modules, moduleName, &module)) {
     if (!IS_MODULE(module)) {
       abort(); /* vm.modules table should only contain modules */
     }
@@ -160,7 +160,7 @@ ubool importModule(ObjString *moduleName) {
   if (!IS_MODULE(vm.stackTop[-1])) {
     abort();
   }
-  tableSet(&vm.modules, moduleName, vm.stackTop[-1]);
+  dictSetStr(&vm.modules, moduleName, vm.stackTop[-1]);
   return UTRUE;
 }
 #endif/*mtots_import_impl_h*/

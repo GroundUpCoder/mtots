@@ -86,7 +86,7 @@ static void blackenObject(Obj *object) {
     case OBJ_CLASS: {
       ObjClass *klass = (ObjClass*)object;
       markObject((Obj*)klass->name);
-      markTable(&klass->methods);
+      markDict(&klass->methods);
       break;
     }
     case OBJ_CLOSURE: {
@@ -120,7 +120,7 @@ static void blackenObject(Obj *object) {
     case OBJ_INSTANCE: {
       ObjInstance *instance = (ObjInstance*)object;
       markObject((Obj*)instance->klass);
-      markTable(&instance->fields);
+      markDict(&instance->fields);
       break;
     }
     case OBJ_UPVALUE:
@@ -176,7 +176,7 @@ static void freeObject(Obj *object) {
   switch (object->type) {
     case OBJ_CLASS: {
       ObjClass *klass = (ObjClass*)object;
-      freeTable(&klass->methods);
+      freeDict(&klass->methods);
       FREE(ObjClass, object);
       break;
     }
@@ -210,7 +210,7 @@ static void freeObject(Obj *object) {
     }
     case OBJ_INSTANCE: {
       ObjInstance *instance = (ObjInstance*)object;
-      freeTable(&instance->fields);
+      freeDict(&instance->fields);
       FREE(ObjInstance, object);
       break;
     }
@@ -284,9 +284,9 @@ static void markRoots() {
     markObject((Obj*)upvalue);
   }
 
-  markTable(&vm.globals);
-  markTable(&vm.modules);
-  markTable(&vm.nativeModuleThunks);
+  markDict(&vm.globals);
+  markDict(&vm.modules);
+  markDict(&vm.nativeModuleThunks);
   markCompilerRoots();
   markObject((Obj*)vm.preludeString);
   markObject((Obj*)vm.initString);
@@ -364,7 +364,7 @@ void collectGarbage() {
 
   markRoots();
   traceReferences();
-  tableRemoveWhite(&vm.strings);
+  dictRemoveWhite(&vm.strings);
   dictRemoveWhite(&vm.tuples);
   sweep();
 

@@ -3,8 +3,6 @@
 
 #include "mtots_value.h"
 
-struct ObjTuple;
-
 typedef struct DictEntry {
   Value key;
   Value value;
@@ -39,10 +37,13 @@ u32 hashval(Value value);
 void initDict(Dict *dict);
 void freeDict(Dict *dict);
 ubool dictGet(Dict *dict, Value key, Value *value);
+ubool dictGetStr(Dict *dict, ObjString *key, Value *value);
 ubool dictSet(Dict *dict, Value key, Value value);
 ubool dictSetStr(Dict *dict, ObjString *key, Value value);
 ubool dictSetN(Dict *dict, const char *key, Value value);
 ubool dictDelete(Dict *dict, Value key);
+ubool dictDeleteStr(Dict *dict, ObjString *key);
+void dictAddAll(Dict *from, Dict *to);
 ObjString *dictFindString(
   Dict *dict, const char *chars, size_t length, u32 hash);
 struct ObjTuple *dictFindTuple(

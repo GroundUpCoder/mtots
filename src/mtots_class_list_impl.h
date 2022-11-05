@@ -195,7 +195,7 @@ void initListClass() {
   for (i = 0; i < sizeof(methods) / sizeof(CFunction*); i++) {
     tmpstr = copyCString(methods[i]->name);
     push(OBJ_VAL(tmpstr));
-    tableSet(
+    dictSetStr(
       &cls->methods, tmpstr, CFUNCTION_VAL(methods[i]));
     pop();
   }

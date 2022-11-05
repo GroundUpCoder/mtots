@@ -4,7 +4,6 @@
 #include "mtots_memory.h"
 #include "mtots_value.h"
 #include "mtots_vm.h"
-#include "mtots_table.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -48,7 +47,7 @@ ObjInstance *newModule(ObjString *name, ubool includeGlobals) {
 
   if (includeGlobals) {
     push(OBJ_VAL(instance));
-    tableAddAll(&vm.globals, &instance->fields);
+    dictAddAll(&vm.globals, &instance->fields);
     pop(); /* instance */
   }
 
@@ -70,7 +69,7 @@ ObjInstance *newModuleFromCString(const char *name, ubool includeGlobals) {
 ObjClass *newClass(ObjString *name) {
   ObjClass *klass = ALLOCATE_OBJ(ObjClass, OBJ_CLASS);
   klass->name = name;
-  initTable(&klass->methods);
+  initDict(&klass->methods);
   klass->isModuleClass = UFALSE;
   klass->isBuiltinClass = UFALSE;
   klass->descriptor = NULL;
@@ -147,7 +146,7 @@ ObjNativeClosure *newNativeClosure(
 ObjInstance *newInstance(ObjClass *klass) {
   ObjInstance *instance = ALLOCATE_OBJ(ObjInstance, OBJ_INSTANCE);
   instance->klass = klass;
-  initTable(&instance->fields);
+  initDict(&instance->fields);
   return instance;
 }
 
@@ -158,7 +157,7 @@ static ObjString *allocateString(char *chars, int length, u32 hash) {
   string->hash = hash;
 
   push(OBJ_VAL(string));
-  tableSet(&vm.strings, string, NIL_VAL());
+  dictSetStr(&vm.strings, string, NIL_VAL());
   pop();
 
   return string;
@@ -201,7 +200,7 @@ static u32 hashTuple(Value *buffer, size_t length) {
  */
 ObjString *takeString(char *chars, size_t length) {
   u32 hash = hashString(chars, length);
-  ObjString *interned = tableFindString(&vm.strings, chars, length, hash);
+  ObjString *interned = dictFindString(&vm.strings, chars, length, hash);
   if (interned != NULL) {
     FREE_ARRAY(char, chars, length + 1);
     return interned;
@@ -211,7 +210,7 @@ ObjString *takeString(char *chars, size_t length) {
 
 ObjString *copyString(const char *chars, size_t length) {
   u32 hash = hashString(chars, length);
-  ObjString *interned = tableFindString(&vm.strings, chars, length, hash);
+  ObjString *interned = dictFindString(&vm.strings, chars, length, hash);
   char *heapChars;
   if (interned != NULL) {
     return interned;

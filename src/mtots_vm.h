@@ -3,7 +3,6 @@
 
 #include "mtots_chunk.h"
 #include "mtots_value.h"
-#include "mtots_table.h"
 #include "mtots_object.h"
 #include "mtots_ops.h"
 #include "mtots_error.h"
@@ -36,10 +35,10 @@ typedef struct VM {
   Value *stackTop;
   TrySnapshot trySnapshots[TRY_SNAPSHOTS_MAX];
   i16 trySnapshotsCount;
-  Table globals;
-  Table strings;            /* table of all interned strings */
-  Table modules;            /* all preloaded modules */
-  Table nativeModuleThunks; /* Table of CFunctions */
+  Dict globals;
+  Dict strings;            /* table of all interned strings */
+  Dict modules;            /* all preloaded modules */
+  Dict nativeModuleThunks; /* Dict of CFunctions */
   Dict tuples;              /* table of all interned tuples */
 
   ObjString *preludeString;

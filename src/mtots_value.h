@@ -121,4 +121,8 @@ const char *getKindName(Value value);
 ubool typePatternMatch(TypePattern pattern, Value value);
 const char *getTypePatternName(TypePattern pattern);
 
+/* Just a convenience function to check that a Value is
+ * equal to the given C-string */
+ubool valueIsCString(Value value, const char *string);
+
 #endif/*mtots_value_h*/

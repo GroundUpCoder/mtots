@@ -4,7 +4,6 @@
 #include "mtots_common.h"
 #include "mtots_value.h"
 #include "mtots_chunk.h"
-#include "mtots_table.h"
 #include "mtots_file.h"
 #include "mtots_dict.h"
 
@@ -201,7 +200,7 @@ typedef struct ObjNativeClosure {
 struct ObjClass {
   Obj obj;
   ObjString *name;
-  Table methods;
+  Dict methods;
   ubool isModuleClass;
   ubool isBuiltinClass;
   NativeObjectDescriptor *descriptor; /* NULL if not native */
@@ -210,7 +209,7 @@ struct ObjClass {
 struct ObjInstance {
   Obj obj;
   ObjClass *klass;
-  Table fields;
+  Dict fields;
 };
 
 ubool IS_MODULE(Value value);

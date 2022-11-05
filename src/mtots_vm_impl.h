@@ -144,7 +144,7 @@ void runtimeError(const char *format, ...) {
 void defineGlobal(const char *name, Value value) {
   push(OBJ_VAL(copyString(name, strlen(name))));
   push(value);
-  tableSet(&vm.globals, AS_STRING(vm.stack[0]), vm.stack[1]);
+  dictSetStr(&vm.globals, AS_STRING(vm.stack[0]), vm.stack[1]);
   pop();
   pop();
 }
@@ -156,7 +156,7 @@ void addNativeModule(CFunction *func) {
   }
   name = copyCString(func->name);
   push(OBJ_VAL(name));
-  if (!tableSet(&vm.nativeModuleThunks, name, CFUNCTION_VAL(func))) {
+  if (!dictSetStr(&vm.nativeModuleThunks, name, CFUNCTION_VAL(func))) {
     panic("Native module %s is already defined", name->chars);
   }
 
@@ -214,10 +214,10 @@ void initVM() {
   vm.stdoutFile = NULL;
   vm.stderrFile = NULL;
 
-  initTable(&vm.globals);
-  initTable(&vm.strings);
-  initTable(&vm.modules);
-  initTable(&vm.nativeModuleThunks);
+  initDict(&vm.globals);
+  initDict(&vm.strings);
+  initDict(&vm.modules);
+  initDict(&vm.nativeModuleThunks);
   initDict(&vm.tuples);
 
   vm.preludeString = copyCString("__prelude__");
@@ -253,10 +253,10 @@ void initVM() {
 }
 
 void freeVM() {
-  freeTable(&vm.globals);
-  freeTable(&vm.strings);
-  freeTable(&vm.modules);
-  freeTable(&vm.nativeModuleThunks);
+  freeDict(&vm.globals);
+  freeDict(&vm.strings);
+  freeDict(&vm.modules);
+  freeDict(&vm.nativeModuleThunks);
   freeDict(&vm.tuples);
   vm.preludeString = NULL;
   vm.initString = NULL;
@@ -519,7 +519,7 @@ static ubool callClass(ObjClass *klass, i16 argCount) {
   } else {
     /* normal classes */
     vm.stackTop[-argCount - 1] = OBJ_VAL(newInstance(klass));
-    if (tableGet(&klass->methods, vm.initString, &initializer)) {
+    if (dictGetStr(&klass->methods, vm.initString, &initializer)) {
       return call(AS_CLOSURE(initializer), argCount);
     } else if (argCount != 0) {
       runtimeError("Expected 0 arguments but got %d", argCount);
@@ -597,7 +597,7 @@ static ubool callValue(Value callee, i16 argCount) {
 static ubool invokeFromClass(
     ObjClass *klass, ObjString *name, i16 argCount) {
   Value method;
-  if (!tableGet(&klass->methods, name, &method)) {
+  if (!dictGetStr(&klass->methods, name, &method)) {
     runtimeError(
       "Method '%s' not found in '%s'",
       name->chars,
@@ -658,7 +658,7 @@ static void closeUpvalues(Value *last) {
 static void defineMethod(ObjString *name) {
   Value method = peek(0);
   ObjClass *klass = AS_CLASS(peek(1));
-  tableSet(&klass->methods, name, method);
+  dictSetStr(&klass->methods, name, method);
   pop();
 }
 
@@ -773,7 +773,7 @@ loop:
       case OP_GET_GLOBAL: {
         ObjString *name = READ_STRING();
         Value value;
-        if (!tableGet(&frame->closure->module->fields, name, &value)) {
+        if (!dictGetStr(&frame->closure->module->fields, name, &value)) {
           runtimeError("Undefined variable '%s'", name->chars);
           RETURN_RUNTIME_ERROR();
         }
@@ -782,14 +782,14 @@ loop:
       }
       case OP_DEFINE_GLOBAL: {
         ObjString *name = READ_STRING();
-        tableSet(&frame->closure->module->fields, name, peek(0));
+        dictSetStr(&frame->closure->module->fields, name, peek(0));
         pop();
         break;
       }
       case OP_SET_GLOBAL: {
         ObjString *name = READ_STRING();
-        if (tableSet(&frame->closure->module->fields, name, peek(0))) {
-          tableDelete(&frame->closure->module->fields, name);
+        if (dictSetStr(&frame->closure->module->fields, name, peek(0))) {
+          dictDeleteStr(&frame->closure->module->fields, name);
           runtimeError("Undefined variable '%s'", name->chars);
           RETURN_RUNTIME_ERROR();
         }
@@ -813,7 +813,7 @@ loop:
           ObjInstance *instance;
           instance = AS_INSTANCE(peek(0));
           name = READ_STRING();
-          if (tableGet(&instance->fields, name, &value)) {
+          if (dictGetStr(&instance->fields, name, &value)) {
             pop(); /* Instance */
             push(value);
             break;
@@ -864,7 +864,7 @@ loop:
         if (IS_INSTANCE(peek(1))) {
           ObjInstance *instance;
           instance = AS_INSTANCE(peek(1));
-          tableSet(&instance->fields, READ_STRING(), peek(0));
+          dictSetStr(&instance->fields, READ_STRING(), peek(0));
           value = pop();
           pop();
           push(value);
@@ -1209,7 +1209,7 @@ loop:
         }
 
         subclass = AS_CLASS(peek(0));
-        tableAddAll(&AS_CLASS(superclass)->methods, &subclass->methods);
+        dictAddAll(&AS_CLASS(superclass)->methods, &subclass->methods);
         pop(); /* subclass */
         break;
       }
@@ -1255,33 +1255,36 @@ static void prepPrelude() {
   /* Copy over values from __prelude__ into global */
   {
     ObjInstance *prelude = AS_INSTANCE(peek(0));
-    TableIterator ti, tj;
-    Entry *entry, *e;
+    DictIterator ti, tj;
+    DictEntry *entry, *e;
 
-    initTableIterator(&ti, &prelude->fields);
-    while (tableIteratorNext(&ti, &entry)) {
-      if (strcmp(entry->key->chars, "sorted") == 0 ||
-          strcmp(entry->key->chars, "list") == 0 ||
-          strcmp(entry->key->chars, "tuple") == 0 ||
-          strcmp(entry->key->chars, "dict") == 0 ||
-          strcmp(entry->key->chars, "set") == 0) {
-        tableSet(&vm.globals, entry->key, entry->value);
-      } else if (strcmp(entry->key->chars, "__List__") == 0) {
+    initDictIterator(&ti, &prelude->fields);
+    while (dictIteratorNext(&ti, &entry)) {
+      if (valueIsCString(entry->key, "sorted") ||
+          valueIsCString(entry->key, "list") ||
+          valueIsCString(entry->key, "tuple") ||
+          valueIsCString(entry->key, "dict") ||
+          valueIsCString(entry->key, "set")) {
+        dictSet(&vm.globals, entry->key, entry->value);
+      } else if (valueIsCString(entry->key, "__List__")) {
         ObjClass *mixinListClass;
         if (!IS_CLASS(entry->value)) {
           panic("__prelude__.__List__ is not a class");
         }
         mixinListClass = AS_CLASS(entry->value);
-        initTableIterator(&tj, &mixinListClass->methods);
-        while (tableIteratorNext(&tj, &e)) {
-          if (e->key != NULL) {
-            if (strcmp(e->key->chars, "sort") == 0) {
-              tableSet(&vm.listClass->methods, e->key, e->value);
-            }
+        initDictIterator(&tj, &mixinListClass->methods);
+        while (dictIteratorNext(&tj, &e)) {
+          if (valueIsCString(e->key, "sort")) {
+            dictSet(&vm.listClass->methods, e->key, e->value);
           }
         }
       }
     }
   }
 }
+
+ubool valueIsCString(Value value, const char *string) {
+  return IS_STRING(value) && strcmp(AS_STRING(value)->chars, string) == 0;
+}
+
 #endif/*mtots_vm_impl_h*/

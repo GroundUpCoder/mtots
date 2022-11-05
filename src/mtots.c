@@ -24,5 +24,4 @@
 #include "mtots_modules_impl.h"
 #include "mtots_object_impl.h"
 #include "mtots_ops_impl.h"
-#include "mtots_table_impl.h"
 #include "mtots_vm_impl.h"

@@ -30,7 +30,7 @@ void initClassClass() {
     tmpstr = copyCString(methods[i]->name);
     push(OBJ_VAL(tmpstr));
     methods[i]->receiverType.type = TYPE_PATTERN_CLASS;
-    tableSet(
+    dictSetStr(
       &cls->methods, tmpstr, CFUNCTION_VAL(methods[i]));
     pop();
   }

@@ -140,7 +140,7 @@ void initDictClass() {
 
   for (i = 0; i < sizeof(methods) / sizeof(CFunction*); i++) {
     methods[i]->receiverType.type = TYPE_PATTERN_DICT;
-    tableSetN(&cls->methods, methods[i]->name, CFUNCTION_VAL(methods[i]));
+    dictSetN(&cls->methods, methods[i]->name, CFUNCTION_VAL(methods[i]));
   }
 }
 #endif/*mtots_class_dict_impl_h*/

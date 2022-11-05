@@ -66,7 +66,7 @@ static void mtots_m_SDL_initStrings(ObjInstance *module) {
     {&string_samples, "samples"},
   };
   list = newList(sizeof(rstrs)/sizeof(RetainedString));
-  tableSetN(&module->fields, "__retain__", OBJ_VAL(list));
+  dictSetN(&module->fields, "__retain__", OBJ_VAL(list));
   for (i = 0; i < sizeof(rstrs)/sizeof(RetainedString); i++) {
     *rstrs[i].location = copyCString(rstrs[i].value);
     list->buffer[i] = OBJ_VAL(*rstrs[i].location);

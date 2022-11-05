@@ -103,11 +103,11 @@ static ubool impl(i16 argCount, Value *args, Value *out) {
   size_t i;
 
   for (i = 0; i < sizeof(functions)/sizeof(CFunction*); i++) {
-    tableSetN(&module->fields, functions[i]->name, CFUNCTION_VAL(functions[i]));
+    dictSetN(&module->fields, functions[i]->name, CFUNCTION_VAL(functions[i]));
   }
 
-  tableSetN(&module->fields, "name", OBJ_VAL(copyCString(OS_NAME)));
-  tableSetN(&module->fields, "sep", OBJ_VAL(copyCString(PATH_SEP_STR)));
+  dictSetN(&module->fields, "name", OBJ_VAL(copyCString(OS_NAME)));
+  dictSetN(&module->fields, "sep", OBJ_VAL(copyCString(PATH_SEP_STR)));
 
   return UTRUE;
 }

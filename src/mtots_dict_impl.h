@@ -93,6 +93,10 @@ ubool dictGet(Dict *dict, Value key, Value *value) {
   return UTRUE;
 }
 
+ubool dictGetStr(Dict *dict, ObjString *key, Value *value) {
+  return dictGet(dict, OBJ_VAL(key), value);
+}
+
 static void adjustDictCapacity(Dict *dict, size_t capacity) {
   size_t i;
   DictEntry *entries = ALLOCATE(DictEntry, capacity);
@@ -223,6 +227,20 @@ ubool dictDelete(Dict *dict, Value key) {
   entry->value = BOOL_VAL(1);
   dict->size--;
   return UTRUE;
+}
+
+ubool dictDeleteStr(Dict *dict, ObjString *key) {
+  return dictDelete(dict, OBJ_VAL(key));
+}
+
+void dictAddAll(Dict *from, Dict *to) {
+  size_t i;
+  for (i = 0; i < from->capacity; i++) {
+    DictEntry *entry = &from->entries[i];
+    if (!IS_EMPTY_KEY(entry->key)) {
+      dictSet(to, entry->key, entry->value);
+    }
+  }
 }
 
 ObjString *dictFindString(
