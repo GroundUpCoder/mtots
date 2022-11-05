@@ -33,7 +33,7 @@ StackState getStackState() {
 
 void restoreStackState(StackState state) {
   if (vm.stack + state.size > vm.stackTop) {
-    panic("restoreStackState - inconsistent stack state");
+    panic("restoreStackState: inconsistent stack state");
   }
   vm.stackTop = vm.stack + state.size;
 }
@@ -83,23 +83,40 @@ ubool isFile(Ref r) {
 }
 
 void setNil(Ref out) {
-  vm.stack[out.i] = NIL_VAL();
+  DEREF(out) = NIL_VAL();
 }
 
 void setBool(Ref out, ubool value) {
-  vm.stack[out.i] = BOOL_VAL(value);
+  DEREF(out) = BOOL_VAL(value);
 }
 
 void setNumber(Ref out, double value) {
-  vm.stack[out.i] = NUMBER_VAL(value);
+  DEREF(out) = NUMBER_VAL(value);
+}
+
+void setCFunc(Ref out, CFunc *value) {
+  DEREF(out) = CFUNC_VAL(value);
 }
 
 void setString(Ref out, const char *value) {
-  vm.stack[out.i] = OBJ_VAL(copyCString(value));
+  DEREF(out) = OBJ_VAL(copyCString(value));
 }
 
-void refGetClass(Ref out, Ref value) {
-  vm.stack[out.i] = OBJ_VAL(getClass(vm.stack[value.i]));
+void setStringWithLength(Ref out, const char *value, size_t byteLength) {
+  DEREF(out) = OBJ_VAL(copyString(value, byteLength));
+}
+
+void setInstanceField(Ref recv, const char *fieldName, Ref value) {
+  ObjInstance *instance;
+  if (!IS_INSTANCE(DEREF(recv))) {
+    panic("Expected instance but got %s", getKindName(DEREF(recv)));
+  }
+  instance = AS_INSTANCE(DEREF(recv));
+  dictSetN(&instance->fields, fieldName, DEREF(value));
+}
+
+void getClass(Ref out, Ref value) {
+  DEREF(out) = OBJ_VAL(getClassOfValue(vm.stack[value.i]));
 }
 
 ubool getBool(Ref r) {

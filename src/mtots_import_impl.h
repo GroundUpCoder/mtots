@@ -97,26 +97,47 @@ static ubool importModuleNoCache(ObjString *moduleName) {
   /* Check for a native module with the given name */
   if (dictGetStr(&vm.nativeModuleThunks, moduleName, &nativeModuleThunkValue)) {
     ObjInstance *module;
-    CFunction *nativeModuleThunk;
-    Value moduleValue, result = NIL_VAL(), *stackStart;
-    if (!IS_CFUNCTION(nativeModuleThunkValue)) {
+    Value moduleValue;
+    if (IS_CFUNCTION(nativeModuleThunkValue)) {
+      Value result = NIL_VAL(), *stackStart;
+      CFunction *nativeModuleThunk;
+      nativeModuleThunk = AS_CFUNCTION(nativeModuleThunkValue);
+      module = newModule(moduleName, UFALSE);
+      moduleValue = OBJ_VAL(module);
+      push(OBJ_VAL(module));
+      stackStart = vm.stackTop;
+      if (!nativeModuleThunk->body(1, &moduleValue, &result)) {
+        return UFALSE;
+      }
+      /* At this point, module should be at the top of the stack */
+      if (vm.stackTop != stackStart) {
+        panic(
+          "Native module started with %d items on the stack, but "
+          "ended with %d",
+          stackStart - vm.stack,
+          vm.stackTop - vm.stack);
+      }
+    } else if (IS_CFUNC(nativeModuleThunkValue)) {
+      CFunc *nativeModuleThunk;
+      Ref moduleRef;
+      StackState stackState;
+      nativeModuleThunk = AS_CFUNC(nativeModuleThunkValue);
+      module = newModule(moduleName, UFALSE);
+      moduleValue = OBJ_VAL(module);
+
+      moduleRef.i = vm.stackTop - vm.stack;
+      push(OBJ_VAL(module));
+
+      stackState = getStackState();
+      /* NOTE: We depend on the native module thunk NOT actually returning
+       * any value. If it does, it will corrupt the slot that contains
+       * the module value */
+      if (!nativeModuleThunk->body(1, moduleRef, moduleRef)) {
+        return UFALSE;
+      }
+      restoreStackState(stackState);
+    } else {
       abort();
-    }
-    nativeModuleThunk = AS_CFUNCTION(nativeModuleThunkValue);
-    module = newModule(moduleName, UFALSE);
-    moduleValue = OBJ_VAL(module);
-    push(OBJ_VAL(module));
-    stackStart = vm.stackTop;
-    if (!nativeModuleThunk->body(1, &moduleValue, &result)) {
-      return UFALSE;
-    }
-    /* At this point, module should be at the top of the stack */
-    if (vm.stackTop != stackStart) {
-      panic(
-        "Native module started with %d items on the stack, but "
-        "ended with %d",
-        stackStart - vm.stack,
-        vm.stackTop - vm.stack);
     }
 
     /* We need to copy all fields of the instance to the class so

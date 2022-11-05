@@ -35,7 +35,7 @@ static ubool implExit(i16 argc, Ref argv, Ref out) {
 static CFunc cfuncExit = { implExit, "exit", 0, 1 };
 
 static ubool implType(i16 argc, Ref argv, Ref out) {
-  refGetClass(out, argv);
+  getClass(out, argv);
   return UTRUE;
 }
 

@@ -90,7 +90,9 @@ void freeVM();
 ubool interpret(const char *source, ObjInstance *module);
 void defineGlobal(const char *name, Value value);
 
-/* Native module bodies should be a CFunction that accepts
+/* NOTE: Deprecated. Use addNativeModuleCFunc instead.
+ *
+ * Native module bodies should be a CFunction that accepts
  * Exactly one argument, the module
  */
 void addNativeModule(CFunction *func);

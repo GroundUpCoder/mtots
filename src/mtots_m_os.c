@@ -1,119 +1,104 @@
 #include "mtots_m_os.h"
 
-#include "mtots_common.h"
-#include "mtots_value.h"
-#include "mtots_object.h"
-#include "mtots_vm.h"
-#include "mtots_memory.h"
+#include "mtots.h"
 
 #include <string.h>
+#include <stdlib.h>
 
-static ubool implDirname(i16 argCount, Value *args, Value *out) {
-  ObjString *str = AS_STRING(args[0]);
-  size_t i = str->length;
-  while (i > 0 && str->chars[i - 1] == PATH_SEP) {
+static ubool implDirname(i16 argc, Ref argv, Ref out) {
+  const char *chars = getString(argv);
+  size_t i = getStringByteLength(argv);
+  while (i > 0 && chars[i - 1] == PATH_SEP) {
     i--;
   }
   for (; i > 0; i--) {
-    if (str->chars[i - 1] == PATH_SEP) {
+    if (chars[i - 1] == PATH_SEP) {
       i--;
       break;
     }
   }
-  *out = OBJ_VAL(copyString(str->chars, i));
+  setStringWithLength(out, chars, i);
   return UTRUE;
 }
 
-static TypePattern argsDirname[] = {
-  { TYPE_PATTERN_STRING },
-};
+static CFunc funcDirname = { implDirname, "dirname", 1 };
 
-static CFunction funcDirname = {
-  implDirname, "dirname", 1, 0, argsDirname,
-};
-
-static ubool implBasename(i16 argCount, Value *args, Value *out) {
-  ObjString *str = AS_STRING(args[0]);
-  size_t i = str->length, end;
-  while (i > 0 && str->chars[i - 1] == PATH_SEP) {
+static ubool implBasename(i16 argc, Ref argv, Ref out) {
+  const char *chars = getString(argv);
+  size_t i = getStringByteLength(argv), end;
+  while (i > 0 && chars[i - 1] == PATH_SEP) {
     i--;
   }
   end = i;
   for (; i > 0; i--) {
-    if (str->chars[i - 1] == PATH_SEP) {
+    if (chars[i - 1] == PATH_SEP) {
       break;
     }
   }
-  *out = OBJ_VAL(copyString(str->chars + i, end - i));
+  setStringWithLength(out, chars + i, end - i);
   return UTRUE;
 }
 
-static TypePattern argsBasename[] = {
-  { TYPE_PATTERN_STRING },
-};
-
-static CFunction funcBasename = {
-  implBasename, "basename", 1, 0, argsBasename,
-};
+static CFunc funcBasename = {implBasename, "basename", 1};
 
 /* TODO: For now, this is basically just a simple join, but in
  * the future, this function will have to evolve to match the
  * behaviors you would expect from a path join */
-static ubool implJoin(i16 argCount, Value *args, Value *out) {
-  size_t i, len = argCount - 1;
+static ubool implJoin(i16 argc, Ref argv, Ref out) {
+  size_t i, len = argc - 1;
   char *chars, *p;
-  for (i = 0; i < argCount; i++) {
-    if (!IS_STRING(args[i])) {
-      runtimeError(
-        "os.join() requires strings, but found %s",
-        getKindName(args[i]));
-      return UFALSE;
-    }
-    len += AS_STRING(args[i])->length;
+  for (i = 0; i < argc; i++) {
+    len += getStringByteLength(refAt(argv, i));
   }
-  p = chars = ALLOCATE(char, len + 1);
-  for (i = 0; i < argCount; i++) {
-    ObjString *s = AS_STRING(args[i]);
+  p = chars = malloc(len + 1);
+  for (i = 0; i < argc; i++) {
+    const char *schars = getString(refAt(argv, i));
+    size_t slength = getStringByteLength(refAt(argv, i));
     if (i > 0) {
       *p++ = PATH_SEP;
     }
-    memcpy(p, s->chars, s->length);
-    p += s->length;
+    memcpy(p, schars, slength);
+    p += slength;
   }
   *p = '\0';
   if (p - chars != len) {
     panic("internal consistency error in os.join()");
   }
-  *out = OBJ_VAL(takeString(chars, len));
+  setStringWithLength(out, chars, len);
+  free(chars);
   return UTRUE;
 }
 
-static CFunction funcJoin = {
-  implJoin, "join", 1, MAX_ARG_COUNT,
-};
+static CFunc funcJoin = { implJoin, "join", 1, MAX_ARG_COUNT };
 
-static ubool impl(i16 argCount, Value *args, Value *out) {
-  ObjInstance *module = AS_INSTANCE(args[0]);
-
-  CFunction *functions[] = {
+static ubool impl(i16 argc, Ref argv, Ref out) {
+  Ref module = argv;
+  CFunc *cfuncs[] = {
     &funcDirname,
     &funcBasename,
     &funcJoin,
   };
   size_t i;
+  StackState stackState = getStackState();
+  Ref ref = allocRefs(1);
 
-  for (i = 0; i < sizeof(functions)/sizeof(CFunction*); i++) {
-    dictSetN(&module->fields, functions[i]->name, CFUNCTION_VAL(functions[i]));
+  for (i = 0; i < sizeof(cfuncs)/sizeof(CFunc*); i++) {
+    setCFunc(ref ,cfuncs[i]);
+    setInstanceField(module, cfuncs[i]->name, ref);
   }
 
-  dictSetN(&module->fields, "name", OBJ_VAL(copyCString(OS_NAME)));
-  dictSetN(&module->fields, "sep", OBJ_VAL(copyCString(PATH_SEP_STR)));
+  setString(ref, OS_NAME);
+  setInstanceField(module, "name", ref);
 
+  setString(ref, PATH_SEP_STR);
+  setInstanceField(module, "sep", ref);
+
+  restoreStackState(stackState);
   return UTRUE;
 }
 
-static CFunction func = { impl, "os", 1 };
+static CFunc func = { impl, "os", 1 };
 
 void addNativeModuleOs() {
-  addNativeModule(&func);
+  addNativeModuleCFunc(&func);
 }

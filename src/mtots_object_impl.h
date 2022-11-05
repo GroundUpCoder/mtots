@@ -371,7 +371,7 @@ ObjUpvalue *newUpvalue(Value *slot) {
   return upvalue;
 }
 
-ObjClass *getClass(Value value) {
+ObjClass *getClassOfValue(Value value) {
   switch (value.type) {
     case VAL_BOOL: return vm.boolClass;
     case VAL_NIL: return vm.nilClass;

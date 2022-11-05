@@ -149,6 +149,20 @@ void defineGlobal(const char *name, Value value) {
   pop();
 }
 
+void addNativeModuleCFunc(CFunc *cfunc) {
+  ObjString *name;
+  if (cfunc->arity != 1) {
+    panic("Native modules must accept 1 argument but got %d", cfunc->arity);
+  }
+  name = copyCString(cfunc->name);
+  push(OBJ_VAL(name));
+  if (!dictSetStr(&vm.nativeModuleThunks, name, CFUNC_VAL(cfunc))) {
+    panic("Native module %s is already defined", name->chars);
+  }
+
+  pop(); /* name */
+}
+
 void addNativeModule(CFunction *func) {
   ObjString *name;
   if (func->arity != 1) {
@@ -307,6 +321,7 @@ static ubool callCFunc(CFunc *cfunc, i16 argCount) {
   Value *argsStart;
   ubool status;
   Ref argsStartRef, resultRef;
+  StackState stackState;
   if (cfunc->arity != argCount) {
     /* not an exact match for the arity
      * We need further checks */
@@ -335,31 +350,12 @@ static ubool callCFunc(CFunc *cfunc, i16 argCount) {
   argsStart = vm.stackTop - argCount;
   argsStartRef.i = argsStart - vm.stack;
   resultRef.i = argsStartRef.i - 1;
-  /* NOTE: Every call always has a value in the receiver slot -
-   * In particular, normal function calls will have the function
-   * itself in the receiver slot */
-  if (!typePatternMatch(cfunc->receiverType, argsStart[-1])) {
-    runtimeError(
-      "Invalid receiver passed to method %s()",
-      cfunc->name);
-    return UFALSE;
-  }
-  if (cfunc->argTypes != NULL) {
-    size_t i;
-    for (i = 0; i < argCount; i++) {
-      if (!typePatternMatch(cfunc->argTypes[i], argsStart[i])) {
-        runtimeError(
-          "%s() expects %s for argument %d, but got %s",
-          cfunc->name, getTypePatternName(cfunc->argTypes[i]),
-          i, getKindName(argsStart[i]));
-        return UFALSE;
-      }
-    }
-  }
+  stackState = getStackState();
   status = cfunc->body(argCount, argsStartRef, resultRef);
   if (!status) {
     return UFALSE;
   }
+  restoreStackState(stackState);
   vm.stackTop -= argCount;
   return UTRUE;
 }
@@ -675,7 +671,7 @@ static ubool invoke(ObjString *name, i16 argCount) {
   ObjClass *klass;
   Value receiver = peek(argCount);
 
-  klass = getClass(receiver);
+  klass = getClassOfValue(receiver);
   if (klass == NULL) {
     runtimeError(
       "%s kind does not yet support method calls", getKindName(receiver));
@@ -1064,7 +1060,7 @@ loop:
       case OP_IN: {
         if (IS_CLASS(peek(0))) {
           ObjClass *cls = AS_CLASS(pop());
-          push(BOOL_VAL(cls == getClass(pop())));
+          push(BOOL_VAL(cls == getClassOfValue(pop())));
         } else {
           Value b = pop();
           Value a = pop();

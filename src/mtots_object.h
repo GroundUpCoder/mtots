@@ -244,7 +244,7 @@ ObjFile *newFile(FILE *file, ubool isOpen, ObjString *name, FileMode mode);
 ObjFile *openFile(const char *filename, FileMode mode);
 ObjNative *newNative(NativeObjectDescriptor *descriptor, size_t objectSize);
 ObjUpvalue *newUpvalue(Value *slot);
-ObjClass *getClass(Value value);
+ObjClass *getClassOfValue(Value value);
 void printObject(Value value);
 const char *getObjectTypeName(ObjType type);
 
