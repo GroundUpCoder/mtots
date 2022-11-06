@@ -668,7 +668,7 @@ static ObjString *stringTokenToObjString() {
   char quote = parser.previous.start[0];
 
   if (!unescapeString(parser.previous.start + 1, quote, &size, NULL)) {
-    error("Failed to escape string");
+    error("Failed to unescape string");
     return NULL;
   }
 
