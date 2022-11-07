@@ -5,6 +5,7 @@
 #include "mtots_vm.h"
 #include "mtots_compiler.h"
 #include "mtots_env.h"
+#include "mtots_ref_private.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -119,20 +120,19 @@ static ubool importModuleNoCache(ObjString *moduleName) {
       }
     } else if (IS_CFUNC(nativeModuleThunkValue)) {
       CFunc *nativeModuleThunk;
-      Ref moduleRef;
+      RefSet moduleRefSet = allocRefs(1);
       StackState stackState;
       nativeModuleThunk = AS_CFUNC(nativeModuleThunkValue);
       module = newModule(moduleName, UFALSE);
       moduleValue = OBJ_VAL(module);
 
-      moduleRef.i = vm.stackTop - vm.stack;
-      push(OBJ_VAL(module));
+      refSet(refAt(moduleRefSet, 0), OBJ_VAL(module));
 
       stackState = getStackState();
       /* NOTE: We depend on the native module thunk NOT actually returning
        * any value. If it does, it will corrupt the slot that contains
        * the module value */
-      if (!nativeModuleThunk->body(1, moduleRef, moduleRef)) {
+      if (!nativeModuleThunk->body(allocRef(), moduleRefSet)) {
         return UFALSE;
       }
       restoreStackState(stackState);

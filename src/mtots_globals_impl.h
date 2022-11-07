@@ -23,10 +23,10 @@ static ubool implClock(i16 argCount, Value *args, Value *out) {
 
 static CFunction cfunctionClock = { implClock, "clock", 0 };
 
-static ubool implExit(i16 argc, Ref argv, Ref out) {
+static ubool implExit(Ref out, RefSet args) {
   int exitCode = 0;
-  if (argc > 0) {
-    exitCode = getNumber(argv);
+  if (args.length > 0) {
+    exitCode = getNumber(refAt(args, 0));
   }
   exit(exitCode);
   return UTRUE;
@@ -34,8 +34,8 @@ static ubool implExit(i16 argc, Ref argv, Ref out) {
 
 static CFunc cfuncExit = { implExit, "exit", 0, 1 };
 
-static ubool implType(i16 argc, Ref argv, Ref out) {
-  getClass(out, argv);
+static ubool implType(Ref out, RefSet args) {
+  getClass(out, refAt(args, 0));
   return UTRUE;
 }
 

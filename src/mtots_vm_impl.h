@@ -320,7 +320,8 @@ static ubool isIterator(Value value) {
 static ubool callCFunc(CFunc *cfunc, i16 argCount) {
   Value *argsStart;
   ubool status;
-  Ref argsStartRef, resultRef;
+  Ref resultRef;
+  RefSet argsRefSet;
   StackState stackState;
   if (cfunc->arity != argCount) {
     /* not an exact match for the arity
@@ -348,10 +349,11 @@ static ubool callCFunc(CFunc *cfunc, i16 argCount) {
     }
   }
   argsStart = vm.stackTop - argCount;
-  argsStartRef.i = argsStart - vm.stack;
-  resultRef.i = argsStartRef.i - 1;
+  argsRefSet.start = argsStart - vm.stack;
+  argsRefSet.length = argCount;
+  resultRef.i = argsRefSet.start - 1;
   stackState = getStackState();
-  status = cfunc->body(argCount, argsStartRef, resultRef);
+  status = cfunc->body(resultRef, argsRefSet);
   if (!status) {
     return UFALSE;
   }

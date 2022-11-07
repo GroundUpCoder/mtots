@@ -5,9 +5,9 @@
 #include <string.h>
 #include <stdlib.h>
 
-static ubool implDirname(i16 argc, Ref argv, Ref out) {
-  const char *chars = getString(argv);
-  size_t i = getStringByteLength(argv);
+static ubool implDirname(Ref out, RefSet args) {
+  const char *chars = getString(refAt(args, 0));
+  size_t i = stringSize(refAt(args, 0));
   while (i > 0 && chars[i - 1] == PATH_SEP) {
     i--;
   }
@@ -17,15 +17,15 @@ static ubool implDirname(i16 argc, Ref argv, Ref out) {
       break;
     }
   }
-  setStringWithLength(out, chars, i);
+  setString(out, chars, i);
   return UTRUE;
 }
 
 static CFunc funcDirname = { implDirname, "dirname", 1 };
 
-static ubool implBasename(i16 argc, Ref argv, Ref out) {
-  const char *chars = getString(argv);
-  size_t i = getStringByteLength(argv), end;
+static ubool implBasename(Ref out, RefSet args) {
+  const char *chars = getString(refAt(args, 0));
+  size_t i = stringSize(refAt(args, 0)), end;
   while (i > 0 && chars[i - 1] == PATH_SEP) {
     i--;
   }
@@ -35,7 +35,7 @@ static ubool implBasename(i16 argc, Ref argv, Ref out) {
       break;
     }
   }
-  setStringWithLength(out, chars + i, end - i);
+  setString(out, chars + i, end - i);
   return UTRUE;
 }
 
@@ -44,16 +44,16 @@ static CFunc funcBasename = {implBasename, "basename", 1};
 /* TODO: For now, this is basically just a simple join, but in
  * the future, this function will have to evolve to match the
  * behaviors you would expect from a path join */
-static ubool implJoin(i16 argc, Ref argv, Ref out) {
-  size_t i, len = argc - 1;
+static ubool implJoin(Ref out, RefSet args) {
+  size_t i, len = args.length - 1;
   char *chars, *p;
-  for (i = 0; i < argc; i++) {
-    len += getStringByteLength(refAt(argv, i));
+  for (i = 0; i < args.length; i++) {
+    len += stringSize(refAt(args, i));
   }
   p = chars = malloc(len + 1);
-  for (i = 0; i < argc; i++) {
-    const char *schars = getString(refAt(argv, i));
-    size_t slength = getStringByteLength(refAt(argv, i));
+  for (i = 0; i < args.length; i++) {
+    const char *schars = getString(refAt(args, i));
+    size_t slength = stringSize(refAt(args, i));
     if (i > 0) {
       *p++ = PATH_SEP;
     }
@@ -64,15 +64,15 @@ static ubool implJoin(i16 argc, Ref argv, Ref out) {
   if (p - chars != len) {
     panic("internal consistency error in os.join()");
   }
-  setStringWithLength(out, chars, len);
+  setString(out, chars, len);
   free(chars);
   return UTRUE;
 }
 
 static CFunc funcJoin = { implJoin, "join", 1, MAX_ARG_COUNT };
 
-static ubool impl(i16 argc, Ref argv, Ref out) {
-  Ref module = argv;
+static ubool impl(Ref out, RefSet args) {
+  Ref module = refAt(args, 0);
   CFunc *cfuncs[] = {
     &funcDirname,
     &funcBasename,
@@ -80,17 +80,17 @@ static ubool impl(i16 argc, Ref argv, Ref out) {
   };
   size_t i;
   StackState stackState = getStackState();
-  Ref ref = allocRefs(1);
+  Ref ref = allocRef();
 
   for (i = 0; i < sizeof(cfuncs)/sizeof(CFunc*); i++) {
     setCFunc(ref ,cfuncs[i]);
     setInstanceField(module, cfuncs[i]->name, ref);
   }
 
-  setString(ref, OS_NAME);
+  setCString(ref, OS_NAME);
   setInstanceField(module, "name", ref);
 
-  setString(ref, PATH_SEP_STR);
+  setCString(ref, PATH_SEP_STR);
   setInstanceField(module, "sep", ref);
 
   restoreStackState(stackState);

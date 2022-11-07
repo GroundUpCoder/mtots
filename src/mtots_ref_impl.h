@@ -2,27 +2,38 @@
 #define mtots_ref_impl_h
 
 #include "mtots_ref.h"
+#include "mtots_ref_private.h"
 
 #include "mtots_vm.h"
 
 #define DEREF(x) ((vm.stack[(x).i]))
 
-Ref allocRefs(i16 n) {
-  Ref ret;
-  if (n <= 0) {
-    panic("allocRefs requires positive argument but got %d", n);
+RefSet allocRefs(i16 n) {
+  RefSet ret;
+  if (n < 0) {
+    panic("allocRefs requires non-negative argument but got %d", n);
   }
   if (vm.stackTop + n > vm.stack + STACK_MAX) {
     panic("stack overflow");
   }
-  ret.i = vm.stackTop - vm.stack;
+  ret.start = vm.stackTop - vm.stack;
+  ret.length = n;
   vm.stackTop += n;
   return ret;
 }
 
-Ref refAt(Ref base, i16 offset) {
-  base.i += offset;
-  return base;
+Ref refAt(RefSet rs, i16 offset) {
+  Ref ret;
+  if (offset < 0 || offset >= rs.length) {
+    panic("invalid offset for RefSet (length=%d, offset=%d)",
+      rs.length, offset);
+  }
+  ret.i = rs.start + offset;
+  return ret;
+}
+
+Ref allocRef() {
+  return refAt(allocRefs(1), 0);
 }
 
 StackState getStackState() {
@@ -98,12 +109,22 @@ void setCFunc(Ref out, CFunc *value) {
   DEREF(out) = CFUNC_VAL(value);
 }
 
-void setString(Ref out, const char *value) {
+void setString(Ref out, const char *value, size_t byteLength) {
+  DEREF(out) = OBJ_VAL(copyString(value, byteLength));
+}
+
+void setCString(Ref out, const char *value) {
   DEREF(out) = OBJ_VAL(copyCString(value));
 }
 
-void setStringWithLength(Ref out, const char *value, size_t byteLength) {
-  DEREF(out) = OBJ_VAL(copyString(value, byteLength));
+void setEmptyList(Ref out) {
+  DEREF(out) = OBJ_VAL(newList(0));
+}
+
+void setList(Ref out, RefSet items) {
+  ObjList *list = newList(items.length);
+  DEREF(out) = OBJ_VAL(list);
+  memcpy(list->buffer, vm.stack + items.start, sizeof(Value) * items.length);
 }
 
 void setInstanceField(Ref recv, const char *fieldName, Ref value) {
@@ -113,6 +134,60 @@ void setInstanceField(Ref recv, const char *fieldName, Ref value) {
   }
   instance = AS_INSTANCE(DEREF(recv));
   dictSetN(&instance->fields, fieldName, DEREF(value));
+}
+
+Ref allocNil() {
+  Ref r = allocRef();
+  setNil(r);
+  return r;
+}
+
+Ref allocBool(ubool boolean) {
+  Ref r = allocRef();
+  setBool(r, boolean);
+  return r;
+}
+
+Ref allocNumber(double number) {
+  Ref r = allocRef();
+  setNumber(r, number);
+  return r;
+}
+
+Ref allocString(const char *string, size_t length) {
+  Ref r = allocRef();
+  setString(r, string, length);
+  return r;
+}
+
+Ref allocCString(const char *string) {
+  Ref r = allocRef();
+  setCString(r, string);
+  return r;
+}
+
+Ref allocEmptyList() {
+  Ref r = allocRef();
+  setEmptyList(r);
+  return r;
+}
+
+Ref allocList(RefSet items) {
+  Ref r = allocRef();
+  setList(r, items);
+  return r;
+}
+
+Ref allocDict() {
+  Ref r = allocRef();
+  setDict(r);
+  return r;
+}
+
+Ref allocValue(Ref src) {
+  Ref r = allocRef();
+  setValue(r, src);
+  return r;
 }
 
 void getClass(Ref out, Ref value) {
@@ -140,11 +215,19 @@ const char *getString(Ref r) {
   return AS_STRING(DEREF(r))->chars;
 }
 
-size_t getStringByteLength(Ref r) {
+size_t stringSize(Ref r) {
   if (!IS_STRING(DEREF(r))) {
     panic("Expected string but got %s", getKindName(DEREF(r)));
   }
   return AS_STRING(DEREF(r))->length;
+}
+
+Value refGet(Ref ref) {
+  return DEREF(ref);
+}
+
+void refSet(Ref ref, Value value) {
+  DEREF(ref) = value;
 }
 
 #endif/*mtots_ref_impl_h*/
