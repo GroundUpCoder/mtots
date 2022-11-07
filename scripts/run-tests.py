@@ -5,6 +5,10 @@ import os, sys, subprocess
 
 kind = 'c89'
 
+ansiRed = '\033[31m'
+ansiGreen = '\033[32m'
+ansiReset = '\033[0m'
+
 if len(sys.argv) == 2:
   kind = sys.argv[1]
 
@@ -65,6 +69,7 @@ for testSet in dirnames:
       text=True)
 
     if expectExit is not None and proc.returncode != expectExit:
+      print(ansiRed)
       print('FAILED (exit code)')
       print('##### Expected #####')
       print(expectExit)
@@ -74,7 +79,9 @@ for testSet in dirnames:
       print(proc.stdout)
       print(f'##### STDERR: #####')
       print(proc.stderr)
+      print(ansiReset)
     elif expectNonzeroExit and proc.returncode == 0:
+      print(ansiRed)
       print('FAILED (exit code)')
       print('##### Expected #####')
       print('(nonzero)')
@@ -84,27 +91,32 @@ for testSet in dirnames:
       print(proc.stdout)
       print(f'##### STDERR: #####')
       print(proc.stderr)
+      print(ansiReset)
     elif expectOut != proc.stdout:
+      print(ansiRed)
       print('FAILED (stdout)')
       print('##### Expected #####')
       print(proc.stdout)
       print('##### TO EQUAL #####')
       print(expectOut)
+      print(ansiReset)
     elif expectErr != proc.stderr:
+      print(ansiRed)
       print('FAILED (stderr)')
       print('##### Expected #####')
       print(proc.stderr)
       print('##### TO EQUAL #####')
       print(expectErr)
+      print(ansiReset)
     else:
       passCount += 1
-      print("OK")
+      print(f"{ansiGreen}OK{ansiReset}")
     testCount += 1
 
 if passCount == testCount:
   print("ALL TESTS PASS")
 else:
-  print("Some tests failed:")
+  print(f"Some tests {ansiRed}failed{ansiReset}:")
   print(f"  {passCount} / {testCount}")
   print(f"  {testCount - passCount} test(s) failed")
 
