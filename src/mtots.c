@@ -26,3 +26,7 @@
 #include "mtots_ops_impl.h"
 #include "mtots_vm_impl.h"
 #include "mtots_ref_impl.h"
+
+const char *getErrorString() {
+  return vm.errorString;
+}

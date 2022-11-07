@@ -11,4 +11,6 @@
  * This method is defined in mtots_vm.c */
 void runtimeError(const char *format, ...);
 
+const char *getErrorString();
+
 #endif/*mtots_error_h*/
