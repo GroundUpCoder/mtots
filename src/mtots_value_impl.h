@@ -148,7 +148,7 @@ const char *getKindName(Value value) {
     case VAL_OBJ: switch (value.as.obj->type) {
       case OBJ_CLASS: return "class";
       case OBJ_CLOSURE: return "closure";
-      case OBJ_FUNCTION: return "function";
+      case OBJ_THUNK: return "function";
       case OBJ_NATIVE_CLOSURE: return "native-closure";
       case OBJ_INSTANCE: return "instance";
       case OBJ_STRING: return "string";

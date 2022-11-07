@@ -183,14 +183,14 @@ ubool implRepr(i16 argCount, Value *args, Value *out) {
         case OBJ_CLOSURE: {
           char buffer[MAX_IDENTIFIER_LENGTH + 16];
           snprintf(buffer, MAX_IDENTIFIER_LENGTH + 16, "<function %s>",
-            AS_CLOSURE(*args)->function->name->chars);
+            AS_CLOSURE(*args)->thunk->name->chars);
           *out = OBJ_VAL(copyCString(buffer));
           break;
         }
-        case OBJ_FUNCTION: {
+        case OBJ_THUNK: {
           char buffer[MAX_IDENTIFIER_LENGTH + 16];
-          snprintf(buffer, MAX_IDENTIFIER_LENGTH + 16, "<function %s>",
-            AS_FUNCTION(*args)->name->chars);
+          snprintf(buffer, MAX_IDENTIFIER_LENGTH + 16, "<thunk %s>",
+            AS_THUNK(*args)->name->chars);
           *out = OBJ_VAL(copyCString(buffer));
           break;
         }

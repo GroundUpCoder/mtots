@@ -85,30 +85,30 @@ ObjClass *newClassFromCString(const char *name) {
   return klass;
 }
 
-ObjClosure *newClosure(ObjFunction *function, ObjInstance *module) {
-  ObjUpvalue **upvalues = ALLOCATE(ObjUpvalue*, function->upvalueCount);
+ObjClosure *newClosure(ObjThunk *thunk, ObjInstance *module) {
+  ObjUpvalue **upvalues = ALLOCATE(ObjUpvalue*, thunk->upvalueCount);
   ObjClosure *closure = ALLOCATE_OBJ(ObjClosure, OBJ_CLOSURE);
   i16 i;
-  for (i = 0; i < function->upvalueCount; i++) {
+  for (i = 0; i < thunk->upvalueCount; i++) {
     upvalues[i] = NULL;
   }
   closure->module = module;
-  closure->function = function;
+  closure->thunk = thunk;
   closure->upvalues = upvalues;
-  closure->upvalueCount = function->upvalueCount;
+  closure->upvalueCount = thunk->upvalueCount;
   return closure;
 }
 
-ObjFunction *newFunction() {
-  ObjFunction *function = ALLOCATE_OBJ(ObjFunction, OBJ_FUNCTION);
-  function->arity = 0;
-  function->upvalueCount = 0;
-  function->name = NULL;
-  function->defaultArgs = NULL;
-  function->defaultArgsCount = 0;
-  function->moduleName = NULL;
-  initChunk(&function->chunk);
-  return function;
+ObjThunk *newFunction() {
+  ObjThunk *thunk = ALLOCATE_OBJ(ObjThunk, OBJ_THUNK);
+  thunk->arity = 0;
+  thunk->upvalueCount = 0;
+  thunk->name = NULL;
+  thunk->defaultArgs = NULL;
+  thunk->defaultArgsCount = 0;
+  thunk->moduleName = NULL;
+  initChunk(&thunk->chunk);
+  return thunk;
 }
 
 ObjNativeClosure *newNativeClosure(
@@ -384,7 +384,7 @@ ObjClass *getClassOfValue(Value value) {
       switch (AS_OBJ(value)->type) {
         case OBJ_CLASS: return vm.classClass;
         case OBJ_CLOSURE: return vm.functionClass;
-        case OBJ_FUNCTION: panic("function kinds do not have classes");
+        case OBJ_THUNK: panic("function kinds do not have classes");
         case OBJ_NATIVE_CLOSURE: return vm.functionClass;
         case OBJ_INSTANCE: return AS_INSTANCE(value)->klass;
         case OBJ_STRING: return vm.stringClass;
@@ -405,7 +405,7 @@ ObjClass *getClassOfValue(Value value) {
   return NULL;
 }
 
-static void printFunction(ObjFunction *function) {
+static void printFunction(ObjThunk *function) {
   if (function->name == NULL) {
     printf("<script>");
     return;
@@ -423,10 +423,10 @@ void printObject(Value value) {
       }
       break;
     case OBJ_CLOSURE:
-      printFunction(AS_CLOSURE(value)->function);
+      printFunction(AS_CLOSURE(value)->thunk);
       break;
-    case OBJ_FUNCTION:
-      printFunction(AS_FUNCTION(value));
+    case OBJ_THUNK:
+      printFunction(AS_THUNK(value));
       break;
     case OBJ_NATIVE_CLOSURE:
       printf("<function %s>", AS_NATIVE_CLOSURE(value)->name);
@@ -468,7 +468,7 @@ const char *getObjectTypeName(ObjType type) {
   switch (type) {
   case OBJ_CLASS: return "OBJ_CLASS";
   case OBJ_CLOSURE: return "OBJ_CLOSURE";
-  case OBJ_FUNCTION: return "OBJ_FUNCTION";
+  case OBJ_THUNK: return "OBJ_THUNK";
   case OBJ_NATIVE_CLOSURE: return "OBJ_NATIVE_CLOSURE";
   case OBJ_INSTANCE: return "OBJ_INSTANCE";
   case OBJ_STRING: return "OBJ_STRING";

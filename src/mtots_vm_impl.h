@@ -39,22 +39,22 @@ static void printStack() {
   i16 i;
   for (i = vm.frameCount - 1; i >= 0; i--) {
     CallFrame *frame = &vm.frames[i];
-    ObjFunction *function = frame->closure->function;
-    size_t instruction = frame->ip - function->chunk.code - 1;
+    ObjThunk *thunk = frame->closure->thunk;
+    size_t instruction = frame->ip - thunk->chunk.code - 1;
     fprintf(
-      stderr, "[line %d] in ", function->chunk.lines[instruction]);
-    if (function->name == NULL) {
-      if (function->moduleName == NULL) {
+      stderr, "[line %d] in ", thunk->chunk.lines[instruction]);
+    if (thunk->name == NULL) {
+      if (thunk->moduleName == NULL) {
         fprintf(stderr, "[script]\n");
       } else {
-        fprintf(stderr, "%s\n", function->moduleName->chars);
+        fprintf(stderr, "%s\n", thunk->moduleName->chars);
       }
     } else {
-      if (function->moduleName == NULL) {
-        fprintf(stderr, "%s()\n", function->name->chars);
+      if (thunk->moduleName == NULL) {
+        fprintf(stderr, "%s()\n", thunk->name->chars);
       } else {
         fprintf(stderr, "%s:%s()\n",
-          function->moduleName->chars, function->name->chars);
+          thunk->moduleName->chars, thunk->name->chars);
       }
     }
   }
@@ -65,21 +65,21 @@ static size_t printStackLength() {
   size_t len = 0;
   for (i = vm.frameCount - 1; i >= 0; i--) {
     CallFrame *frame = &vm.frames[i];
-    ObjFunction *function = frame->closure->function;
-    size_t instruction = frame->ip - function->chunk.code - 1;
-    len += snprintf(NULL, 0, "[line %d] in ", function->chunk.lines[instruction]);
-    if (function->name == NULL) {
-      if (function->moduleName == NULL) {
+    ObjThunk *thunk = frame->closure->thunk;
+    size_t instruction = frame->ip - thunk->chunk.code - 1;
+    len += snprintf(NULL, 0, "[line %d] in ", thunk->chunk.lines[instruction]);
+    if (thunk->name == NULL) {
+      if (thunk->moduleName == NULL) {
         len += snprintf(NULL, 0, "[script]\n");
       } else {
-        len += snprintf(NULL, 0, "%s\n", function->moduleName->chars);
+        len += snprintf(NULL, 0, "%s\n", thunk->moduleName->chars);
       }
     } else {
-      if (function->moduleName == NULL) {
-        len += snprintf(NULL, 0, "%s()\n", function->name->chars);
+      if (thunk->moduleName == NULL) {
+        len += snprintf(NULL, 0, "%s()\n", thunk->name->chars);
       } else {
         len += snprintf(NULL, 0, "%s:%s()\n",
-          function->moduleName->chars, function->name->chars);
+          thunk->moduleName->chars, thunk->name->chars);
       }
     }
   }
@@ -90,21 +90,21 @@ static char *printStackToString(char *out) {
   i16 i;
   for (i = vm.frameCount - 1; i >= 0; i--) {
     CallFrame *frame = &vm.frames[i];
-    ObjFunction *function = frame->closure->function;
-    size_t instruction = frame->ip - function->chunk.code - 1;
-    out += sprintf(out, "[line %d] in ", function->chunk.lines[instruction]);
-    if (function->name == NULL) {
-      if (function->moduleName == NULL) {
+    ObjThunk *thunk = frame->closure->thunk;
+    size_t instruction = frame->ip - thunk->chunk.code - 1;
+    out += sprintf(out, "[line %d] in ", thunk->chunk.lines[instruction]);
+    if (thunk->name == NULL) {
+      if (thunk->moduleName == NULL) {
         out += sprintf(out, "[script]\n");
       } else {
-        out += sprintf(out, "%s\n", function->moduleName->chars);
+        out += sprintf(out, "%s\n", thunk->moduleName->chars);
       }
     } else {
-      if (function->moduleName == NULL) {
-        out += sprintf(out, "%s()\n", function->name->chars);
+      if (thunk->moduleName == NULL) {
+        out += sprintf(out, "%s()\n", thunk->name->chars);
       } else {
         out += sprintf(out, "%s:%s()\n",
-          function->moduleName->chars, function->name->chars);
+          thunk->moduleName->chars, thunk->name->chars);
       }
     }
   }
@@ -310,7 +310,7 @@ static ubool isIterator(Value value) {
   if (IS_OBJ(value)) {
     switch (AS_OBJ(value)->type) {
       case OBJ_NATIVE_CLOSURE: return AS_NATIVE_CLOSURE(value)->arity == 0;
-      case OBJ_CLOSURE: return AS_CLOSURE(value)->function->arity == 0;
+      case OBJ_CLOSURE: return AS_CLOSURE(value)->thunk->arity == 0;
       default: break;
     }
   }
@@ -459,21 +459,21 @@ static ubool callNativeClosure(ObjNativeClosure *nc, i16 argCount) {
 ubool call(ObjClosure *closure, i16 argCount) {
   CallFrame *frame;
 
-  if (argCount < closure->function->arity &&
-      argCount + closure->function->defaultArgsCount >=
-        closure->function->arity) {
+  if (argCount < closure->thunk->arity &&
+      argCount + closure->thunk->defaultArgsCount >=
+        closure->thunk->arity) {
     size_t i = 0;
-    while (argCount < closure->function->arity) {
-      push(closure->function->defaultArgs[i]);
+    while (argCount < closure->thunk->arity) {
+      push(closure->thunk->defaultArgs[i]);
       i++;
       argCount++;
     }
   }
 
-  if (argCount != closure->function->arity) {
+  if (argCount != closure->thunk->arity) {
     runtimeError(
       "Expected %d arguments but got %d",
-      closure->function->arity, argCount);
+      closure->thunk->arity, argCount);
     return UFALSE;
   }
 
@@ -484,7 +484,7 @@ ubool call(ObjClosure *closure, i16 argCount) {
 
   frame = &vm.frames[vm.frameCount++];
   frame->closure = closure;
-  frame->ip = closure->function->chunk.code;
+  frame->ip = closure->thunk->chunk.code;
   frame->slots = vm.stackTop - argCount - 1;
   return UTRUE;
 }
@@ -750,7 +750,7 @@ ubool run(i16 returnFrameCount) {
 #define READ_SHORT() \
   (frame->ip += 2, (u16)((frame->ip[-2] << 8) | frame->ip[-1]))
 #define READ_CONSTANT() \
-  (frame->closure->function->chunk.constants.values[READ_BYTE()])
+  (frame->closure->thunk->chunk.constants.values[READ_BYTE()])
 #define READ_STRING() AS_STRING(READ_CONSTANT())
 #define RETURN_RUNTIME_ERROR() \
   do { \
@@ -804,8 +804,8 @@ loop:
     }
     printf("\n");
     disassembleInstruction(
-      &frame->closure->function->chunk,
-      (int)(frame->ip - frame->closure->function->chunk.code));
+      &frame->closure->thunk->chunk,
+      (int)(frame->ip - frame->closure->thunk->chunk.code));
 #else
 loop:
 #endif
@@ -1185,8 +1185,8 @@ loop:
         break;
       }
       case OP_CLOSURE: {
-        ObjFunction *function = AS_FUNCTION(READ_CONSTANT());
-        ObjClosure *closure = newClosure(function, frame->closure->module);
+        ObjThunk *thunk = AS_THUNK(READ_CONSTANT());
+        ObjClosure *closure = newClosure(thunk, frame->closure->module);
         i16 i;
         push(OBJ_VAL(closure));
         for (i = 0; i < closure->upvalueCount; i++) {
@@ -1288,13 +1288,13 @@ loop:
 /* Runs true on success, false otherwise */
 ubool interpret(const char *source, ObjInstance *module) {
   ObjClosure *closure;
-  ObjFunction *function = compile(source, module->klass->name);
-  if (function == NULL) {
+  ObjThunk *thunk = compile(source, module->klass->name);
+  if (thunk == NULL) {
     return UFALSE;
   }
 
-  push(OBJ_VAL(function));
-  closure = newClosure(function, module);
+  push(OBJ_VAL(thunk));
+  closure = newClosure(thunk, module);
   pop();
   push(OBJ_VAL(closure));
   call(closure, 0);

@@ -47,7 +47,7 @@ static char *readFile(const char *path) {
 ubool importModuleWithPath(ObjString *moduleName, const char *path) {
   char *source = readFile(path);
   ObjClosure *closure;
-  ObjFunction *function;
+  ObjThunk *thunk;
   i16 returnFrameCount = vm.frameCount;
   ObjInstance *module;
   ObjString *pathStr;
@@ -60,14 +60,14 @@ ubool importModuleWithPath(ObjString *moduleName, const char *path) {
   dictSetN(&module->fields, "__path__", OBJ_VAL(pathStr));
   pop(); /* pathStr */
 
-  function = compile(source, moduleName);
-  if (function == NULL) {
+  thunk = compile(source, moduleName);
+  if (thunk == NULL) {
     runtimeError("Failed to compile %s", path);
     return UFALSE;
   }
 
-  push(OBJ_VAL(function));
-  closure = newClosure(function, module);
+  push(OBJ_VAL(thunk));
+  closure = newClosure(thunk, module);
   pop(); /* function */
 
   push(OBJ_VAL(closure));

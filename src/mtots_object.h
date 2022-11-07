@@ -13,7 +13,7 @@
 
 #define IS_CLASS(value) isObjType(value, OBJ_CLASS)
 #define IS_CLOSURE(value) isObjType(value, OBJ_CLOSURE)
-#define IS_FUNCTION(value) isObjType(value, OBJ_FUNCTION)
+#define IS_THUNK(value) isObjType(value, OBJ_THUNK)
 #define IS_NATIVE_CLOSURE(value) isObjType(value, OBJ_NATIVE_CLOSURE)
 #define IS_INSTANCE(value) isObjType(value, OBJ_INSTANCE)
 #define IS_STRING(value) isObjType(value, OBJ_STRING)
@@ -27,7 +27,7 @@
 
 #define AS_CLASS(value) ((ObjClass*)AS_OBJ(value))
 #define AS_CLOSURE(value) ((ObjClosure*)AS_OBJ(value))
-#define AS_FUNCTION(value) ((ObjFunction*)AS_OBJ(value))
+#define AS_THUNK(value) ((ObjThunk*)AS_OBJ(value))
 #define AS_NATIVE_CLOSURE(value) ((ObjNativeClosure*)AS_OBJ(value))
 #define AS_INSTANCE(value) ((ObjInstance*)AS_OBJ(value))
 #define AS_STRING(value) ((ObjString*)AS_OBJ(value))
@@ -55,7 +55,7 @@ typedef struct ObjInstance ObjInstance;
 typedef enum ObjType {
   OBJ_CLASS,
   OBJ_CLOSURE,
-  OBJ_FUNCTION,
+  OBJ_THUNK,
   OBJ_NATIVE_CLOSURE,
   OBJ_INSTANCE,
   OBJ_STRING,
@@ -78,7 +78,7 @@ struct Obj {
   struct Obj *next;
 };
 
-typedef struct ObjFunction {
+typedef struct ObjThunk {
   Obj obj;
   i16 arity;
   i16 upvalueCount;
@@ -87,7 +87,7 @@ typedef struct ObjFunction {
   Value *defaultArgs;
   i16 defaultArgsCount;
   ObjString *moduleName;
-} ObjFunction;
+} ObjThunk;
 
 struct ObjString {
   Obj obj;
@@ -175,7 +175,7 @@ typedef struct ObjUpvalue {
 typedef struct ObjClosure {
   Obj obj;
   ObjInstance *module;
-  ObjFunction *function;
+  ObjThunk *thunk;
   ObjUpvalue **upvalues;
   i16 upvalueCount;
 } ObjClosure;
@@ -218,8 +218,8 @@ ObjInstance *newModule(ObjString *name, ubool includeGlobals);
 ObjInstance *newModuleFromCString(const char *name, ubool includeGlobals);
 ObjClass *newClass(ObjString *name);
 ObjClass *newClassFromCString(const char *name);
-ObjClosure *newClosure(ObjFunction *function, ObjInstance *module);
-ObjFunction *newFunction();
+ObjClosure *newClosure(ObjThunk *function, ObjInstance *module);
+ObjThunk *newFunction();
 ObjNativeClosure *newNativeClosure(
   size_t structSize,
   ubool (*body)(void *it, i16 argCount, Value *args, Value *out),

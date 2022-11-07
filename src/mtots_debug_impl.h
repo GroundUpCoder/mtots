@@ -158,7 +158,7 @@ int disassembleInstruction(Chunk *chunk, int offset) {
       return invokeInstruction("OP_SUPER_INVOKE", chunk, offset);
     case OP_CLOSURE: {
       u8 constant;
-      ObjFunction *function;
+      ObjThunk *thunk;
       i16 j;
 
       offset++;
@@ -167,8 +167,8 @@ int disassembleInstruction(Chunk *chunk, int offset) {
       printValue(chunk->constants.values[constant]);
       printf("\n");
 
-      function = AS_FUNCTION(chunk->constants.values[constant]);
-      for (j = 0; j < function->upvalueCount; j++) {
+      thunk = AS_THUNK(chunk->constants.values[constant]);
+      for (j = 0; j < thunk->upvalueCount; j++) {
         i32 isLocal = chunk->code[offset++];
         i32 index = chunk->code[offset++];
         printf(

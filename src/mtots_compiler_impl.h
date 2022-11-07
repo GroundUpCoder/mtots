@@ -60,17 +60,17 @@ typedef struct Upvalue {
   ubool isLocal;
 } Upvalue;
 
-typedef enum FunctionType {
+typedef enum ThunkType {
   TYPE_FUNCTION,
   TYPE_INITIALIZER,
   TYPE_METHOD,
   TYPE_SCRIPT
-} FunctionType;
+} ThunkType;
 
 typedef struct Compiler {
   struct Compiler *enclosing;
-  ObjFunction *function;
-  FunctionType type;
+  ObjThunk *thunk;
+  ThunkType type;
 
   Local locals[U8_COUNT];
   i16 localCount;
@@ -93,7 +93,7 @@ ClassCompiler *currentClass = NULL;
 static Token syntheticToken(const char *text);
 
 static Chunk *currentChunk() {
-  return &current->function->chunk;
+  return &current->thunk->chunk;
 }
 
 static void errorAt(Token *token, const char *message) {
@@ -225,21 +225,21 @@ static void patchJump(i32 offset) {
   currentChunk()->code[offset + 1] = jump & 0xFF;
 }
 
-static void initCompiler(Compiler *compiler, FunctionType type) {
+static void initCompiler(Compiler *compiler, ThunkType type) {
   Local *local;
 
   compiler->enclosing = current;
-  compiler->function = NULL;
+  compiler->thunk = NULL;
   compiler->type = type;
   compiler->localCount = 0;
   compiler->scopeDepth = 0;
   compiler->defaultArgsCount = 0;
 
-  compiler->function = newFunction();
+  compiler->thunk = newFunction();
 
   current = compiler;
   if (type != TYPE_SCRIPT) {
-    current->function->name = copyString(
+    current->thunk->name = copyString(
       parser.previous.start, parser.previous.length);
   }
 
@@ -255,18 +255,18 @@ static void initCompiler(Compiler *compiler, FunctionType type) {
   }
 }
 
-static ObjFunction *endCompiler() {
-  ObjFunction *function;
+static ObjThunk *endCompiler() {
+  ObjThunk *thunk;
 
   emitReturn();
-  function = current->function;
+  thunk = current->thunk;
 
   /* Copy over any default arguments */
   if (current->defaultArgsCount > 0) {
-    function->defaultArgs = ALLOCATE(Value, current->defaultArgsCount);
-    function->defaultArgsCount = current->defaultArgsCount;
+    thunk->defaultArgs = ALLOCATE(Value, current->defaultArgsCount);
+    thunk->defaultArgsCount = current->defaultArgsCount;
     memcpy(
-      function->defaultArgs,
+      thunk->defaultArgs,
       current->defaultArgs,
       sizeof(Value) * current->defaultArgsCount);
   }
@@ -275,14 +275,14 @@ static ObjFunction *endCompiler() {
   if (!parser.hadError) {
     disassembleChunk(
       currentChunk(),
-      function->name != NULL ?
-        function->name->chars :
+      thunk->name != NULL ?
+        thunk->name->chars :
         "<script>");
   }
 #endif
 
   current = current->enclosing;
-  return function;
+  return thunk;
 }
 
 static void beginScope() {
@@ -335,7 +335,7 @@ static i16 resolveLocal(Compiler *compiler, Token *name) {
 }
 
 static i16 addUpvalue(Compiler *compiler, u8 index, ubool isLocal) {
-  i16 upvalueCount = compiler->function->upvalueCount;
+  i16 upvalueCount = compiler->thunk->upvalueCount;
   i16 i;
   for (i = 0; i < upvalueCount; i++) {
     Upvalue *upvalue = &compiler->upvalues[i];
@@ -345,13 +345,13 @@ static i16 addUpvalue(Compiler *compiler, u8 index, ubool isLocal) {
   }
 
   if (upvalueCount == U8_COUNT) {
-    error("Too many closure variables in function");
+    error("Too many closure variables in thunk");
     return 0;
   }
 
   compiler->upvalues[upvalueCount].isLocal = isLocal;
   compiler->upvalues[upvalueCount].index = index;
-  return compiler->function->upvalueCount++;
+  return compiler->thunk->upvalueCount++;
 }
 
 static i16 resolveUpvalue(Compiler *compiler, Token *name) {
@@ -373,7 +373,7 @@ static void addLocal(Token name) {
   Local *local;
 
   if (current->localCount == U8_COUNT) {
-    error("Too many local variables in function");
+    error("Too many local variables in thunk");
     return;
   }
 
@@ -940,21 +940,21 @@ static Value defaultArgument() {
   return NIL_VAL();
 }
 
-static void function(FunctionType type) {
+static void function(ThunkType type) {
   Compiler compiler;
-  ObjFunction *function;
+  ObjThunk *thunk;
   i16 i;
 
   initCompiler(&compiler, type);
-  compiler.function->moduleName = compiler.enclosing->function->moduleName;
+  compiler.thunk->moduleName = compiler.enclosing->thunk->moduleName;
   beginScope();
 
   consume(TOKEN_LEFT_PAREN, "Expect '(' after function name");
   if (!check(TOKEN_RIGHT_PAREN)) {
     do {
       u8 constant;
-      current->function->arity++;
-      if (current->function->arity > 255) {
+      current->thunk->arity++;
+      if (current->thunk->arity > 255) {
         errorAtCurrent("Can't have more than 255 parameters");
       }
       constant = parseVariable("Expect parameter name");
@@ -973,10 +973,10 @@ static void function(FunctionType type) {
   while (match(TOKEN_NEWLINE));
   block(UFALSE);
 
-  function = endCompiler();
-  emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(function)));
+  thunk = endCompiler();
+  emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(thunk)));
 
-  for (i = 0; i < function->upvalueCount; i++) {
+  for (i = 0; i < thunk->upvalueCount; i++) {
     emitByte(compiler.upvalues[i].isLocal ? 1 : 0);
     emitByte(compiler.upvalues[i].index);
   }
@@ -984,7 +984,7 @@ static void function(FunctionType type) {
 
 static void method() {
   u8 constant;
-  FunctionType type;
+  ThunkType type;
   consume(TOKEN_DEF, "Expect 'def' to start method definition");
   consume(TOKEN_IDENTIFIER, "Expect method name");
   constant = identifierConstant(&parser.previous);
@@ -1385,12 +1385,12 @@ static void statement() {
   }
 }
 
-ObjFunction *compile(const char *source, ObjString *moduleName) {
+ObjThunk *compile(const char *source, ObjString *moduleName) {
   Compiler compiler;
-  ObjFunction *function;
+  ObjThunk *thunk;
   initScanner(source);
   initCompiler(&compiler, TYPE_SCRIPT);
-  compiler.function->moduleName = moduleName;
+  compiler.thunk->moduleName = moduleName;
   parser.hadError = 0;
   parser.panicMode = 0;
   advance();
@@ -1399,8 +1399,8 @@ ObjFunction *compile(const char *source, ObjString *moduleName) {
     declaration();
   }
 
-  function = endCompiler();
-  return parser.hadError ? NULL : function;
+  thunk = endCompiler();
+  return parser.hadError ? NULL : thunk;
 }
 
 void markCompilerRoots() {
@@ -1410,7 +1410,7 @@ void markCompilerRoots() {
     for (i = 0; i < compiler->defaultArgsCount; i++) {
       markValue(compiler->defaultArgs[i]);
     }
-    markObject((Obj*)compiler->function);
+    markObject((Obj*)compiler->thunk);
     compiler = compiler->enclosing;
   }
 }

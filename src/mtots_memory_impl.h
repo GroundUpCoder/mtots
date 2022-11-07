@@ -93,20 +93,20 @@ static void blackenObject(Obj *object) {
       i16 i;
       ObjClosure *closure = (ObjClosure*)object;
       markObject((Obj*)closure->module);
-      markObject((Obj*)closure->function);
+      markObject((Obj*)closure->thunk);
       for (i = 0; i < closure->upvalueCount; i++) {
         markObject((Obj*)closure->upvalues[i]);
       }
       break;
     }
-    case OBJ_FUNCTION: {
-      ObjFunction *function = (ObjFunction*) object;
+    case OBJ_THUNK: {
+      ObjThunk *thunk = (ObjThunk*) object;
       size_t i;
-      markObject((Obj*)function->name);
-      markObject((Obj*)function->moduleName);
-      markArray(&function->chunk.constants);
-      for (i = 0; i < function->defaultArgsCount; i++) {
-        markValue(function->defaultArgs[i]);
+      markObject((Obj*)thunk->name);
+      markObject((Obj*)thunk->moduleName);
+      markArray(&thunk->chunk.constants);
+      for (i = 0; i < thunk->defaultArgsCount; i++) {
+        markValue(thunk->defaultArgs[i]);
       }
       break;
     }
@@ -186,11 +186,11 @@ static void freeObject(Obj *object) {
       FREE(ObjClosure, object);
       break;
     }
-    case OBJ_FUNCTION: {
-      ObjFunction *function = (ObjFunction*) object;
-      freeChunk(&function->chunk);
-      FREE_ARRAY(Value, function->defaultArgs, function->defaultArgsCount);
-      FREE(ObjFunction, object);
+    case OBJ_THUNK: {
+      ObjThunk *thunk = (ObjThunk*) object;
+      freeChunk(&thunk->chunk);
+      FREE_ARRAY(Value, thunk->defaultArgs, thunk->defaultArgsCount);
+      FREE(ObjThunk, object);
       break;
     }
     case OBJ_NATIVE_CLOSURE: {
