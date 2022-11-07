@@ -51,7 +51,7 @@ static ubool impl(i16 argCount, Value *args, Value *out) {
   size_t i;
 
   for (i = 0; i < sizeof(functions)/sizeof(CFunction*); i++) {
-    dictSetN(&module->fields, functions[i]->name, CFUNCTION_VAL(functions[i]));
+    mapSetN(&module->fields, functions[i]->name, CFUNCTION_VAL(functions[i]));
   }
 
   return UTRUE;

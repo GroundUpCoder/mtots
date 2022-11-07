@@ -8,7 +8,7 @@
 
 static ubool implDictGetItem(i16 argCount, Value *args, Value *out) {
   ObjDict *dict = AS_DICT(args[-1]);
-  if (!dictGet(&dict->dict, args[0], out)) {
+  if (!mapGet(&dict->dict, args[0], out)) {
     runtimeError("Key not found in dict");
     return UFALSE;
   }
@@ -19,7 +19,7 @@ static CFunction funcDictGetItem = { implDictGetItem, "__getitem__", 1 };
 
 static ubool implDictSetItem(i16 argCount, Value *args, Value *out) {
   ObjDict *dict = AS_DICT(args[-1]);
-  *out = BOOL_VAL(dictSet(&dict->dict, args[0], args[1]));
+  *out = BOOL_VAL(mapSet(&dict->dict, args[0], args[1]));
   return UTRUE;
 }
 
@@ -27,7 +27,7 @@ static CFunction funcDictSetItem = { implDictSetItem, "__setitem__", 2 };
 
 static ubool implDictDelete(i16 argCount, Value *args, Value *out) {
   ObjDict *dict = AS_DICT(args[-1]);
-  *out = BOOL_VAL(dictDelete(&dict->dict, args[0]));
+  *out = BOOL_VAL(mapDelete(&dict->dict, args[0]));
   return UTRUE;
 }
 
@@ -36,7 +36,7 @@ static CFunction funcDictDelete = { implDictDelete, "delete", 1 };
 static ubool implDictContains(i16 argCount, Value *args, Value *out) {
   Value dummy;
   ObjDict *dict = AS_DICT(args[-1]);
-  *out = BOOL_VAL(dictGet(&dict->dict, args[0], &dummy));
+  *out = BOOL_VAL(mapGet(&dict->dict, args[0], &dummy));
   return UTRUE;
 }
 
@@ -45,13 +45,13 @@ static CFunction funcDictContains = { implDictContains, "__contains__", 1 };
 typedef struct ObjDictIterator {
   ObjNativeClosure obj;
   ObjDict *dict;
-  DictIterator di;
+  MapIterator di;
 } ObjDictIterator;
 
 static ubool implDictIterator(
     void *it, i16 argCount, Value *args, Value *out) {
   ObjDictIterator *iter = (ObjDictIterator*)it;
-  if (dictIteratorNextKey(&iter->di, out)) {
+  if (mapIteratorNextKey(&iter->di, out)) {
     return UTRUE;
   }
   *out = STOP_ITERATION_VAL();
@@ -71,9 +71,9 @@ static ubool implDictIter(i16 argCount, Value *args, Value *out) {
     implDictIterator,
     blackenDictIterator,
     NULL,
-    "DictIterator", 0, 0);
+    "MapIterator", 0, 0);
   iter->dict = dict;
-  initDictIterator(&iter->di, &dict->dict);
+  initMapIterator(&iter->di, &dict->dict);
   *out = OBJ_VAL(iter);
   return UTRUE;
 }
@@ -86,7 +86,7 @@ static CFunction funcDictIter = { implDictIter, "__iter__", 0 };
  * Find a key with the given value
  * If more than one entry has the same value, this function
  * will return the first matching key that would've been returned
- * in an iteration of the dictionary
+ * in an iteration of the mapionary
  *
  * Implementation is a slow linear search, but a method like this
  * is still handy sometimes.
@@ -94,11 +94,11 @@ static CFunction funcDictIter = { implDictIter, "__iter__", 0 };
 static ubool implDictRget(i16 argCount, Value *args, Value *out) {
   ObjDict *dict = AS_DICT(args[-1]);
   Value value = args[0];
-  DictIterator di;
-  DictEntry *entry;
+  MapIterator di;
+  MapEntry *entry;
 
-  initDictIterator(&di, &dict->dict);
-  while (dictIteratorNext(&di, &entry)) {
+  initMapIterator(&di, &dict->dict);
+  while (mapIteratorNext(&di, &entry)) {
     if (valuesEqual(entry->value, value)) {
       *out = entry->key;
       return UTRUE;
@@ -113,7 +113,7 @@ static ubool implDictRget(i16 argCount, Value *args, Value *out) {
   }
   /* If no entry is found, and no optional argument is provided
    * we throw an error */
-  runtimeError("No entry with given value found in Dict");
+  runtimeError("No entry with given value found in Map");
   return UFALSE;
 }
 
@@ -132,15 +132,15 @@ void initDictClass() {
   size_t i;
   ObjClass *cls;
 
-  tmpstr = copyCString("Dict");
+  tmpstr = copyCString("Map");
   push(OBJ_VAL(tmpstr));
-  cls = vm.dictClass = newClass(tmpstr);
+  cls = vm.mapClass = newClass(tmpstr);
   cls->isBuiltinClass = UTRUE;
   pop();
 
   for (i = 0; i < sizeof(methods) / sizeof(CFunction*); i++) {
     methods[i]->receiverType.type = TYPE_PATTERN_DICT;
-    dictSetN(&cls->methods, methods[i]->name, CFUNCTION_VAL(methods[i]));
+    mapSetN(&cls->methods, methods[i]->name, CFUNCTION_VAL(methods[i]));
   }
 }
 #endif/*mtots_class_dict_impl_h*/

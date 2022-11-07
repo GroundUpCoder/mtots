@@ -68,18 +68,18 @@ ubool valuesEqual(Value a, Value b) {
           return UTRUE;
         }
         case OBJ_DICT: {
-          ObjDict *dictA = (ObjDict*)objA, *dictB = (ObjDict*)objB;
-          DictIterator di;
-          DictEntry *entry;
-          if (dictA->dict.size != dictB->dict.size) {
+          ObjDict *mapA = (ObjDict*)objA, *mapB = (ObjDict*)objB;
+          MapIterator di;
+          MapEntry *entry;
+          if (mapA->dict.size != mapB->dict.size) {
             return UFALSE;
           }
-          initDictIterator(&di, &dictA->dict);
-          while (dictIteratorNext(&di, &entry)) {
+          initMapIterator(&di, &mapA->dict);
+          while (mapIteratorNext(&di, &entry)) {
             Value key = entry->key;
             if (!IS_EMPTY_KEY(key)) {
               Value value1 = entry->value, value2;
-              if (!dictGet(&dictB->dict, key, &value2)) {
+              if (!mapGet(&mapB->dict, key, &value2)) {
                 return UFALSE;
               }
               if (!valuesEqual(value1, value2)) {

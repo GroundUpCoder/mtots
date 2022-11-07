@@ -366,7 +366,7 @@ void initByteArrayClass() {
     tmpstr = copyCString(methods[i]->name);
     methods[i]->receiverType.type = TYPE_PATTERN_BYTE_ARRAY_OR_VIEW;
     push(OBJ_VAL(tmpstr));
-    dictSetStr(
+    mapSetStr(
       &cls->methods, tmpstr, CFUNCTION_VAL(methods[i]));
     pop();
   }
@@ -387,7 +387,7 @@ void initByteArrayViewClass() {
     tmpstr = copyCString(methods[i]->name);
     methods[i]->receiverType.type = TYPE_PATTERN_BYTE_ARRAY_OR_VIEW;
     push(OBJ_VAL(tmpstr));
-    dictSetStr(
+    mapSetStr(
       &cls->methods, tmpstr, CFUNCTION_VAL(methods[i]));
     pop();
   }

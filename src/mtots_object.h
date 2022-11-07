@@ -5,7 +5,7 @@
 #include "mtots_value.h"
 #include "mtots_chunk.h"
 #include "mtots_file.h"
-#include "mtots_dict.h"
+#include "mtots_map.h"
 
 #include <stdio.h>
 
@@ -130,7 +130,7 @@ typedef struct ObjTuple {
 
 typedef struct ObjDict {
   Obj obj;
-  Dict dict;
+  Map dict;
 } ObjDict;
 
 typedef struct NativeObjectDescriptor {
@@ -200,7 +200,7 @@ typedef struct ObjNativeClosure {
 struct ObjClass {
   Obj obj;
   ObjString *name;
-  Dict methods;
+  Map methods;
   ubool isModuleClass;
   ubool isBuiltinClass;
   NativeObjectDescriptor *descriptor; /* NULL if not native */
@@ -209,7 +209,7 @@ struct ObjClass {
 struct ObjInstance {
   Obj obj;
   ObjClass *klass;
-  Dict fields;
+  Map fields;
 };
 
 ubool IS_MODULE(Value value);

@@ -86,7 +86,7 @@ static void blackenObject(Obj *object) {
     case OBJ_CLASS: {
       ObjClass *klass = (ObjClass*)object;
       markObject((Obj*)klass->name);
-      markDict(&klass->methods);
+      markMap(&klass->methods);
       break;
     }
     case OBJ_CLOSURE: {
@@ -120,7 +120,7 @@ static void blackenObject(Obj *object) {
     case OBJ_INSTANCE: {
       ObjInstance *instance = (ObjInstance*)object;
       markObject((Obj*)instance->klass);
-      markDict(&instance->fields);
+      markMap(&instance->fields);
       break;
     }
     case OBJ_UPVALUE:
@@ -150,7 +150,7 @@ static void blackenObject(Obj *object) {
     }
     case OBJ_DICT: {
       ObjDict *dict = (ObjDict*)object;
-      markDict(&dict->dict);
+      markMap(&dict->dict);
       break;
     }
     case OBJ_FILE: {
@@ -176,7 +176,7 @@ static void freeObject(Obj *object) {
   switch (object->type) {
     case OBJ_CLASS: {
       ObjClass *klass = (ObjClass*)object;
-      freeDict(&klass->methods);
+      freeMap(&klass->methods);
       FREE(ObjClass, object);
       break;
     }
@@ -210,7 +210,7 @@ static void freeObject(Obj *object) {
     }
     case OBJ_INSTANCE: {
       ObjInstance *instance = (ObjInstance*)object;
-      freeDict(&instance->fields);
+      freeMap(&instance->fields);
       FREE(ObjInstance, object);
       break;
     }
@@ -244,7 +244,7 @@ static void freeObject(Obj *object) {
     }
     case OBJ_DICT: {
       ObjDict *dict = (ObjDict*)object;
-      freeDict(&dict->dict);
+      freeMap(&dict->dict);
       FREE(ObjDict, object);
       break;
     }
@@ -284,9 +284,9 @@ static void markRoots() {
     markObject((Obj*)upvalue);
   }
 
-  markDict(&vm.globals);
-  markDict(&vm.modules);
-  markDict(&vm.nativeModuleThunks);
+  markMap(&vm.globals);
+  markMap(&vm.modules);
+  markMap(&vm.nativeModuleThunks);
   markCompilerRoots();
   markObject((Obj*)vm.preludeString);
   markObject((Obj*)vm.initString);
@@ -307,7 +307,7 @@ static void markRoots() {
   markObject((Obj*)vm.byteArrayViewClass);
   markObject((Obj*)vm.listClass);
   markObject((Obj*)vm.tupleClass);
-  markObject((Obj*)vm.dictClass);
+  markObject((Obj*)vm.mapClass);
   markObject((Obj*)vm.functionClass);
   markObject((Obj*)vm.operatorClass);
   markObject((Obj*)vm.classClass);
@@ -364,8 +364,8 @@ void collectGarbage() {
 
   markRoots();
   traceReferences();
-  dictRemoveWhite(&vm.strings);
-  dictRemoveWhite(&vm.tuples);
+  mapRemoveWhite(&vm.strings);
+  mapRemoveWhite(&vm.tuples);
   sweep();
 
   vm.nextGC = vm.bytesAllocated * GC_HEAP_GROW_FACTOR;

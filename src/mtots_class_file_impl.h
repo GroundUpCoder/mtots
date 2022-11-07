@@ -152,7 +152,7 @@ void initFileClass() {
   for (i = 0; i < sizeof(methods) / sizeof(CFunction*); i++) {
     tmpstr = copyCString(methods[i]->name);
     push(OBJ_VAL(tmpstr));
-    dictSetStr(
+    mapSetStr(
       &cls->methods, tmpstr, CFUNCTION_VAL(methods[i]));
     pop();
   }

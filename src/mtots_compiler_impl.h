@@ -763,7 +763,7 @@ static void listDisplay(ubool canAssign) {
   emitBytes(OP_NEW_LIST, length);
 }
 
-static void dictDisplay(ubool canAssign) {
+static void mapDisplay(ubool canAssign) {
   size_t length = 0;
   for (;;) {
     if (match(TOKEN_RIGHT_BRACE)) {
@@ -823,7 +823,7 @@ void initParseRules() {
     rules[i].precedence = PREC_NONE;
   }
   rules[TOKEN_LEFT_PAREN] = newRule(grouping, parseCall, PREC_CALL);
-  rules[TOKEN_LEFT_BRACE] = newRule(dictDisplay, NULL, PREC_NONE);
+  rules[TOKEN_LEFT_BRACE] = newRule(mapDisplay, NULL, PREC_NONE);
   rules[TOKEN_LEFT_BRACKET] = newRule(listDisplay, subscript, PREC_CALL);
   rules[TOKEN_DOT] = newRule(NULL, dot, PREC_CALL);
   rules[TOKEN_MINUS] = newRule(unary, binary, PREC_TERM);

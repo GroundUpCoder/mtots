@@ -133,7 +133,7 @@ void setInstanceField(Ref recv, const char *fieldName, Ref value) {
     panic("Expected instance but got %s", getKindName(DEREF(recv)));
   }
   instance = AS_INSTANCE(DEREF(recv));
-  dictSetN(&instance->fields, fieldName, DEREF(value));
+  mapSetN(&instance->fields, fieldName, DEREF(value));
 }
 
 Ref allocNil() {

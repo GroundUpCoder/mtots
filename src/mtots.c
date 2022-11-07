@@ -16,6 +16,7 @@
 #include "mtots_compiler_impl.h"
 #include "mtots_debug_impl.h"
 #include "mtots_dict_impl.h"
+#include "mtots_map_impl.h"
 #include "mtots_env_impl.h"
 #include "mtots_file_impl.h"
 #include "mtots_globals_impl.h"

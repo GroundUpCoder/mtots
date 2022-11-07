@@ -95,12 +95,12 @@ static ubool writeJSON(Value value, size_t *outLen, char *out) {
   if (IS_DICT(value)) {
     ObjDict *dict = AS_DICT(value);
     size_t len = 0;
-    DictIterator di;
-    DictEntry *entry;
+    MapIterator di;
+    MapEntry *entry;
     ubool first = UTRUE;
     len++; if (out) *out++ = '{';
-    initDictIterator(&di, &dict->dict);
-    while (dictIteratorNext(&di, &entry)) {
+    initMapIterator(&di, &dict->dict);
+    while (mapIteratorNext(&di, &entry)) {
       size_t keyLen, valueLen;
       if (!first) {
         len++; if (out) *out++ = ',';

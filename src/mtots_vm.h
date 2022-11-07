@@ -35,11 +35,11 @@ typedef struct VM {
   Value *stackTop;
   TrySnapshot trySnapshots[TRY_SNAPSHOTS_MAX];
   i16 trySnapshotsCount;
-  Dict globals;
-  Dict strings;            /* table of all interned strings */
-  Dict modules;            /* all preloaded modules */
-  Dict nativeModuleThunks; /* Dict of CFunctions */
-  Dict tuples;              /* table of all interned tuples */
+  Map globals;
+  Map strings;            /* table of all interned strings */
+  Map modules;            /* all preloaded modules */
+  Map nativeModuleThunks; /* Map of CFunctions */
+  Map tuples;              /* table of all interned tuples */
 
   ObjString *preludeString;
   ObjString *initString;
@@ -61,7 +61,7 @@ typedef struct VM {
   ObjClass *byteArrayViewClass;
   ObjClass *listClass;
   ObjClass *tupleClass;
-  ObjClass *dictClass;
+  ObjClass *mapClass;
   ObjClass *functionClass;
   ObjClass *operatorClass;
   ObjClass *classClass;

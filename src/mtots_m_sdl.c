@@ -35,49 +35,49 @@ static ubool impl(i16 argCount, Value *args, Value *out) {
     CFunction **method;
     NativeObjectDescriptor *descriptor = descriptors[i];
     ObjClass *klass = newClassFromCString(descriptor->name);
-    dictSetN(&module->fields, descriptor->name, OBJ_VAL(klass));
+    mapSetN(&module->fields, descriptor->name, OBJ_VAL(klass));
     descriptor->klass = klass;
     klass->descriptor = descriptor;
     for (method = descriptor->methods; method && *method; method++) {
-      dictSetN(&klass->methods, (*method)->name, CFUNCTION_VAL(*method));
+      mapSetN(&klass->methods, (*method)->name, CFUNCTION_VAL(*method));
       (*method)->receiverType.type = TYPE_PATTERN_NATIVE;
       (*method)->receiverType.nativeTypeDescriptor = descriptor;
     }
   }
 
   for (i = 0; i < sizeof(functions)/sizeof(CFunction*); i++) {
-    dictSetN(&module->fields, functions[i]->name, CFUNCTION_VAL(functions[i]));
+    mapSetN(&module->fields, functions[i]->name, CFUNCTION_VAL(functions[i]));
   }
 
   sdlglModule = createSDLGLModule();
   push(OBJ_VAL(sdlglModule));
-  dictSetN(&module->fields, "gl", OBJ_VAL(sdlglModule));
+  mapSetN(&module->fields, "gl", OBJ_VAL(sdlglModule));
   pop(); /* sdlglModule */
 
   dict = newDict();
-  dictSetN(&module->fields, "key", OBJ_VAL(dict));
+  mapSetN(&module->fields, "key", OBJ_VAL(dict));
   for (i = 0; i < sizeof(keyConstants)/sizeof(KeyConstant); i++) {
     KeyConstant c = keyConstants[i];
-    dictSetN(&dict->dict, c.name, NUMBER_VAL(c.value));
+    mapSetN(&dict->dict, c.name, NUMBER_VAL(c.value));
   }
 
   dict = newDict();
-  dictSetN(&module->fields, "scancode", OBJ_VAL(dict));
+  mapSetN(&module->fields, "scancode", OBJ_VAL(dict));
   for (i = 0; i < sizeof(scanConstants)/sizeof(KeyConstant); i++) {
     KeyConstant c = scanConstants[i];
-    dictSetN(&dict->dict, c.name, NUMBER_VAL(c.value));
+    mapSetN(&dict->dict, c.name, NUMBER_VAL(c.value));
   }
 
   dict = newDict();
-  dictSetN(&module->fields, "button", OBJ_VAL(dict));
+  mapSetN(&module->fields, "button", OBJ_VAL(dict));
   for (i = 0; i < sizeof(buttonConstants)/sizeof(KeyConstant); i++) {
     KeyConstant c = buttonConstants[i];
-    dictSetN(&dict->dict, c.name, NUMBER_VAL(c.value));
+    mapSetN(&dict->dict, c.name, NUMBER_VAL(c.value));
   }
 
   for (i = 0; i < sizeof(numericConstants)/sizeof(NumericConstant); i++) {
     NumericConstant c = numericConstants[i];
-    dictSetN(&module->fields, c.name, NUMBER_VAL(c.value));
+    mapSetN(&module->fields, c.name, NUMBER_VAL(c.value));
   }
 
   return UTRUE;

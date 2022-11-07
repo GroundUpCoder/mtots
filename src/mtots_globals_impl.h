@@ -280,13 +280,13 @@ ubool implRepr(i16 argCount, Value *args, Value *out) {
           size_t j, charCount = 0;
           Value *stackStart = vm.stackTop, *stackptr = vm.stackTop;
           char *chars, *charsTop;
-          DictIterator di;
-          DictEntry *entry;
+          MapIterator di;
+          MapEntry *entry;
 
           /* stringify all entries in the dict and push them on the stack
            * (for GC reasons) */
-          initDictIterator(&di, &dict->dict);
-          for (j = 0; dictIteratorNext(&di, &entry);) {
+          initMapIterator(&di, &dict->dict);
+          for (j = 0; mapIteratorNext(&di, &entry);) {
             Value strkey, strval;
             if (IS_EMPTY_KEY(entry->key)) {
               continue;
@@ -327,8 +327,8 @@ ubool implRepr(i16 argCount, Value *args, Value *out) {
           charsTop = chars = ALLOCATE(char, charCount + 1);
           *charsTop++ = '{';
 
-          initDictIterator(&di, &dict->dict);
-          for (j = 0; dictIteratorNext(&di, &entry);) {
+          initMapIterator(&di, &dict->dict);
+          for (j = 0; mapIteratorNext(&di, &entry);) {
             ObjString *itemstr;
             if (IS_EMPTY_KEY(entry->key)) {
               continue;
@@ -780,20 +780,20 @@ void defineDefaultGlobals() {
   defineGlobal("__sort__", CFUNCTION_VAL(&cfunctionSort));
   defineGlobal("__tuple__", CFUNCTION_VAL(&cfunctionTuple));
 
-  dictSetStr(&vm.globals, vm.sentinelClass->name, OBJ_VAL(vm.sentinelClass));
-  dictSetStr(&vm.globals, vm.nilClass->name, OBJ_VAL(vm.nilClass));
-  dictSetStr(&vm.globals, vm.boolClass->name, OBJ_VAL(vm.boolClass));
-  dictSetStr(&vm.globals, vm.numberClass->name, OBJ_VAL(vm.numberClass));
-  dictSetStr(&vm.globals, vm.stringClass->name, OBJ_VAL(vm.stringClass));
-  dictSetStr(&vm.globals, vm.byteArrayClass->name, OBJ_VAL(vm.byteArrayClass));
-  dictSetStr(&vm.globals, vm.byteArrayViewClass->name, OBJ_VAL(vm.byteArrayViewClass));
-  dictSetStr(&vm.globals, vm.listClass->name, OBJ_VAL(vm.listClass));
-  dictSetStr(&vm.globals, vm.tupleClass->name, OBJ_VAL(vm.tupleClass));
-  dictSetStr(&vm.globals, vm.dictClass->name, OBJ_VAL(vm.dictClass));
-  dictSetStr(&vm.globals, vm.functionClass->name, OBJ_VAL(vm.functionClass));
-  dictSetStr(&vm.globals, vm.operatorClass->name, OBJ_VAL(vm.operatorClass));
-  dictSetStr(&vm.globals, vm.classClass->name, OBJ_VAL(vm.classClass));
-  dictSetStr(&vm.globals, vm.fileClass->name, OBJ_VAL(vm.fileClass));
+  mapSetStr(&vm.globals, vm.sentinelClass->name, OBJ_VAL(vm.sentinelClass));
+  mapSetStr(&vm.globals, vm.nilClass->name, OBJ_VAL(vm.nilClass));
+  mapSetStr(&vm.globals, vm.boolClass->name, OBJ_VAL(vm.boolClass));
+  mapSetStr(&vm.globals, vm.numberClass->name, OBJ_VAL(vm.numberClass));
+  mapSetStr(&vm.globals, vm.stringClass->name, OBJ_VAL(vm.stringClass));
+  mapSetStr(&vm.globals, vm.byteArrayClass->name, OBJ_VAL(vm.byteArrayClass));
+  mapSetStr(&vm.globals, vm.byteArrayViewClass->name, OBJ_VAL(vm.byteArrayViewClass));
+  mapSetStr(&vm.globals, vm.listClass->name, OBJ_VAL(vm.listClass));
+  mapSetStr(&vm.globals, vm.tupleClass->name, OBJ_VAL(vm.tupleClass));
+  mapSetStr(&vm.globals, vm.mapClass->name, OBJ_VAL(vm.mapClass));
+  mapSetStr(&vm.globals, vm.functionClass->name, OBJ_VAL(vm.functionClass));
+  mapSetStr(&vm.globals, vm.operatorClass->name, OBJ_VAL(vm.operatorClass));
+  mapSetStr(&vm.globals, vm.classClass->name, OBJ_VAL(vm.classClass));
+  mapSetStr(&vm.globals, vm.fileClass->name, OBJ_VAL(vm.fileClass));
 
   defineStandardIOGlobals();
 }

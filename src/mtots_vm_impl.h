@@ -144,7 +144,7 @@ void runtimeError(const char *format, ...) {
 void defineGlobal(const char *name, Value value) {
   push(OBJ_VAL(copyString(name, strlen(name))));
   push(value);
-  dictSetStr(&vm.globals, AS_STRING(vm.stack[0]), vm.stack[1]);
+  mapSetStr(&vm.globals, AS_STRING(vm.stack[0]), vm.stack[1]);
   pop();
   pop();
 }
@@ -156,7 +156,7 @@ void addNativeModuleCFunc(CFunc *cfunc) {
   }
   name = copyCString(cfunc->name);
   push(OBJ_VAL(name));
-  if (!dictSetStr(&vm.nativeModuleThunks, name, CFUNC_VAL(cfunc))) {
+  if (!mapSetStr(&vm.nativeModuleThunks, name, CFUNC_VAL(cfunc))) {
     panic("Native module %s is already defined", name->chars);
   }
 
@@ -170,7 +170,7 @@ void addNativeModule(CFunction *func) {
   }
   name = copyCString(func->name);
   push(OBJ_VAL(name));
-  if (!dictSetStr(&vm.nativeModuleThunks, name, CFUNCTION_VAL(func))) {
+  if (!mapSetStr(&vm.nativeModuleThunks, name, CFUNCTION_VAL(func))) {
     panic("Native module %s is already defined", name->chars);
   }
 
@@ -219,7 +219,7 @@ void initVM() {
   vm.byteArrayViewClass = NULL;
   vm.listClass = NULL;
   vm.tupleClass = NULL;
-  vm.dictClass = NULL;
+  vm.mapClass = NULL;
   vm.functionClass = NULL;
   vm.operatorClass = NULL;
   vm.classClass = NULL;
@@ -228,11 +228,11 @@ void initVM() {
   vm.stdoutFile = NULL;
   vm.stderrFile = NULL;
 
-  initDict(&vm.globals);
-  initDict(&vm.strings);
-  initDict(&vm.modules);
-  initDict(&vm.nativeModuleThunks);
-  initDict(&vm.tuples);
+  initMap(&vm.globals);
+  initMap(&vm.strings);
+  initMap(&vm.modules);
+  initMap(&vm.nativeModuleThunks);
+  initMap(&vm.tuples);
 
   vm.preludeString = copyCString("__prelude__");
   vm.initString = copyCString("__init__");
@@ -267,11 +267,11 @@ void initVM() {
 }
 
 void freeVM() {
-  freeDict(&vm.globals);
-  freeDict(&vm.strings);
-  freeDict(&vm.modules);
-  freeDict(&vm.nativeModuleThunks);
-  freeDict(&vm.tuples);
+  freeMap(&vm.globals);
+  freeMap(&vm.strings);
+  freeMap(&vm.modules);
+  freeMap(&vm.nativeModuleThunks);
+  freeMap(&vm.tuples);
   vm.preludeString = NULL;
   vm.initString = NULL;
   vm.iterString = NULL;
@@ -578,7 +578,7 @@ static ubool callClass(ObjClass *klass, i16 argCount) {
   } else {
     /* normal classes */
     vm.stackTop[-argCount - 1] = OBJ_VAL(newInstance(klass));
-    if (dictGetStr(&klass->methods, vm.initString, &initializer)) {
+    if (mapGetStr(&klass->methods, vm.initString, &initializer)) {
       return call(AS_CLOSURE(initializer), argCount);
     } else if (argCount != 0) {
       runtimeError("Expected 0 arguments but got %d", argCount);
@@ -659,7 +659,7 @@ static ubool callValue(Value callee, i16 argCount) {
 static ubool invokeFromClass(
     ObjClass *klass, ObjString *name, i16 argCount) {
   Value method;
-  if (!dictGetStr(&klass->methods, name, &method)) {
+  if (!mapGetStr(&klass->methods, name, &method)) {
     runtimeError(
       "Method '%s' not found in '%s'",
       name->chars,
@@ -720,7 +720,7 @@ static void closeUpvalues(Value *last) {
 static void defineMethod(ObjString *name) {
   Value method = peek(0);
   ObjClass *klass = AS_CLASS(peek(1));
-  dictSetStr(&klass->methods, name, method);
+  mapSetStr(&klass->methods, name, method);
   pop();
 }
 
@@ -835,7 +835,7 @@ loop:
       case OP_GET_GLOBAL: {
         ObjString *name = READ_STRING();
         Value value;
-        if (!dictGetStr(&frame->closure->module->fields, name, &value)) {
+        if (!mapGetStr(&frame->closure->module->fields, name, &value)) {
           runtimeError("Undefined variable '%s'", name->chars);
           RETURN_RUNTIME_ERROR();
         }
@@ -844,14 +844,14 @@ loop:
       }
       case OP_DEFINE_GLOBAL: {
         ObjString *name = READ_STRING();
-        dictSetStr(&frame->closure->module->fields, name, peek(0));
+        mapSetStr(&frame->closure->module->fields, name, peek(0));
         pop();
         break;
       }
       case OP_SET_GLOBAL: {
         ObjString *name = READ_STRING();
-        if (dictSetStr(&frame->closure->module->fields, name, peek(0))) {
-          dictDeleteStr(&frame->closure->module->fields, name);
+        if (mapSetStr(&frame->closure->module->fields, name, peek(0))) {
+          mapDeleteStr(&frame->closure->module->fields, name);
           runtimeError("Undefined variable '%s'", name->chars);
           RETURN_RUNTIME_ERROR();
         }
@@ -875,7 +875,7 @@ loop:
           ObjInstance *instance;
           instance = AS_INSTANCE(peek(0));
           name = READ_STRING();
-          if (dictGetStr(&instance->fields, name, &value)) {
+          if (mapGetStr(&instance->fields, name, &value)) {
             pop(); /* Instance */
             push(value);
             break;
@@ -889,12 +889,12 @@ loop:
         if (IS_DICT(peek(0))) {
           ObjDict *d = AS_DICT(peek(0));
           name = READ_STRING();
-          if (dictGet(&d->dict, OBJ_VAL(name), &value)) {
+          if (mapGet(&d->dict, OBJ_VAL(name), &value)) {
             pop(); /* Instance */
             push(value);
             break;
           }
-          runtimeError("Field '%s' not found in Dict", name->chars);
+          runtimeError("Field '%s' not found in Map", name->chars);
           RETURN_RUNTIME_ERROR();
         }
 
@@ -926,7 +926,7 @@ loop:
         if (IS_INSTANCE(peek(1))) {
           ObjInstance *instance;
           instance = AS_INSTANCE(peek(1));
-          dictSetStr(&instance->fields, READ_STRING(), peek(0));
+          mapSetStr(&instance->fields, READ_STRING(), peek(0));
           value = pop();
           pop();
           push(value);
@@ -935,7 +935,7 @@ loop:
 
         if (IS_DICT(peek(1))) {
           ObjDict *d = AS_DICT(peek(1));
-          dictSet(&d->dict, OBJ_VAL(READ_STRING()), peek(0));
+          mapSet(&d->dict, OBJ_VAL(READ_STRING()), peek(0));
           value = pop();
           pop();
           push(value);
@@ -1252,7 +1252,7 @@ loop:
         Value *start = vm.stackTop - 2 * length;
         push(OBJ_VAL(dict)); /* preserve for GC */
         for (i = 0; i < 2 * length; i += 2) {
-          dictSet(&dict->dict, start[i], start[i + 1]);
+          mapSet(&dict->dict, start[i], start[i + 1]);
         }
         vm.stackTop = start;
         push(OBJ_VAL(dict));
@@ -1271,7 +1271,7 @@ loop:
         }
 
         subclass = AS_CLASS(peek(0));
-        dictAddAll(&AS_CLASS(superclass)->methods, &subclass->methods);
+        mapAddAll(&AS_CLASS(superclass)->methods, &subclass->methods);
         pop(); /* subclass */
         break;
       }
@@ -1317,27 +1317,27 @@ static void prepPrelude() {
   /* Copy over values from __prelude__ into global */
   {
     ObjInstance *prelude = AS_INSTANCE(peek(0));
-    DictIterator ti, tj;
-    DictEntry *entry, *e;
+    MapIterator ti, tj;
+    MapEntry *entry, *e;
 
-    initDictIterator(&ti, &prelude->fields);
-    while (dictIteratorNext(&ti, &entry)) {
+    initMapIterator(&ti, &prelude->fields);
+    while (mapIteratorNext(&ti, &entry)) {
       if (valueIsCString(entry->key, "sorted") ||
           valueIsCString(entry->key, "list") ||
           valueIsCString(entry->key, "tuple") ||
           valueIsCString(entry->key, "dict") ||
           valueIsCString(entry->key, "set")) {
-        dictSet(&vm.globals, entry->key, entry->value);
+        mapSet(&vm.globals, entry->key, entry->value);
       } else if (valueIsCString(entry->key, "__List__")) {
         ObjClass *mixinListClass;
         if (!IS_CLASS(entry->value)) {
           panic("__prelude__.__List__ is not a class");
         }
         mixinListClass = AS_CLASS(entry->value);
-        initDictIterator(&tj, &mixinListClass->methods);
-        while (dictIteratorNext(&tj, &e)) {
+        initMapIterator(&tj, &mixinListClass->methods);
+        while (mapIteratorNext(&tj, &e)) {
           if (valueIsCString(e->key, "sort")) {
-            dictSet(&vm.listClass->methods, e->key, e->value);
+            mapSet(&vm.listClass->methods, e->key, e->value);
           }
         }
       }

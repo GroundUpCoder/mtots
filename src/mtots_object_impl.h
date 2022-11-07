@@ -47,7 +47,7 @@ ObjInstance *newModule(ObjString *name, ubool includeGlobals) {
 
   if (includeGlobals) {
     push(OBJ_VAL(instance));
-    dictAddAll(&vm.globals, &instance->fields);
+    mapAddAll(&vm.globals, &instance->fields);
     pop(); /* instance */
   }
 
@@ -69,7 +69,7 @@ ObjInstance *newModuleFromCString(const char *name, ubool includeGlobals) {
 ObjClass *newClass(ObjString *name) {
   ObjClass *klass = ALLOCATE_OBJ(ObjClass, OBJ_CLASS);
   klass->name = name;
-  initDict(&klass->methods);
+  initMap(&klass->methods);
   klass->isModuleClass = UFALSE;
   klass->isBuiltinClass = UFALSE;
   klass->descriptor = NULL;
@@ -146,7 +146,7 @@ ObjNativeClosure *newNativeClosure(
 ObjInstance *newInstance(ObjClass *klass) {
   ObjInstance *instance = ALLOCATE_OBJ(ObjInstance, OBJ_INSTANCE);
   instance->klass = klass;
-  initDict(&instance->fields);
+  initMap(&instance->fields);
   return instance;
 }
 
@@ -157,7 +157,7 @@ static ObjString *allocateString(char *chars, int length, u32 hash) {
   string->hash = hash;
 
   push(OBJ_VAL(string));
-  dictSetStr(&vm.strings, string, NIL_VAL());
+  mapSetStr(&vm.strings, string, NIL_VAL());
   pop();
 
   return string;
@@ -200,7 +200,7 @@ static u32 hashTuple(Value *buffer, size_t length) {
  */
 ObjString *takeString(char *chars, size_t length) {
   u32 hash = hashString(chars, length);
-  ObjString *interned = dictFindString(&vm.strings, chars, length, hash);
+  ObjString *interned = mapFindString(&vm.strings, chars, length, hash);
   if (interned != NULL) {
     FREE_ARRAY(char, chars, length + 1);
     return interned;
@@ -210,7 +210,7 @@ ObjString *takeString(char *chars, size_t length) {
 
 ObjString *copyString(const char *chars, size_t length) {
   u32 hash = hashString(chars, length);
-  ObjString *interned = dictFindString(&vm.strings, chars, length, hash);
+  ObjString *interned = mapFindString(&vm.strings, chars, length, hash);
   char *heapChars;
   if (interned != NULL) {
     return interned;
@@ -304,7 +304,7 @@ static ObjTuple *allocateTuple(Value *buffer, int length, u32 hash) {
   tuple->hash = hash;
 
   push(OBJ_VAL(tuple));
-  dictSet(&vm.tuples, OBJ_VAL(tuple), NIL_VAL());
+  mapSet(&vm.tuples, OBJ_VAL(tuple), NIL_VAL());
   pop();
 
   return tuple;
@@ -312,7 +312,7 @@ static ObjTuple *allocateTuple(Value *buffer, int length, u32 hash) {
 
 ObjTuple *copyTuple(Value *buffer, size_t length) {
   u32 hash = hashTuple(buffer, length);
-  ObjTuple *interned = dictFindTuple(&vm.tuples, buffer, length, hash);
+  ObjTuple *interned = mapFindTuple(&vm.tuples, buffer, length, hash);
   Value *newBuffer;
   if (interned != NULL) {
     return interned;
@@ -324,7 +324,7 @@ ObjTuple *copyTuple(Value *buffer, size_t length) {
 
 ObjDict *newDict() {
   ObjDict *dict = ALLOCATE_OBJ(ObjDict, OBJ_DICT);
-  initDict(&dict->dict);
+  initMap(&dict->dict);
   return dict;
 }
 
@@ -392,7 +392,7 @@ ObjClass *getClassOfValue(Value value) {
         case OBJ_BYTE_ARRAY_VIEW: return vm.byteArrayViewClass;
         case OBJ_LIST: return vm.listClass;
         case OBJ_TUPLE: return vm.tupleClass;
-        case OBJ_DICT: return vm.dictClass;
+        case OBJ_DICT: return vm.mapClass;
         case OBJ_FILE: return vm.fileClass;
         case OBJ_NATIVE: return AS_NATIVE(value)->descriptor->klass;
         case OBJ_UPVALUE: panic("upvalue kinds do not have classes");

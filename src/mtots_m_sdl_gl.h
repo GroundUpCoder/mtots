@@ -160,23 +160,23 @@ static CFunction *sdlglfunctions[] = {
 
 static ObjInstance *createSDLGLModule() {
   size_t i;
-  DictIterator ti;
-  DictEntry *entry;
+  MapIterator ti;
+  MapEntry *entry;
   ObjInstance *module = newModuleFromCString("sdl.gl", UFALSE);
   push(OBJ_VAL(module));
 
   for (i = 0; i < sizeof(sdlglfunctions)/sizeof(CFunction*); i++) {
-    dictSetN(&module->fields, sdlglfunctions[i]->name, CFUNCTION_VAL(sdlglfunctions[i]));
+    mapSetN(&module->fields, sdlglfunctions[i]->name, CFUNCTION_VAL(sdlglfunctions[i]));
   }
 
   for (i = 0; i < sizeof(sdlglConstants)/sizeof(SDLGLConstant); i++) {
     SDLGLConstant c = sdlglConstants[i];
-    dictSetN(&module->fields, c.name, NUMBER_VAL(c.value));
+    mapSetN(&module->fields, c.name, NUMBER_VAL(c.value));
   }
 
-  initDictIterator(&ti, &module->fields);
-  while (dictIteratorNext(&ti, &entry)) {
-    dictSet(&module->klass->methods, entry->key, entry->value);
+  initMapIterator(&ti, &module->fields);
+  while (mapIteratorNext(&ti, &entry)) {
+    mapSet(&module->klass->methods, entry->key, entry->value);
   }
 
   pop(); /* module */

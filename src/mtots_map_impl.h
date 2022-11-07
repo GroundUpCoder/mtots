@@ -1,6 +1,7 @@
-#ifndef mtots_dict_impl_h
-#define mtots_dict_impl_h
-#include "mtots_dict.h"
+#ifndef mtots_map_impl_h
+#define mtots_map_impl_h
+
+#include "mtots_map.h"
 #include "mtots_memory.h"
 #include "mtots_object.h"
 #include "mtots_value.h"
@@ -10,31 +11,57 @@
 
 #define DICT_MAX_LOAD 0.75
 
-void initDict(Dict *dict) {
-  dict->occupied = 0;
-  dict->capacity = 0;
-  dict->size = 0;
-  dict->entries = NULL;
-  dict->first = NULL;
-  dict->last = NULL;
+void initMap(Map *map) {
+  map->occupied = 0;
+  map->capacity = 0;
+  map->size = 0;
+  map->entries = NULL;
+  map->first = NULL;
+  map->last = NULL;
 }
 
-void freeDict(Dict *dict) {
-  FREE_ARRAY(DictEntry, dict->entries, dict->capacity);
-  initDict(dict);
+void freeMap(Map *map) {
+  FREE_ARRAY(MapEntry, map->entries, map->capacity);
+  initMap(map);
+}
+
+u32 hashval(Value value) {
+  switch (value.type) {
+    /* hash values for bool taken from Java */
+    case VAL_BOOL: return AS_BOOL(value) ? 1231 : 1237;
+    case VAL_NIL: return 17;
+    case VAL_NUMBER: {
+      double x = AS_NUMBER(value);
+      i32 ix = (i32) x;
+      if (x == (double)ix) {
+        return (u32) ix;
+      }
+    }
+    case VAL_CFUNC: break;
+    case VAL_CFUNCTION: break;
+    case VAL_OPERATOR: break;
+    case VAL_SENTINEL: return (u32) AS_SENTINEL(value);
+    case VAL_OBJ: switch (AS_OBJ(value)->type) {
+      case OBJ_STRING: return AS_STRING(value)->hash;
+      case OBJ_TUPLE: return AS_TUPLE(value)->hash;
+      default: break;
+    }
+  }
+  panic("%s values are not hashable", getKindName(value));
+  return 0;
 }
 
 /* NOTE: capacity should always be non-zero.
- * If findDictEntry was a non-static function, I probably would do the check
+ * If findMapEntry was a non-static function, I probably would do the check
  * in the function itself. But since it is static, all places where
  * it can be called are within this file.
  */
-static DictEntry *findDictEntry(DictEntry *entries, size_t capacity, Value key) {
+static MapEntry *findMapEntry(MapEntry *entries, size_t capacity, Value key) {
   /* OPT: key->hash % capacity */
   u32 index = hashval(key) & (capacity - 1);
-  DictEntry *tombstone = NULL;
+  MapEntry *tombstone = NULL;
   for (;;) {
-    DictEntry *entry = &entries[index];
+    MapEntry *entry = &entries[index];
     if (IS_EMPTY_KEY(entry->key)) {
       if (IS_NIL(entry->value)) {
         /* Empty entry */
@@ -52,14 +79,14 @@ static DictEntry *findDictEntry(DictEntry *entries, size_t capacity, Value key) 
   }
 }
 
-ubool dictGet(Dict *dict, Value key, Value *value) {
-  DictEntry *entry;
+ubool mapGet(Map *map, Value key, Value *value) {
+  MapEntry *entry;
 
-  if (dict->occupied == 0) {
+  if (map->occupied == 0) {
     return UFALSE;
   }
 
-  entry = findDictEntry(dict->entries, dict->capacity, key);
+  entry = findMapEntry(map->entries, map->capacity, key);
   if (IS_EMPTY_KEY(entry->key)) {
     return UFALSE;
   }
@@ -68,24 +95,24 @@ ubool dictGet(Dict *dict, Value key, Value *value) {
   return UTRUE;
 }
 
-ubool dictGetStr(Dict *dict, ObjString *key, Value *value) {
-  return dictGet(dict, OBJ_VAL(key), value);
+ubool mapGetStr(Map *map, ObjString *key, Value *value) {
+  return mapGet(map, OBJ_VAL(key), value);
 }
 
-static void adjustDictCapacity(Dict *dict, size_t capacity) {
+static void adjustMapCapacity(Map *map, size_t capacity) {
   size_t i;
-  DictEntry *entries = ALLOCATE(DictEntry, capacity);
-  DictEntry *p, *first = NULL, *last = NULL;
+  MapEntry *entries = ALLOCATE(MapEntry, capacity);
+  MapEntry *p, *first = NULL, *last = NULL;
   for (i = 0; i < capacity; i++) {
     entries[i].key = EMPTY_KEY_VAL();
     entries[i].value = NIL_VAL();
   }
 
-  dict->occupied = 0;
-  for (p = dict->first; p; p = p->next) {
-    DictEntry *dest;
+  map->occupied = 0;
+  for (p = map->first; p; p = p->next) {
+    MapEntry *dest;
 
-    dest = findDictEntry(entries, capacity, p->key);
+    dest = findMapEntry(entries, capacity, p->key);
     dest->key = p->key;
     dest->value = p->value;
 
@@ -100,25 +127,25 @@ static void adjustDictCapacity(Dict *dict, size_t capacity) {
       last = dest;
     }
 
-    dict->occupied++;
+    map->occupied++;
   }
 
-  FREE_ARRAY(DictEntry, dict->entries, dict->capacity);
-  dict->entries = entries;
-  dict->capacity = capacity;
-  dict->first = first;
-  dict->last = last;
+  FREE_ARRAY(MapEntry, map->entries, map->capacity);
+  map->entries = entries;
+  map->capacity = capacity;
+  map->first = first;
+  map->last = last;
 }
 
-ubool dictSet(Dict *dict, Value key, Value value) {
-  DictEntry *entry;
+ubool mapSet(Map *map, Value key, Value value) {
+  MapEntry *entry;
   ubool isNewKey;
 
-  if (dict->occupied + 1 > dict->capacity * DICT_MAX_LOAD) {
-    size_t capacity = GROW_CAPACITY(dict->capacity);
-    adjustDictCapacity(dict, capacity);
+  if (map->occupied + 1 > map->capacity * DICT_MAX_LOAD) {
+    size_t capacity = GROW_CAPACITY(map->capacity);
+    adjustMapCapacity(map, capacity);
   }
-  entry = findDictEntry(dict->entries, dict->capacity, key);
+  entry = findMapEntry(map->entries, map->capacity, key);
   isNewKey = IS_EMPTY_KEY(entry->key);
 
   if (isNewKey) {
@@ -128,18 +155,18 @@ ubool dictSet(Dict *dict, Value key, Value value) {
     * We include tombstones in the count so that the loadfactor
     * is sensitive to slots occupied by tombstones */
     if (IS_NIL(entry->value)) {
-      dict->occupied++;
+      map->occupied++;
     }
-    dict->size++;
+    map->size++;
 
-    if (dict->last == NULL) {
-      dict->first = dict->last = entry;
+    if (map->last == NULL) {
+      map->first = map->last = entry;
       entry->prev = entry->next = NULL;
     } else {
-      entry->prev = dict->last;
+      entry->prev = map->last;
       entry->next = NULL;
-      dict->last->next = entry;
-      dict->last = entry;
+      map->last->next = entry;
+      map->last = entry;
     }
   }
   entry->key = key;
@@ -147,51 +174,51 @@ ubool dictSet(Dict *dict, Value key, Value value) {
   return isNewKey;
 }
 
-ubool dictSetStr(Dict *dict, ObjString *key, Value value) {
-  return dictSet(dict, OBJ_VAL(key), value);
+ubool mapSetStr(Map *map, ObjString *key, Value value) {
+  return mapSet(map, OBJ_VAL(key), value);
 }
 
-/* Like dictSet, but a version that's more convenient for use in
+/* Like mapSet, but a version that's more convenient for use in
  * native code in two ways:
  *   1) the key parameter is a C-string that is automatically be converted
  *      to an ObjString and properly retained and released using the stack
  *   2) the value parameter will retained and popped from the stack, so that
- *      even if dictSet or copyCString triggers a reallocation, the value
+ *      even if mapSet or copyCString triggers a reallocation, the value
  *      will not be collected.
  */
-ubool dictSetN(Dict *dict, const char *key, Value value) {
+ubool mapSetN(Map *map, const char *key, Value value) {
   ubool result;
   ObjString *keystr;
 
   push(value);
   keystr = copyCString(key);
   push(OBJ_VAL(keystr));
-  result = dictSet(dict, OBJ_VAL(keystr), value);
+  result = mapSet(map, OBJ_VAL(keystr), value);
   pop(); /* keystr */
   pop(); /* value */
   return result;
 }
 
-ubool dictDelete(Dict *dict, Value key) {
-  DictEntry *entry;
+ubool mapDelete(Map *map, Value key) {
+  MapEntry *entry;
 
-  if (dict->occupied == 0) {
+  if (map->occupied == 0) {
     return UFALSE;
   }
 
-  entry = findDictEntry(dict->entries, dict->capacity, key);
+  entry = findMapEntry(map->entries, map->capacity, key);
   if (IS_EMPTY_KEY(entry->key)) {
     return UFALSE;
   }
 
   /* Update linked list */
   if (entry->prev == NULL) {
-    dict->first = entry->next;
+    map->first = entry->next;
   } else {
     entry->prev->next = entry->next;
   }
   if (entry->next == NULL) {
-    dict->last = entry->prev;
+    map->last = entry->prev;
   } else {
     entry->next->prev = entry->prev;
   }
@@ -200,34 +227,34 @@ ubool dictDelete(Dict *dict, Value key) {
   /* Place a tombstone in the entry */
   entry->key = EMPTY_KEY_VAL();
   entry->value = BOOL_VAL(1);
-  dict->size--;
+  map->size--;
   return UTRUE;
 }
 
-ubool dictDeleteStr(Dict *dict, ObjString *key) {
-  return dictDelete(dict, OBJ_VAL(key));
+ubool mapDeleteStr(Map *map, ObjString *key) {
+  return mapDelete(map, OBJ_VAL(key));
 }
 
-void dictAddAll(Dict *from, Dict *to) {
+void mapAddAll(Map *from, Map *to) {
   size_t i;
   for (i = 0; i < from->capacity; i++) {
-    DictEntry *entry = &from->entries[i];
+    MapEntry *entry = &from->entries[i];
     if (!IS_EMPTY_KEY(entry->key)) {
-      dictSet(to, entry->key, entry->value);
+      mapSet(to, entry->key, entry->value);
     }
   }
 }
 
-ObjString *dictFindString(
-    Dict *dict, const char *chars, size_t length, u32 hash) {
+ObjString *mapFindString(
+    Map *map, const char *chars, size_t length, u32 hash) {
   u32 index;
-  if (dict->occupied == 0) {
+  if (map->occupied == 0) {
     return NULL;
   }
-  /* OPT: hash % dict->capacity */
-  index = hash & (dict->capacity - 1);
+  /* OPT: hash % map->capacity */
+  index = hash & (map->capacity - 1);
   for (;;) {
-    DictEntry *entry = &dict->entries[index];
+    MapEntry *entry = &map->entries[index];
     if (IS_EMPTY_KEY(entry->key)) {
       /* Stop if we find an empty non-tombstone entry */
       if (IS_NIL(entry->value)) {
@@ -241,24 +268,24 @@ ObjString *dictFindString(
         return key; /* We found it */
       }
     }
-    /* OPT: (index + 1) % dict->capacity */
-    index = (index + 1) & (dict->capacity - 1);
+    /* OPT: (index + 1) % map->capacity */
+    index = (index + 1) & (map->capacity - 1);
   }
 }
 
-ObjTuple *dictFindTuple(
-    Dict *dict,
+ObjTuple *mapFindTuple(
+    Map *map,
     Value *buffer,
     size_t length,
     u32 hash) {
   u32 index;
-  if (dict->occupied == 0) {
+  if (map->occupied == 0) {
     return NULL;
   }
-  /* OPT: hash % dict->capacity */
-  index = hash & (dict->capacity - 1);
+  /* OPT: hash % map->capacity */
+  index = hash & (map->capacity - 1);
   for (;;) {
-    DictEntry *entry = &dict->entries[index];
+    MapEntry *entry = &map->entries[index];
     if (IS_EMPTY_KEY(entry->key)) {
       /* Stop if we find an empty non-tombstone entry */
       if (IS_NIL(entry->value)) {
@@ -280,27 +307,27 @@ ObjTuple *dictFindTuple(
         }
       }
     }
-    /* OPT: (index + 1) % dict->capacity */
-    index = (index + 1) & (dict->capacity - 1);
+    /* OPT: (index + 1) % map->capacity */
+    index = (index + 1) & (map->capacity - 1);
   }
 }
 
-void dictRemoveWhite(Dict *dict) {
+void mapRemoveWhite(Map *map) {
   size_t i;
-  for (i = 0; i < dict->capacity; i++) {
-    DictEntry *entry = &dict->entries[i];
+  for (i = 0; i < map->capacity; i++) {
+    MapEntry *entry = &map->entries[i];
     if (!IS_EMPTY_KEY(entry->key) &&
         IS_OBJ(entry->key) &&
         !AS_OBJ(entry->key)->isMarked) {
-      dictDelete(dict, entry->key);
+      mapDelete(map, entry->key);
     }
   }
 }
 
-void markDict(Dict *dict) {
+void markMap(Map *map) {
   size_t i;
-  for (i = 0; i < dict->capacity; i++) {
-    DictEntry *entry = &dict->entries[i];
+  for (i = 0; i < map->capacity; i++) {
+    MapEntry *entry = &map->entries[i];
     if (!IS_EMPTY_KEY(entry->key)) {
       markValue(entry->key);
       markValue(entry->value);
@@ -308,15 +335,15 @@ void markDict(Dict *dict) {
   }
 }
 
-void initDictIterator(DictIterator *di, Dict *dict) {
-  di->entry = dict->first;
+void initMapIterator(MapIterator *di, Map *map) {
+  di->entry = map->first;
 }
 
-ubool dictIteratorDone(DictIterator *di) {
+ubool mapIteratorDone(MapIterator *di) {
   return di->entry == NULL;
 }
 
-ubool dictIteratorNext(DictIterator *di, DictEntry **out) {
+ubool mapIteratorNext(MapIterator *di, MapEntry **out) {
   if (di->entry) {
     *out = di->entry;
     di->entry = di->entry->next;
@@ -325,7 +352,7 @@ ubool dictIteratorNext(DictIterator *di, DictEntry **out) {
   return UFALSE;
 }
 
-ubool dictIteratorNextKey(DictIterator *di, Value *out) {
+ubool mapIteratorNextKey(MapIterator *di, Value *out) {
   if (di->entry) {
     *out = di->entry->key;
     di->entry = di->entry->next;
@@ -333,4 +360,5 @@ ubool dictIteratorNextKey(DictIterator *di, Value *out) {
   }
   return UFALSE;
 }
-#endif/*mtots_dict_impl_h*/
+
+#endif/*mtots_map_impl_h*/

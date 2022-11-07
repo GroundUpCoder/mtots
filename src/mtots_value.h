@@ -35,7 +35,7 @@ typedef enum Operator {
 
 typedef enum Sentinel {
   SentinelStopIteration,
-  SentinelEmptyKey        /* Used internally in Dict */
+  SentinelEmptyKey        /* Used internally in Map */
 } Sentinel;
 
 typedef enum ValueType {

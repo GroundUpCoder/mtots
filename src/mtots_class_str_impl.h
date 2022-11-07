@@ -340,7 +340,7 @@ void initStringClass() {
     methods[i]->receiverType.type = TYPE_PATTERN_STRING;
     tmpstr = copyCString(methods[i]->name);
     push(OBJ_VAL(tmpstr));
-    dictSetStr(
+    mapSetStr(
       &cls->methods, tmpstr, CFUNCTION_VAL(methods[i]));
     pop();
   }
