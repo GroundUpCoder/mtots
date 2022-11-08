@@ -144,7 +144,7 @@ static void consume(TokenType type, const char *message) {
   errorAtCurrent(message);
 }
 
-static ubool check(TokenType type) {
+static ubool parseCheck(TokenType type) {
   return parser.current.type == type;
 }
 
@@ -152,8 +152,8 @@ static ubool check(TokenType type) {
  * move past it and return true.
  * Otherwise, do nothing and return false.
  */
-static ubool match(TokenType type) {
-  if (!check(type)) {
+static ubool parseMatch(TokenType type) {
+  if (!parseCheck(type)) {
     return UFALSE;
   }
   advance();
@@ -303,17 +303,17 @@ static void endScope() {
   }
 }
 
-static void expression();
-static void statement();
-static void declaration();
+static void parseExpression();
+static void parseStatement();
+static void parseDeclaration();
 static ParseRule *getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
 
-static u8 identifierConstant(Token *name) {
+static u8 parseIdentifierConstant(Token *name) {
   return makeConstant(OBJ_VAL(copyString(name->start, name->length)));
 }
 
-static ubool identifiersEqual(Token *a, Token *b) {
+static ubool parseIdentifiersEqual(Token *a, Token *b) {
   if (a->length != b->length) {
     return 0;
   }
@@ -324,9 +324,9 @@ static i16 resolveLocal(Compiler *compiler, Token *name) {
   i16 i;
   for (i = compiler->localCount - 1; i >= 0; i--) {
     Local *local = &compiler->locals[i];
-    if (identifiersEqual(name, &local->name)) {
+    if (parseIdentifiersEqual(name, &local->name)) {
       if (local->depth == -1) {
-        error("Can't read local variable in its own initializer");
+        error("Can't read local parseVariable in its own initializer");
       }
       return i;
     }
@@ -384,7 +384,7 @@ static void addLocal(Token name) {
 }
 
 /* Record the existance of a variable */
-static void declareVariable() {
+static void parseDeclareVariable() {
   Token *name;
   i16 i;
   if (current->scopeDepth == 0) {
@@ -398,22 +398,22 @@ static void declareVariable() {
       break;
     }
 
-    if (identifiersEqual(name, &local->name)) {
+    if (parseIdentifiersEqual(name, &local->name)) {
       error("Already a variable with this name in this scope");
     }
   }
   addLocal(*name);
 }
 
-static u8 parseVariable(const char *errorMessage) {
+static u8 parseAndGetVariable(const char *errorMessage) {
   consume(TOKEN_IDENTIFIER, errorMessage);
 
-  declareVariable();
+  parseDeclareVariable();
   if (current->scopeDepth > 0) {
     return 0;
   }
 
-  return identifierConstant(&parser.previous);
+  return parseIdentifierConstant(&parser.previous);
 }
 
 static void markInitialized() {
@@ -424,7 +424,7 @@ static void markInitialized() {
 }
 
 /* Initialize a variable with the value at the top of the stack */
-static void defineVariable(u8 global) {
+static void parseDefineVariable(u8 global) {
   if (current->scopeDepth > 0) { /* local variable */
     markInitialized();
     return;
@@ -433,25 +433,25 @@ static void defineVariable(u8 global) {
   emitBytes(OP_DEFINE_GLOBAL, global);
 }
 
-static u8 argumentList() {
+static u8 parseArgumentList() {
   u8 argCount = 0;
-  if (!check(TOKEN_RIGHT_PAREN)) {
+  if (!parseCheck(TOKEN_RIGHT_PAREN)) {
     do {
-      if (check(TOKEN_RIGHT_PAREN)) {
+      if (parseCheck(TOKEN_RIGHT_PAREN)) {
         break;
       }
-      expression();
+      parseExpression();
       if (argCount == 255) {
         error("Can't have more than 255 arguments");
       }
       argCount++;
-    } while (match(TOKEN_COMMA));
+    } while (parseMatch(TOKEN_COMMA));
   }
   consume(TOKEN_RIGHT_PAREN, "Expect ')' after arguments");
   return argCount;
 }
 
-static void and_(ubool canAssign) {
+static void parseAnd(ubool canAssign) {
   i32 endJump = emitJump(OP_JUMP_IF_FALSE);
 
   emitByte(OP_POP);
@@ -460,11 +460,11 @@ static void and_(ubool canAssign) {
   patchJump(endJump);
 }
 
-static void binary(ubool canAssign) {
+static void parseBinary(ubool canAssign) {
   TokenType operatorType = parser.previous.type;
   ParseRule *rule = getRule(operatorType);
   ubool isNot = UFALSE, notIn = UFALSE;
-  if (operatorType == TOKEN_IS && match(TOKEN_NOT)) {
+  if (operatorType == TOKEN_IS && parseMatch(TOKEN_NOT)) {
     isNot = UTRUE;
   } else if (operatorType == TOKEN_NOT) {
     consume(
@@ -502,21 +502,21 @@ static void binary(ubool canAssign) {
 }
 
 static void parseCall(ubool canAssign) {
-  u8 argCount = argumentList();
+  u8 argCount = parseArgumentList();
   emitBytes(OP_CALL, argCount);
 }
 
-static void dot(ubool canAssign) {
+static void parseDot(ubool canAssign) {
   u8 name;
 
   consume(TOKEN_IDENTIFIER, "Expect property name after '.'");
-  name = identifierConstant(&parser.previous);
+  name = parseIdentifierConstant(&parser.previous);
 
-  if (canAssign && match(TOKEN_EQUAL)) {
-    expression();
+  if (canAssign && parseMatch(TOKEN_EQUAL)) {
+    parseExpression();
     emitBytes(OP_SET_FIELD, name);
-  } else if (match(TOKEN_LEFT_PAREN)) {
-    u8 argCount = argumentList();
+  } else if (parseMatch(TOKEN_LEFT_PAREN)) {
+    u8 argCount = parseArgumentList();
     emitBytes(OP_INVOKE, name);
     emitByte(argCount);
   } else {
@@ -531,43 +531,43 @@ static Token syntheticToken(const char *text) {
   return token;
 }
 
-static void subscript(ubool canAssign) {
-  if (check(TOKEN_COLON)) {
+static void parseSubscript(ubool canAssign) {
+  if (parseCheck(TOKEN_COLON)) {
     /* implicit 'nil' when first slice argument is missing */
     emitByte(OP_NIL);
   } else {
-    expression(); /* index */
+    parseExpression(); /* index */
   }
 
-  if (match(TOKEN_COLON)) {
+  if (parseMatch(TOKEN_COLON)) {
     Token nameToken = syntheticToken("__slice__");
-    u8 name = identifierConstant(&nameToken);
-    if (check(TOKEN_RIGHT_BRACKET)) {
+    u8 name = parseIdentifierConstant(&nameToken);
+    if (parseCheck(TOKEN_RIGHT_BRACKET)) {
       emitByte(OP_NIL); /* implicit nil second argument, if missing */
     } else {
-      expression();
+      parseExpression();
     }
     consume(TOKEN_RIGHT_BRACKET, "Expect ']' after slice index expression");
     emitBytes(OP_INVOKE, name);
     emitByte(2); /* argCount */
   } else {
     consume(TOKEN_RIGHT_BRACKET, "Expect ']' after index expression");
-    if (canAssign && match(TOKEN_EQUAL)) {
+    if (canAssign && parseMatch(TOKEN_EQUAL)) {
       Token nameToken = syntheticToken("__setitem__");
-      u8 name = identifierConstant(&nameToken);
-      expression();
+      u8 name = parseIdentifierConstant(&nameToken);
+      parseExpression();
       emitBytes(OP_INVOKE, name);
       emitByte(2); /* argCount */
     } else {
       Token nameToken = syntheticToken("__getitem__");
-      u8 name = identifierConstant(&nameToken);
+      u8 name = parseIdentifierConstant(&nameToken);
       emitBytes(OP_INVOKE, name);
       emitByte(1);
     }
   }
 }
 
-static void literal(ubool canAssign) {
+static void parseLiteral(ubool canAssign) {
   switch (parser.previous.type) {
     case TOKEN_FALSE: emitByte(OP_FALSE); break;
     case TOKEN_NIL: emitByte(OP_NIL); break;
@@ -578,17 +578,17 @@ static void literal(ubool canAssign) {
   }
 }
 
-static void grouping(ubool canAssign) {
-  expression();
+static void parseGrouping(ubool canAssign) {
+  parseExpression();
   consume(TOKEN_RIGHT_PAREN, "Expected ')' after expression");
 }
 
-static void number(ubool canAssign) {
+static void parseNumber(ubool canAssign) {
   double value = strtod(parser.previous.start, NULL);
   emitConstant(NUMBER_VAL(value));
 }
 
-static void numberHex(ubool canAssign) {
+static void parseNumberHex(ubool canAssign) {
   double value = 0;
   size_t i, len = parser.previous.length;
   for (i = 2; i < len; i++) {
@@ -607,7 +607,7 @@ static void numberHex(ubool canAssign) {
   emitConstant(NUMBER_VAL(value));
 }
 
-static void numberBin(ubool canAssign) {
+static void parseNumberBin(ubool canAssign) {
   double value = 0;
   size_t i, len = parser.previous.length;
   for (i = 2; i < len; i++) {
@@ -622,24 +622,24 @@ static void numberBin(ubool canAssign) {
   emitConstant(NUMBER_VAL(value));
 }
 
-static void try_(ubool canAssign) {
+static void parseTry(ubool canAssign) {
   i32 startJump, endJump;
 
   startJump = emitJump(OP_TRY_START);
-  expression();
+  parseExpression();
   endJump = emitJump(OP_TRY_END);
   consume(TOKEN_ELSE, "Expected 'else' in 'try' expression");
   patchJump(startJump);
-  expression();
+  parseExpression();
   patchJump(endJump);
 }
 
-static void raise_(ubool canAssign) {
-  expression();
+static void parseRaise(ubool canAssign) {
+  parseExpression();
   emitByte(OP_RAISE);
 }
 
-static void or_(ubool canAssign) {
+static void parseOr(ubool canAssign) {
   i32 elseJump = emitJump(OP_JUMP_IF_FALSE);
   i32 endJump = emitJump(OP_JUMP);
 
@@ -650,13 +650,13 @@ static void or_(ubool canAssign) {
   patchJump(endJump);
 }
 
-static void rawString(ubool canAssign) {
+static void parseRawString(ubool canAssign) {
   emitConstant(OBJ_VAL(copyString(
     parser.previous.start + 2,
     parser.previous.length - 3)));
 }
 
-static void tripleQuoteRawString(ubool canAssign) {
+static void parseTripleQuoteRawString(ubool canAssign) {
   emitConstant(OBJ_VAL(copyString(
     parser.previous.start + 4,
     parser.previous.length - 7)));
@@ -679,14 +679,14 @@ static ObjString *stringTokenToObjString() {
   return takeString(s, size);
 }
 
-static void string(ubool canAssign) {
+static void parseString(ubool canAssign) {
   ObjString *str = stringTokenToObjString();
   if (str != NULL) {
     emitConstant(OBJ_VAL(str));
   }
 }
 
-static void namedVariable(Token name, ubool canAssign) {
+static void parseNamedVariable(Token name, ubool canAssign) {
   u8 getOp, setOp;
   i16 arg = resolveLocal(current, &name);
   if (arg != -1) {
@@ -696,24 +696,24 @@ static void namedVariable(Token name, ubool canAssign) {
     getOp = OP_GET_UPVALUE;
     setOp = OP_SET_UPVALUE;
   } else {
-    arg = identifierConstant(&name);
+    arg = parseIdentifierConstant(&name);
     getOp = OP_GET_GLOBAL;
     setOp = OP_SET_GLOBAL;
   }
 
-  if (canAssign && match(TOKEN_EQUAL)) {
-    expression();
+  if (canAssign && parseMatch(TOKEN_EQUAL)) {
+    parseExpression();
     emitBytes(setOp, (u8) arg);
   } else {
     emitBytes(getOp, (u8) arg);
   }
 }
 
-static void variable(ubool canAssign) {
-  namedVariable(parser.previous, canAssign);
+static void parseVariable(ubool canAssign) {
+  parseNamedVariable(parser.previous, canAssign);
 }
 
-static void super_(ubool canAssign) {
+static void parseSuper(ubool canAssign) {
   u8 name, argCount;
 
   if (currentClass == NULL) {
@@ -724,34 +724,34 @@ static void super_(ubool canAssign) {
 
   consume(TOKEN_DOT, "Expect '.' after 'super'");
   consume(TOKEN_IDENTIFIER, "Expect superclass method name");
-  name = identifierConstant(&parser.previous);
+  name = parseIdentifierConstant(&parser.previous);
 
-  namedVariable(syntheticToken("this"), UFALSE);
+  parseNamedVariable(syntheticToken("this"), UFALSE);
   consume(TOKEN_LEFT_PAREN, "Expect '(' to call super method");
-  argCount = argumentList();
-  namedVariable(syntheticToken("super"), UFALSE);
+  argCount = parseArgumentList();
+  parseNamedVariable(syntheticToken("super"), UFALSE);
   emitBytes(OP_SUPER_INVOKE, name);
   emitByte(argCount);
 }
 
-static void this_(ubool canAssign) {
+static void parseThis(ubool canAssign) {
   if (currentClass == NULL) {
     error("Can't use 'this' outside of a class");
     return;
   }
 
-  variable(UFALSE);
+  parseVariable(UFALSE);
 }
 
-static void listDisplay(ubool canAssign) {
+static void parseListDisplay(ubool canAssign) {
   size_t length = 0;
   for (;;) {
-    if (match(TOKEN_RIGHT_BRACKET)) {
+    if (parseMatch(TOKEN_RIGHT_BRACKET)) {
       break;
     }
-    expression();
+    parseExpression();
     length++;
-    if (!match(TOKEN_COMMA)) {
+    if (!parseMatch(TOKEN_COMMA)) {
       consume(TOKEN_RIGHT_BRACKET, "Expect ']' at the end of a list display");
       break;
     }
@@ -763,21 +763,21 @@ static void listDisplay(ubool canAssign) {
   emitBytes(OP_NEW_LIST, length);
 }
 
-static void mapDisplay(ubool canAssign) {
+static void parseMapDisplay(ubool canAssign) {
   size_t length = 0;
   for (;;) {
-    if (match(TOKEN_RIGHT_BRACE)) {
+    if (parseMatch(TOKEN_RIGHT_BRACE)) {
       break;
     }
-    expression();
-    if (match(TOKEN_COLON)) {
-      expression();
+    parseExpression();
+    if (parseMatch(TOKEN_COLON)) {
+      parseExpression();
     } else {
       /* if the value part is missing, 'nil' is implied */
       emitByte(OP_NIL);
     }
     length++;
-    if (!match(TOKEN_COMMA)) {
+    if (!parseMatch(TOKEN_COMMA)) {
       consume(TOKEN_RIGHT_BRACE, "Expect '}' at the end of a dict display");
       break;
     }
@@ -789,7 +789,7 @@ static void mapDisplay(ubool canAssign) {
   emitBytes(OP_NEW_DICT, length);
 }
 
-static void unary(ubool canAssign) {
+static void parseUnary(ubool canAssign) {
   TokenType operatorType = parser.previous.type;
 
   /* compile the operand */
@@ -822,48 +822,48 @@ void initParseRules() {
     rules[i].infix = rules[i].prefix = NULL;
     rules[i].precedence = PREC_NONE;
   }
-  rules[TOKEN_LEFT_PAREN] = newRule(grouping, parseCall, PREC_CALL);
-  rules[TOKEN_LEFT_BRACE] = newRule(mapDisplay, NULL, PREC_NONE);
-  rules[TOKEN_LEFT_BRACKET] = newRule(listDisplay, subscript, PREC_CALL);
-  rules[TOKEN_DOT] = newRule(NULL, dot, PREC_CALL);
-  rules[TOKEN_MINUS] = newRule(unary, binary, PREC_TERM);
-  rules[TOKEN_PERCENT] = newRule(NULL, binary, PREC_FACTOR);
-  rules[TOKEN_PLUS] = newRule(NULL, binary, PREC_TERM);
-  rules[TOKEN_SLASH] = newRule(NULL, binary, PREC_FACTOR);
-  rules[TOKEN_STAR] = newRule(NULL, binary, PREC_FACTOR);
-  rules[TOKEN_PIPE] = newRule(NULL, binary, PREC_BITWISE_OR);
-  rules[TOKEN_AMPERSAND] = newRule(NULL, binary, PREC_BITWISE_AND);
-  rules[TOKEN_CARET] = newRule(NULL, binary, PREC_BITWISE_XOR);
-  rules[TOKEN_TILDE] = newRule(unary, NULL, PREC_NONE);
-  rules[TOKEN_SHIFT_LEFT] = newRule(NULL, binary, PREC_SHIFT);
-  rules[TOKEN_SHIFT_RIGHT] = newRule(NULL, binary, PREC_SHIFT);
-  rules[TOKEN_BANG_EQUAL] = newRule(NULL, binary, PREC_COMPARISON);
-  rules[TOKEN_EQUAL_EQUAL] = newRule(NULL, binary, PREC_COMPARISON);
-  rules[TOKEN_GREATER] = newRule(NULL, binary, PREC_COMPARISON);
-  rules[TOKEN_GREATER_EQUAL] = newRule(NULL, binary, PREC_COMPARISON);
-  rules[TOKEN_LESS] = newRule(NULL, binary, PREC_COMPARISON);
-  rules[TOKEN_LESS_EQUAL] = newRule(NULL, binary, PREC_COMPARISON);
-  rules[TOKEN_SLASH_SLASH] = newRule(NULL, binary, PREC_FACTOR);
-  rules[TOKEN_IDENTIFIER] = newRule(variable, NULL, PREC_NONE);
-  rules[TOKEN_STRING] = newRule(string, NULL, PREC_NONE);
-  rules[TOKEN_RAW_STRING] = newRule(rawString, NULL, PREC_NONE);
+  rules[TOKEN_LEFT_PAREN] = newRule(parseGrouping, parseCall, PREC_CALL);
+  rules[TOKEN_LEFT_BRACE] = newRule(parseMapDisplay, NULL, PREC_NONE);
+  rules[TOKEN_LEFT_BRACKET] = newRule(parseListDisplay, parseSubscript, PREC_CALL);
+  rules[TOKEN_DOT] = newRule(NULL, parseDot, PREC_CALL);
+  rules[TOKEN_MINUS] = newRule(parseUnary, parseBinary, PREC_TERM);
+  rules[TOKEN_PERCENT] = newRule(NULL, parseBinary, PREC_FACTOR);
+  rules[TOKEN_PLUS] = newRule(NULL, parseBinary, PREC_TERM);
+  rules[TOKEN_SLASH] = newRule(NULL, parseBinary, PREC_FACTOR);
+  rules[TOKEN_STAR] = newRule(NULL, parseBinary, PREC_FACTOR);
+  rules[TOKEN_PIPE] = newRule(NULL, parseBinary, PREC_BITWISE_OR);
+  rules[TOKEN_AMPERSAND] = newRule(NULL, parseBinary, PREC_BITWISE_AND);
+  rules[TOKEN_CARET] = newRule(NULL, parseBinary, PREC_BITWISE_XOR);
+  rules[TOKEN_TILDE] = newRule(parseUnary, NULL, PREC_NONE);
+  rules[TOKEN_SHIFT_LEFT] = newRule(NULL, parseBinary, PREC_SHIFT);
+  rules[TOKEN_SHIFT_RIGHT] = newRule(NULL, parseBinary, PREC_SHIFT);
+  rules[TOKEN_BANG_EQUAL] = newRule(NULL, parseBinary, PREC_COMPARISON);
+  rules[TOKEN_EQUAL_EQUAL] = newRule(NULL, parseBinary, PREC_COMPARISON);
+  rules[TOKEN_GREATER] = newRule(NULL, parseBinary, PREC_COMPARISON);
+  rules[TOKEN_GREATER_EQUAL] = newRule(NULL, parseBinary, PREC_COMPARISON);
+  rules[TOKEN_LESS] = newRule(NULL, parseBinary, PREC_COMPARISON);
+  rules[TOKEN_LESS_EQUAL] = newRule(NULL, parseBinary, PREC_COMPARISON);
+  rules[TOKEN_SLASH_SLASH] = newRule(NULL, parseBinary, PREC_FACTOR);
+  rules[TOKEN_IDENTIFIER] = newRule(parseVariable, NULL, PREC_NONE);
+  rules[TOKEN_STRING] = newRule(parseString, NULL, PREC_NONE);
+  rules[TOKEN_RAW_STRING] = newRule(parseRawString, NULL, PREC_NONE);
   rules[TOKEN_TRIPLE_QUOTE_RAW_STRING] =
-    newRule(tripleQuoteRawString, NULL, PREC_NONE);
-  rules[TOKEN_NUMBER] = newRule(number, NULL, PREC_NONE);
-  rules[TOKEN_NUMBER_HEX] = newRule(numberHex, NULL, PREC_NONE);
-  rules[TOKEN_NUMBER_BIN] = newRule(numberBin, NULL, PREC_NONE);
-  rules[TOKEN_AND] = newRule(NULL, and_, PREC_AND);
-  rules[TOKEN_FALSE] = newRule(literal, NULL, PREC_NONE);
-  rules[TOKEN_NIL] = newRule(literal, NULL, PREC_NONE);
-  rules[TOKEN_OR] = newRule(NULL, or_, PREC_OR);
-  rules[TOKEN_SUPER] = newRule(super_, NULL, PREC_NONE);
-  rules[TOKEN_THIS] = newRule(this_, NULL, PREC_NONE);
-  rules[TOKEN_TRUE] = newRule(literal, NULL, PREC_NONE);
-  rules[TOKEN_IN] = newRule(NULL, binary, PREC_COMPARISON);
-  rules[TOKEN_IS] = newRule(NULL, binary, PREC_COMPARISON);
-  rules[TOKEN_NOT] = newRule(unary, binary, PREC_COMPARISON);
-  rules[TOKEN_RAISE] = newRule(raise_, NULL, PREC_NONE);
-  rules[TOKEN_TRY] = newRule(try_, NULL, PREC_NONE);
+    newRule(parseTripleQuoteRawString, NULL, PREC_NONE);
+  rules[TOKEN_NUMBER] = newRule(parseNumber, NULL, PREC_NONE);
+  rules[TOKEN_NUMBER_HEX] = newRule(parseNumberHex, NULL, PREC_NONE);
+  rules[TOKEN_NUMBER_BIN] = newRule(parseNumberBin, NULL, PREC_NONE);
+  rules[TOKEN_AND] = newRule(NULL, parseAnd, PREC_AND);
+  rules[TOKEN_FALSE] = newRule(parseLiteral, NULL, PREC_NONE);
+  rules[TOKEN_NIL] = newRule(parseLiteral, NULL, PREC_NONE);
+  rules[TOKEN_OR] = newRule(NULL, parseOr, PREC_OR);
+  rules[TOKEN_SUPER] = newRule(parseSuper, NULL, PREC_NONE);
+  rules[TOKEN_THIS] = newRule(parseThis, NULL, PREC_NONE);
+  rules[TOKEN_TRUE] = newRule(parseLiteral, NULL, PREC_NONE);
+  rules[TOKEN_IN] = newRule(NULL, parseBinary, PREC_COMPARISON);
+  rules[TOKEN_IS] = newRule(NULL, parseBinary, PREC_COMPARISON);
+  rules[TOKEN_NOT] = newRule(parseUnary, parseBinary, PREC_COMPARISON);
+  rules[TOKEN_RAISE] = newRule(parseRaise, NULL, PREC_NONE);
+  rules[TOKEN_TRY] = newRule(parseTry, NULL, PREC_NONE);
 }
 
 static void parsePrecedence(Precedence precedence) {
@@ -891,7 +891,7 @@ static ParseRule *getRule(TokenType type) {
   return &rules[type];
 }
 
-static void expression() {
+static void parseExpression() {
   parsePrecedence(PREC_ASSIGNMENT);
 }
 
@@ -902,13 +902,13 @@ static void block(ubool newScope) {
     beginScope();
   }
 
-  while (match(TOKEN_NEWLINE));
+  while (parseMatch(TOKEN_NEWLINE));
   consume(TOKEN_INDENT, "Expect INDENT at begining of block");
-  while (match(TOKEN_NEWLINE));
-  while (!check(TOKEN_DEDENT) && !check(TOKEN_EOF)) {
+  while (parseMatch(TOKEN_NEWLINE));
+  while (!parseCheck(TOKEN_DEDENT) && !parseCheck(TOKEN_EOF)) {
     atLeastOneDeclaration = UTRUE;
-    declaration();
-    while (match(TOKEN_NEWLINE));
+    parseDeclaration();
+    while (parseMatch(TOKEN_NEWLINE));
   }
 
   consume(TOKEN_DEDENT, "Expect DEDENT after block");
@@ -922,17 +922,17 @@ static void block(ubool newScope) {
   }
 }
 
-static Value defaultArgument() {
-  if (match(TOKEN_NIL)) {
+static Value parseDefaultArgument() {
+  if (parseMatch(TOKEN_NIL)) {
     return NIL_VAL();
-  } else if (match(TOKEN_TRUE)) {
+  } else if (parseMatch(TOKEN_TRUE)) {
     return BOOL_VAL(UTRUE);
-  } else if (match(TOKEN_FALSE)) {
+  } else if (parseMatch(TOKEN_FALSE)) {
     return BOOL_VAL(UFALSE);
-  } else if (match(TOKEN_NUMBER)) {
+  } else if (parseMatch(TOKEN_NUMBER)) {
     double value = strtod(parser.previous.start, NULL);
     return NUMBER_VAL(value);
-  } else if (match(TOKEN_STRING)) {
+  } else if (parseMatch(TOKEN_STRING)) {
     ObjString *str = stringTokenToObjString();
     return str ? OBJ_VAL(str) : NIL_VAL();
   }
@@ -940,7 +940,7 @@ static Value defaultArgument() {
   return NIL_VAL();
 }
 
-static void function(ThunkType type) {
+static void parseFunction(ThunkType type) {
   Compiler compiler;
   ObjThunk *thunk;
   i16 i;
@@ -950,27 +950,27 @@ static void function(ThunkType type) {
   beginScope();
 
   consume(TOKEN_LEFT_PAREN, "Expect '(' after function name");
-  if (!check(TOKEN_RIGHT_PAREN)) {
+  if (!parseCheck(TOKEN_RIGHT_PAREN)) {
     do {
       u8 constant;
       current->thunk->arity++;
       if (current->thunk->arity > 255) {
         errorAtCurrent("Can't have more than 255 parameters");
       }
-      constant = parseVariable("Expect parameter name");
-      defineVariable(constant);
-      if (compiler.defaultArgsCount > 0 && !check(TOKEN_EQUAL)) {
+      constant = parseAndGetVariable("Expect parameter name");
+      parseDefineVariable(constant);
+      if (compiler.defaultArgsCount > 0 && !parseCheck(TOKEN_EQUAL)) {
         error("non-optional argument may not follow an optional argument");
       }
-      if (match(TOKEN_EQUAL)) {
-        compiler.defaultArgs[compiler.defaultArgsCount++] = defaultArgument();
+      if (parseMatch(TOKEN_EQUAL)) {
+        compiler.defaultArgs[compiler.defaultArgsCount++] = parseDefaultArgument();
       }
-    } while (match(TOKEN_COMMA));
+    } while (parseMatch(TOKEN_COMMA));
   }
   consume(TOKEN_RIGHT_PAREN, "Expect ')' after parameters");
 
   consume(TOKEN_COLON, "Expect ':' before function body");
-  while (match(TOKEN_NEWLINE));
+  while (parseMatch(TOKEN_NEWLINE));
   block(UFALSE);
 
   thunk = endCompiler();
@@ -982,56 +982,56 @@ static void function(ThunkType type) {
   }
 }
 
-static void method() {
+static void parseMethod() {
   u8 constant;
   ThunkType type;
   consume(TOKEN_DEF, "Expect 'def' to start method definition");
   consume(TOKEN_IDENTIFIER, "Expect method name");
-  constant = identifierConstant(&parser.previous);
+  constant = parseIdentifierConstant(&parser.previous);
 
   type = TYPE_METHOD;
   if (parser.previous.length == 8 &&
       memcmp(parser.previous.start, "__init__", 8) == 0) {
     type = TYPE_INITIALIZER;
   }
-  function(type);
+  parseFunction(type);
   emitBytes(OP_METHOD, constant);
 }
 
-static void classDeclaration() {
+static void parseClassDeclaration() {
   u8 nameConstant;
   Token className;
   ClassCompiler classCompiler;
 
   consume(TOKEN_IDENTIFIER, "Expect class name");
   className = parser.previous;
-  nameConstant = identifierConstant(&parser.previous);
-  declareVariable();
+  nameConstant = parseIdentifierConstant(&parser.previous);
+  parseDeclareVariable();
 
   emitBytes(OP_CLASS, nameConstant);
-  defineVariable(nameConstant);
+  parseDefineVariable(nameConstant);
 
   classCompiler.hasSuperclass = UFALSE;
   classCompiler.enclosing = currentClass;
   currentClass = &classCompiler;
 
-  if (match(TOKEN_LEFT_PAREN)) {
-    if (!match(TOKEN_RIGHT_PAREN)) {
-      expression();
+  if (parseMatch(TOKEN_LEFT_PAREN)) {
+    if (!parseMatch(TOKEN_RIGHT_PAREN)) {
+      parseExpression();
 
-      /* TODO: add a 'full-name' check instead - we should check
+      /* TODO: add a 'full-name' parseCheck instead - we should parseCheck
        * both the class name and module the class is from */
       /*
-      if (identifiersEqual(&className, &parser.previous)) {
+      if (parseIdentifiersEqual(&className, &parser.previous)) {
         error("A class can't inherit from itself");
       }
       */
 
       beginScope();
       addLocal(syntheticToken("super"));
-      defineVariable(0);
+      parseDefineVariable(0);
 
-      namedVariable(className, UFALSE);
+      parseNamedVariable(className, UFALSE);
       emitByte(OP_INHERIT);
       classCompiler.hasSuperclass = UTRUE;
 
@@ -1039,19 +1039,19 @@ static void classDeclaration() {
     }
   }
 
-  namedVariable(className, UFALSE);
+  parseNamedVariable(className, UFALSE);
   consume(TOKEN_COLON, "Expect ':' before class body");
-  while (match(TOKEN_NEWLINE));
+  while (parseMatch(TOKEN_NEWLINE));
   consume(TOKEN_INDENT, "Expect INDENT before class body");
-  while (match(TOKEN_NEWLINE));
-  if (match(TOKEN_STRING) ||
-      match(TOKEN_RAW_STRING) ||
-      match(TOKEN_TRIPLE_QUOTE_RAW_STRING)) {
-    while (match(TOKEN_NEWLINE));
+  while (parseMatch(TOKEN_NEWLINE));
+  if (parseMatch(TOKEN_STRING) ||
+      parseMatch(TOKEN_RAW_STRING) ||
+      parseMatch(TOKEN_TRIPLE_QUOTE_RAW_STRING)) {
+    while (parseMatch(TOKEN_NEWLINE));
   }
-  while (!check(TOKEN_DEDENT) && !check(TOKEN_EOF)) {
-    method();
-    while (match(TOKEN_NEWLINE));
+  while (!parseCheck(TOKEN_DEDENT) && !parseCheck(TOKEN_EOF)) {
+    parseMethod();
+    while (parseMatch(TOKEN_NEWLINE));
   }
   consume(TOKEN_DEDENT, "Expect DEDENT after class body");
   emitByte(OP_POP);
@@ -1063,74 +1063,74 @@ static void classDeclaration() {
   currentClass = currentClass->enclosing;
 }
 
-static void funDeclaration() {
-  u8 global = parseVariable("Expect function name");
+static void parseFunDeclaration() {
+  u8 global = parseAndGetVariable("Expect function name");
   markInitialized();
-  function(TYPE_FUNCTION);
-  defineVariable(global);
+  parseFunction(TYPE_FUNCTION);
+  parseDefineVariable(global);
 }
 
 static void consumeStatementDelimiter(const char *message) {
-  if (!match(TOKEN_NEWLINE)) {
+  if (!parseMatch(TOKEN_NEWLINE)) {
     consume(TOKEN_SEMICOLON, message);
   }
 }
 
-static void decoratedFunDeclaration() {
+static void parseDecoratedFunDeclaration() {
   u8 global;
   size_t wrapCount = 0, i;
   ubool named = UFALSE;
 
   do {
-    expression();
+    parseExpression();
     consumeStatementDelimiter(
       "Expected statement delimiter after decorator expression");
     wrapCount++;
-  } while (match(TOKEN_AT));
+  } while (parseMatch(TOKEN_AT));
 
   consume(
     TOKEN_DEF,
     "Expect 'def' to start function after decorator expression");
-  if (check(TOKEN_IDENTIFIER)) {
+  if (parseCheck(TOKEN_IDENTIFIER)) {
     named = UTRUE;
-    global = parseVariable("Expect function name");
+    global = parseAndGetVariable("Expect function name");
     markInitialized();
   }
-  function(TYPE_FUNCTION);
+  parseFunction(TYPE_FUNCTION);
 
   for (i = 0; i < wrapCount; i++) {
     emitBytes(OP_CALL, 1);
   }
 
   if (named) {
-    defineVariable(global);
+    parseDefineVariable(global);
   } else {
     emitByte(OP_POP);
   }
 }
 
-static void varDeclaration() {
-  u8 global = parseVariable("Expect variable name");
+static void parseVarDeclaration() {
+  u8 global = parseAndGetVariable("Expect variable name");
 
-  if (match(TOKEN_EQUAL)) {
-    expression();
+  if (parseMatch(TOKEN_EQUAL)) {
+    parseExpression();
   } else {
     emitByte(OP_NIL);
   }
   consumeStatementDelimiter(
     "Expected statement delimiter after variable declaration");
 
-  defineVariable(global);
+  parseDefineVariable(global);
 }
 
-static void expressionStatement() {
-  expression();
+static void parseExpressionStatement() {
+  parseExpression();
   consumeStatementDelimiter(
     "Expected statement delimiter after expression");
   emitByte(OP_POP);
 }
 
-static void forInStatement() {
+static void parseForInStatement() {
   i32 jump, loopStart;
   Token variableToken;
 
@@ -1141,17 +1141,17 @@ static void forInStatement() {
   variableToken = parser.previous;
 
   consume(TOKEN_IN, "Expect 'in' in for-in statement");
-  expression();          /* container/iterable */
+  parseExpression();          /* container/iterable */
   emitByte(OP_GET_ITER); /* replace container/iterable with an iterator */
   addLocal(syntheticToken("@iterator"));
-  defineVariable(0);
+  parseDefineVariable(0);
   loopStart = currentChunk()->count;
   emitByte(OP_GET_NEXT); /* gets next value returned by the iterator */
   jump = emitJump(OP_JUMP_IF_STOP_ITERATION);
 
   beginScope();
   addLocal(variableToken); /* next item is already on TOS */
-  defineVariable(0);
+  parseDefineVariable(0);
   consume(TOKEN_COLON, "Expect ':' to begin for-in loop body");
   block(UFALSE);
   endScope();
@@ -1167,29 +1167,29 @@ static void forInStatement() {
   endScope();
 }
 
-static void forStatement() {
+static void parseForStatement() {
   i32 loopStart, exitJump;
 
-  if (check(TOKEN_IDENTIFIER)) {
-    forInStatement();
+  if (parseCheck(TOKEN_IDENTIFIER)) {
+    parseForInStatement();
     return;
   }
 
   beginScope();
 
   consume(TOKEN_LEFT_PAREN, "Expect '(' after 'for'");
-  if (match(TOKEN_SEMICOLON)) {
+  if (parseMatch(TOKEN_SEMICOLON)) {
     /* No initializer */
-  } else if (match(TOKEN_VAR)) {
-    varDeclaration();
+  } else if (parseMatch(TOKEN_VAR)) {
+    parseVarDeclaration();
   } else {
-    expressionStatement();
+    parseExpressionStatement();
   }
 
   loopStart = currentChunk()->count;
   exitJump = -1;
-  if (!match(TOKEN_SEMICOLON)) {
-    expression();
+  if (!parseMatch(TOKEN_SEMICOLON)) {
+    parseExpression();
     consume(TOKEN_SEMICOLON, "Expect ';' after loop condition");
 
     /* Jump out of hte loop if the condition is false */
@@ -1197,10 +1197,10 @@ static void forStatement() {
     emitByte(OP_POP); /* Condition */
   }
 
-  if (!match(TOKEN_RIGHT_PAREN)) {
+  if (!parseMatch(TOKEN_RIGHT_PAREN)) {
     i32 bodyJump = emitJump(OP_JUMP);
     i32 incrementStart = currentChunk()->count;
-    expression();
+    parseExpression();
     emitByte(OP_POP);
     consume(TOKEN_RIGHT_PAREN, "Expect ')' after for clauses");
 
@@ -1221,11 +1221,11 @@ static void forStatement() {
   endScope();
 }
 
-static void ifStatement() {
+static void parseIfStatement() {
   i32 thenJump, i;
   i32 endJumps[MAX_ELIF_CHAIN_COUNT], endJumpsCount = 0;
 
-  expression();
+  parseExpression();
   consume(TOKEN_COLON, "Expect ':' after condition");
 
   thenJump = emitJump(OP_JUMP_IF_FALSE);
@@ -1236,12 +1236,12 @@ static void ifStatement() {
   patchJump(thenJump);
   emitByte(OP_POP);
 
-  while (match(TOKEN_ELIF)) {
+  while (parseMatch(TOKEN_ELIF)) {
     i32 endJump;
     if (endJumpsCount >= MAX_ELIF_CHAIN_COUNT) {
       error("Too many chained 'elif' clauses");
     }
-    expression();
+    parseExpression();
     consume(TOKEN_COLON, "Expect ':' after elif condition");
     thenJump = emitJump(OP_JUMP_IF_FALSE);
     emitByte(OP_POP);
@@ -1255,7 +1255,7 @@ static void ifStatement() {
     }
   }
 
-  if (match(TOKEN_ELSE)) {
+  if (parseMatch(TOKEN_ELSE)) {
     consume(TOKEN_COLON, "Expect ':' after 'else'");
     block(UTRUE);
   }
@@ -1265,51 +1265,51 @@ static void ifStatement() {
   }
 }
 
-static void importStatement() {
+static void parseImportStatement() {
   u8 moduleName, alias;
 
   consume(TOKEN_IDENTIFIER, "Expect module name after 'import'");
-  moduleName = identifierConstant(&parser.previous);
+  moduleName = parseIdentifierConstant(&parser.previous);
 
-  if (match(TOKEN_AS)) {
+  if (parseMatch(TOKEN_AS)) {
     consume(TOKEN_IDENTIFIER, "Expect module alias after 'as'");
   }
 
-  /* parseVariable but without consuming */
-  declareVariable();
-  alias = current->scopeDepth > 0 ? 0 : identifierConstant(&parser.previous);
+  /* parseAndGetVariable but without consuming */
+  parseDeclareVariable();
+  alias = current->scopeDepth > 0 ? 0 : parseIdentifierConstant(&parser.previous);
 
   /* actually import module */
   emitBytes(OP_IMPORT, moduleName);
-  defineVariable(alias); /* store in variable */
+  parseDefineVariable(alias); /* store in variable */
 
   consumeStatementDelimiter(
     "Expect statement delimiter after import statement");
 }
 
-static void returnStatement() {
+static void parseReturnStatement() {
   if (current->type == TYPE_SCRIPT) {
     error("Can't return from top-level code");
   }
 
-  if (match(TOKEN_SEMICOLON)) {
+  if (parseMatch(TOKEN_SEMICOLON)) {
     emitReturn();
   } else {
     if (current->type == TYPE_INITIALIZER) {
       error("Can't return a value from an initializer");
     }
 
-    expression();
+    parseExpression();
     consumeStatementDelimiter("Expect newline or ';' after return value");
     emitByte(OP_RETURN);
   }
 }
 
-static void whileStatement() {
+static void parseWhileStatement() {
   i32 exitJump, loopStart;
 
   loopStart = currentChunk()->count;
-  expression();
+  parseExpression();
   consume(TOKEN_COLON, "Expect ':' after condition");
 
   exitJump = emitJump(OP_JUMP_IF_FALSE);
@@ -1321,7 +1321,7 @@ static void whileStatement() {
   emitByte(OP_POP);
 }
 
-static void synchronize() {
+static void synchronizeParser() {
   parser.panicMode = 0;
 
   while (parser.current.type != TOKEN_EOF) {
@@ -1345,43 +1345,43 @@ static void synchronize() {
   }
 }
 
-static void declaration() {
-  if (match(TOKEN_CLASS)) {
-    classDeclaration();
-  } else if (match(TOKEN_DEF)) {
-    funDeclaration();
-  } else if (match(TOKEN_VAR) || match(TOKEN_FINAL)) {
-    varDeclaration();
-  } else if (match(TOKEN_AT)) {
-    decoratedFunDeclaration();
+static void parseDeclaration() {
+  if (parseMatch(TOKEN_CLASS)) {
+    parseClassDeclaration();
+  } else if (parseMatch(TOKEN_DEF)) {
+    parseFunDeclaration();
+  } else if (parseMatch(TOKEN_VAR) || parseMatch(TOKEN_FINAL)) {
+    parseVarDeclaration();
+  } else if (parseMatch(TOKEN_AT)) {
+    parseDecoratedFunDeclaration();
   } else {
-    statement();
+    parseStatement();
   }
 
   if (parser.panicMode) {
-    synchronize();
+    synchronizeParser();
   }
 }
 
-static void statement() {
-  if (match(TOKEN_FOR)) {
-    forStatement();
-  } else if (match(TOKEN_IF)) {
-    ifStatement();
-  } else if (match(TOKEN_RETURN)) {
-    returnStatement();
-  } else if (match(TOKEN_WHILE)) {
-    whileStatement();
-  } else if (match(TOKEN_IMPORT)) {
-    importStatement();
-  } else if (match(TOKEN_NEWLINE) || match(TOKEN_SEMICOLON)) {
+static void parseStatement() {
+  if (parseMatch(TOKEN_FOR)) {
+    parseForStatement();
+  } else if (parseMatch(TOKEN_IF)) {
+    parseIfStatement();
+  } else if (parseMatch(TOKEN_RETURN)) {
+    parseReturnStatement();
+  } else if (parseMatch(TOKEN_WHILE)) {
+    parseWhileStatement();
+  } else if (parseMatch(TOKEN_IMPORT)) {
+    parseImportStatement();
+  } else if (parseMatch(TOKEN_NEWLINE) || parseMatch(TOKEN_SEMICOLON)) {
     /* nop statement */
-  } else if (match(TOKEN_PASS)) {
+  } else if (parseMatch(TOKEN_PASS)) {
     /* pass statement */
     consumeStatementDelimiter(
       "Expected statement delimiter at end of pass statement");
   } else {
-    expressionStatement();
+    parseExpressionStatement();
   }
 }
 
@@ -1395,8 +1395,8 @@ ObjThunk *compile(const char *source, ObjString *moduleName) {
   parser.panicMode = 0;
   advance();
 
-  while (!match(TOKEN_EOF)) {
-    declaration();
+  while (!parseMatch(TOKEN_EOF)) {
+    parseDeclaration();
   }
 
   thunk = endCompiler();
