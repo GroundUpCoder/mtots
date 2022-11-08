@@ -24,7 +24,7 @@ RefSet allocRefs(i16 n) {
 
 Ref refAt(RefSet rs, i16 offset) {
   Ref ret;
-  if (offset < 0 || offset >= rs.length) {
+  if (offset < -1 || offset >= rs.length) {
     panic("invalid offset for RefSet (length=%d, offset=%d)",
       rs.length, offset);
   }
