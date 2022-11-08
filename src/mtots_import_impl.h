@@ -49,7 +49,6 @@ ubool importModuleWithPath(ObjString *moduleName, const char *path) {
   char *source = readFile(path);
   ObjClosure *closure;
   ObjThunk *thunk;
-  i16 returnFrameCount = vm.frameCount;
   ObjInstance *module;
   ObjString *pathStr;
 
@@ -75,7 +74,7 @@ ubool importModuleWithPath(ObjString *moduleName, const char *path) {
 
   call(closure, 0);
 
-  if (run(returnFrameCount)) {
+  if (run()) {
     pop(); /* return value from run */
 
     push(OBJ_VAL(module));

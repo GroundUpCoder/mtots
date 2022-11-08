@@ -98,7 +98,7 @@ void defineGlobal(const char *name, Value value);
 void addNativeModule(CFunction *func);
 
 /* semi-private functions */
-ubool run(i16 returnFrameCount);
+ubool run();
 ubool call(ObjClosure *closure, i16 argCount);
 
 #endif/*mtots_vm_h*/

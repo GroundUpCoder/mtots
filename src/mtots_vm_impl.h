@@ -745,7 +745,8 @@ static void concatenate() {
   push(OBJ_VAL(result));
 }
 
-ubool run(i16 returnFrameCount) {
+ubool run() {
+  i16 returnFrameCount = vm.frameCount - 1;
   CallFrame *frame = &vm.frames[vm.frameCount - 1];
 
 #define READ_BYTE() (*frame->ip++)
@@ -1301,7 +1302,7 @@ ubool interpret(const char *source, ObjInstance *module) {
   push(OBJ_VAL(closure));
   call(closure, 0);
 
-  return run(0);
+  return run();
 }
 
 static void prepPrelude() {
