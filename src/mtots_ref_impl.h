@@ -127,6 +127,15 @@ void setList(Ref out, RefSet items) {
   memcpy(list->buffer, vm.stack + items.start, sizeof(Value) * items.length);
 }
 
+void setDict(Ref out) {
+  ObjDict *dict = newDict();
+  DEREF(out) = OBJ_VAL(dict);
+}
+
+void setValue(Ref out, Ref src) {
+  DEREF(out) = refGet(src);
+}
+
 void setInstanceField(Ref recv, const char *fieldName, Ref value) {
   ObjInstance *instance;
   if (!IS_INSTANCE(DEREF(recv))) {
