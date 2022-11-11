@@ -10,32 +10,32 @@
 void checkAssumptions() {
   /* check type sizes */
   if (sizeof(char) != 1) { /* standard should guarantee this */
-    fprintf(stderr, "char is not 1 bytes (got %lu)", sizeof(char));
+    fprintf(stderr, "char is not 1 bytes (got %lu)", (unsigned long)sizeof(char));
     exit(1);
   }
   if (sizeof(short) != 2) {
-    fprintf(stderr, "short is not 2 bytes (got %lu)", sizeof(short));
+    fprintf(stderr, "short is not 2 bytes (got %lu)", (unsigned long)sizeof(short));
     exit(1);
   }
   if (sizeof(int) != 4) {
-    fprintf(stderr, "int is not 4 bytes (got %lu)", sizeof(int));
+    fprintf(stderr, "int is not 4 bytes (got %lu)", (unsigned long)sizeof(int));
     exit(1);
   }
   if (sizeof(float) != 4) {
-    fprintf(stderr, "float is not 4 bytes (got %lu)", sizeof(float));
+    fprintf(stderr, "float is not 4 bytes (got %lu)", (unsigned long)sizeof(float));
     exit(1);
   }
   if (sizeof(double) != 8) {
-    fprintf(stderr, "double is not 8 bytes (got %lu)", sizeof(double));
+    fprintf(stderr, "double is not 8 bytes (got %lu)", (unsigned long)sizeof(double));
     exit(1);
   }
   if (sizeof(void*) != 4 && sizeof(void*) != 8) {
-    fprintf(stderr, "void* is neither 4 nor 8 bytes (got %lu)", sizeof(void*));
+    fprintf(stderr, "void* is neither 4 nor 8 bytes (got %lu)", (unsigned long)sizeof(void*));
     exit(1);
   }
   if (sizeof(void*) != sizeof(size_t)) {
     fprintf(stderr, "sizeof(void*) != sizeof(size_t) (got %lu and %lu)",
-      sizeof(void*), sizeof(size_t));
+      (unsigned long)sizeof(void*), (unsigned long)sizeof(size_t));
     exit(1);
   }
 
