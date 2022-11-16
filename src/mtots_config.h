@@ -43,43 +43,24 @@
  ****************************************************************/
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-
 #define OS_NAME "windows"
-
 #elif __APPLE__
-
 #include <TargetConditionals.h>
-
 #if TARGET_OS_IPHONE
-
 #define OS_NAME "iphone"
-
 #elif TARGET_OS_MAC
-
 #define OS_NAME "macos"
-
 #endif
-
 #elif __ANDROID__
-
 #define OS_NAME "android"
-
 #elif __linux__
-
 #define OS_NAME "linux"
-
 #elif __unix__
-
 #define OS_NAME "unix"
-
 #elif defined(_POSIX_VERSION)
-
 #define OS_NAME "posix"
-
 #else
-
 #define OS_NAME "unknown"
-
 #endif
 
 #endif/*mtots_config_h*/
