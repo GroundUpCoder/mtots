@@ -1,7 +1,6 @@
 #ifndef mtots_vm_h
 #define mtots_vm_h
 
-#include "mtots_object.h"
 #include "mtots_ops.h"
 #include "mtots_compiler.h"
 #include "mtots_import.h"

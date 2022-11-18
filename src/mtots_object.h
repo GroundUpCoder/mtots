@@ -2,7 +2,6 @@
 #define mtots_object_h
 
 #include "mtots_common.h"
-#include "mtots_value.h"
 #include "mtots_chunk.h"
 #include "mtots_map.h"
 #include "mtots_memory.h"

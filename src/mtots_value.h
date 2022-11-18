@@ -1,7 +1,6 @@
 #ifndef mtots_value_h
 #define mtots_value_h
 
-#include "mtots_common.h"
 #include "mtots_ref.h"
 
 typedef struct CFunction CFunction;
