@@ -4,6 +4,10 @@ Draw a graph of header dependencies
 import os
 import argparse
 
+IGNORE_SET = {
+  'mtots_common.h'
+}
+
 aparser = argparse.ArgumentParser()
 aparser.add_argument('--cfiles', type=int, default=0)
 aparser.add_argument('--outfile', '-o', type=str, default=None)
@@ -17,7 +21,8 @@ mtotsDir = os.path.dirname(scriptDir)
 srcDir = os.path.join(mtotsDir, 'src')
 fileNames = [
   fn for fn in os.listdir(srcDir)
-  if fn.endswith('.h') or includeCFiles and fn.endswith('.c')
+  if fn not in IGNORE_SET and (
+    fn.endswith('.h') or includeCFiles and fn.endswith('.c'))
 ]
 
 if outfilePath:
@@ -32,7 +37,9 @@ def getDeps(fileName):
     for line in f:
       line = line.strip()
       if line.startswith('#include "'):
-        yield line[len('#include "'):-len('"')]
+        depFileName = line[len('#include "'):-len('"')]
+        if depFileName not in IGNORE_SET:
+          yield depFileName
 
 def formatName(name):
   if name.endswith('.h') and name.startswith('mtots_'):

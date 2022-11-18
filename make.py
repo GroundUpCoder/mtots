@@ -148,6 +148,7 @@ def buildGraph():
     run([
         exe,
         join(mtotsDir, 'scripts', 'deps-graph.py'),
+        '--cfiles', '1',
         '-o', join(mtotsDir, 'out', 'graph', 'sources.dot')])
     run([
         'dot',
