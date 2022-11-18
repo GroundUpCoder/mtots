@@ -1,7 +1,6 @@
 #ifndef mtots_globals_h
 #define mtots_globals_h
 
-#include "mtots_common.h"
 #include "mtots_value.h"
 
 void defineDefaultGlobals();

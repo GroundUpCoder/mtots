@@ -1,6 +1,4 @@
-#include "mtots_object.h"
 #include "mtots_memory.h"
-#include "mtots_value.h"
 #include "mtots_vm.h"
 
 #include <stdio.h>

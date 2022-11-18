@@ -1,6 +1,5 @@
 #include "mtots_class_list.h"
 #include "mtots_memory.h"
-#include "mtots_value.h"
 #include "mtots_vm.h"
 
 static void listAppend(ObjList *list, Value value) {

@@ -1,9 +1,6 @@
 #include "mtots_globals.h"
-#include "mtots_value.h"
 #include "mtots_vm.h"
-#include "mtots_object.h"
 #include "mtots_memory.h"
-#include "mtots_util.h"
 #include "mtots.h"
 
 #include <time.h>

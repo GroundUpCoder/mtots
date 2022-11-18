@@ -2,7 +2,6 @@
 #define mtots_m_sdl_gl_h
 
 #include "mtots_m_sdl_common.h"
-#include "mtots_vm.h"
 
 #include <stdio.h>
 

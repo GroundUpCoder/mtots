@@ -2,10 +2,8 @@
 #define mtots_vm_h
 
 #include "mtots_chunk.h"
-#include "mtots_value.h"
 #include "mtots_object.h"
 #include "mtots_ops.h"
-#include "mtots_util.h"
 
 /* headers with prototypes whose function definitions are in mtots_vm.c */
 #include "mtots_stack.h"

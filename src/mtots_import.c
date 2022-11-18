@@ -1,9 +1,7 @@
 #include "mtots_import.h"
-#include "mtots_object.h"
 #include "mtots_vm.h"
 #include "mtots_compiler.h"
 #include "mtots_env.h"
-#include "mtots_ref_private.h"
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -1,12 +1,7 @@
 #ifndef mtots_m_json_parse_h
 #define mtots_m_json_parse_h
 
-#include "mtots_common.h"
-#include "mtots_value.h"
-#include "mtots_object.h"
 #include "mtots_vm.h"
-#include "mtots_util.h"
-#include "mtots_memory.h"
 
 #include <string.h>
 #include <stdlib.h>

@@ -1,7 +1,6 @@
 #ifndef mtots_m_sdl_funcs_h
 #define mtots_m_sdl_funcs_h
 
-#include "mtots_m_sdl_common.h"
 #include "mtots_m_sdl_acb.h"
 
 #include <stdio.h>

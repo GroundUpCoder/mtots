@@ -1,7 +1,6 @@
 #ifndef mtots_chunk_h
 #define mtots_chunk_h
 
-#include "mtots_common.h"
 #include "mtots_value.h"
 
 typedef enum OpCode {
