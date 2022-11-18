@@ -296,6 +296,8 @@ static void endScope() {
   }
 }
 
+static void parseFieldDeclaration();
+static void parseTypeExpression();
 static void parseExpression();
 static void parseStatement();
 static void parseDeclaration();
@@ -952,6 +954,9 @@ static void parseFunction(ThunkType type) {
       }
       constant = parseAndGetVariable("Expect parameter name");
       parseDefineVariable(constant);
+      if (parseCheck(TOKEN_IDENTIFIER)) {
+        parseTypeExpression();
+      }
       if (compiler.defaultArgsCount > 0 && !parseCheck(TOKEN_EQUAL)) {
         error("non-optional argument may not follow an optional argument");
       }
@@ -961,6 +966,10 @@ static void parseFunction(ThunkType type) {
     } while (parseMatch(TOKEN_COMMA));
   }
   consume(TOKEN_RIGHT_PAREN, "Expect ')' after parameters");
+
+  if (parseCheck(TOKEN_IDENTIFIER)) {
+    parseTypeExpression();
+  }
 
   consume(TOKEN_COLON, "Expect ':' before function body");
   while (parseMatch(TOKEN_NEWLINE));
@@ -1042,6 +1051,9 @@ static void parseClassDeclaration() {
       parseMatch(TOKEN_TRIPLE_QUOTE_RAW_STRING)) {
     while (parseMatch(TOKEN_NEWLINE));
   }
+  while (parseCheck(TOKEN_VAR) || parseCheck(TOKEN_FINAL)) {
+    parseFieldDeclaration();
+  }
   while (!parseCheck(TOKEN_DEDENT) && !parseCheck(TOKEN_EOF)) {
     parseMethod();
     while (parseMatch(TOKEN_NEWLINE));
@@ -1104,6 +1116,10 @@ static void parseDecoratedFunDeclaration() {
 
 static void parseVarDeclaration() {
   u8 global = parseAndGetVariable("Expect variable name");
+
+  if (parseCheck(TOKEN_IDENTIFIER)) {
+    parseTypeExpression();
+  }
 
   if (parseMatch(TOKEN_EQUAL)) {
     parseExpression();
@@ -1375,6 +1391,47 @@ static void parseStatement() {
       "Expected statement delimiter at end of pass statement");
   } else {
     parseExpressionStatement();
+  }
+}
+
+static void parseFieldDeclaration() {
+  /* Field declarations have no runtime effect whatsoever
+   * They are purely for documentation */
+  if (!parseMatch(TOKEN_FINAL)) {
+    consume(TOKEN_VAR, "Expected 'var' for field declaration");
+  }
+  consume(TOKEN_IDENTIFIER, "Expected field identifier");
+  parseTypeExpression();
+  consumeStatementDelimiter("Expected delimiter after field declaration");
+}
+
+static void parseTypeExpression() {
+  /* Type expressions are completely ignored by the runtime, and are used
+   * purely for documentation */
+  consume(TOKEN_IDENTIFIER, "Expected type expression");
+  for (;;) {
+    if (parseMatch(TOKEN_QMARK)) {
+      continue;
+    }
+    if (parseMatch(TOKEN_DOT)) {
+      consume(TOKEN_IDENTIFIER, "Expected type member identifier");
+      continue;
+    }
+    if (parseMatch(TOKEN_PIPE)) {
+      parseTypeExpression();
+      continue;
+    }
+    if (parseMatch(TOKEN_LEFT_BRACKET)) {
+      while (parseCheck(TOKEN_IDENTIFIER)) {
+        parseTypeExpression();
+        if (!parseMatch(TOKEN_COMMA)) {
+          break;
+        }
+      }
+      consume(TOKEN_RIGHT_BRACKET, "Expected ']' to close matching bracket");
+      continue;
+    }
+    break;
   }
 }
 

@@ -52,7 +52,9 @@ void runtimeError(const char *format, ...) {
   ptr += vsprintf(ptr, format, args);
   va_end(args);
   ptr += sprintf(ptr, "\n");
-  strcpy(ptr, sb.chars);
+  if (sb.length) {
+    strcpy(ptr, sb.chars);
+  }
 }
 
 const char *getErrorString() {

@@ -446,6 +446,7 @@ Token scanToken() {
     case '&': return makeToken(TOKEN_AMPERSAND);
     case '^': return makeToken(TOKEN_CARET);
     case '~': return makeToken(TOKEN_TILDE);
+    case '?': return makeToken(TOKEN_QMARK);
     case '!':
       return makeToken(
         matchScanner('=') ? TOKEN_BANG_EQUAL : TOKEN_BANG);
