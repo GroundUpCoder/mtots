@@ -5,7 +5,9 @@ import os
 import argparse
 
 IGNORE_SET = {
-  'mtots_common.h'
+  'mtots_common.h',
+  'mtots_debug.h',
+  'mtots_debug.c',
 }
 
 aparser = argparse.ArgumentParser()

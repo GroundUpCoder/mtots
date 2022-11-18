@@ -1,6 +1,5 @@
 #include "mtots_import.h"
 #include "mtots_vm.h"
-#include "mtots_compiler.h"
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -1,7 +1,5 @@
 #include "mtots_assumptions.h"
 #include "mtots_vm.h"
-#include "mtots_debug.h"
-#include "mtots_compiler.h"
 #include "mtots_globals.h"
 #include "mtots_class_list.h"
 #include "mtots_class_file.h"
@@ -9,7 +7,6 @@
 #include "mtots_class_dict.h"
 #include "mtots_class_ba.h"
 #include "mtots_class_class.h"
-#include "mtots_import.h"
 #include "mtots_modules.h"
 
 #include <stdio.h>

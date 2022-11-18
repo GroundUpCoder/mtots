@@ -34,7 +34,9 @@
         "__functional_03": "c",
         "__locale": "c",
         "__string": "c",
-        "istream": "c"
+        "istream": "c",
+        "__functional_base_03": "c",
+        "__tuple": "c"
     },
     "C_Cpp.default.defines": [
         "MTOTS_ENABLE_SDL=1",
