@@ -1,7 +1,6 @@
 #include "mtots_class_str.h"
 #include "mtots_vm.h"
 #include "mtots_globals.h"
-#include "mtots_memory.h"
 
 #include <string.h>
 #include <stdlib.h>

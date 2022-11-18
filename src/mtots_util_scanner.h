@@ -1,5 +1,5 @@
-#ifndef mtots_scanner_h
-#define mtots_scanner_h
+#ifndef mtots_util_scanner_h
+#define mtots_util_scanner_h
 
 #include <stddef.h>
 
@@ -51,4 +51,4 @@ typedef struct Token {
 void initScanner(const char *source);
 Token scanToken();
 
-#endif/*mtots_scanner_h*/
+#endif/*mtots_util_scanner_h*/

@@ -1,8 +1,7 @@
 #ifndef mtots_memory_h
 #define mtots_memory_h
 
-#include "mtots_common.h"
-#include "mtots_object.h"
+#include "mtots_value.h"
 
 #define ALLOCATE(type, count) \
     (type*)reallocate(NULL, 0, sizeof(type) * (count))

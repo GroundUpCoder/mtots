@@ -2,7 +2,6 @@
 #include "mtots_vm.h"
 #include "mtots_debug.h"
 #include "mtots_compiler.h"
-#include "mtots_memory.h"
 #include "mtots_globals.h"
 #include "mtots_class_list.h"
 #include "mtots_class_file.h"

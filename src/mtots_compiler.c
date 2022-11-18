@@ -1,7 +1,4 @@
 #include "mtots_compiler.h"
-#include "mtots_scanner.h"
-#include "mtots_memory.h"
-#include "mtots_chunk.h"
 
 #if DEBUG_PRINT_CODE
 #include "mtots_debug.h"

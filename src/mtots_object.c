@@ -1,4 +1,3 @@
-#include "mtots_memory.h"
 #include "mtots_vm.h"
 
 #include <stdio.h>

@@ -1,4 +1,4 @@
-#include "mtots_scanner.h"
+#include "mtots_util_scanner.h"
 #include "mtots_common.h"
 
 #include <string.h>

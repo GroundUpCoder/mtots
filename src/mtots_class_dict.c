@@ -1,5 +1,4 @@
 #include "mtots_vm.h"
-#include "mtots_memory.h"
 
 static ubool implDictGetItem(i16 argCount, Value *args, Value *out) {
   ObjDict *dict = AS_DICT(args[-1]);

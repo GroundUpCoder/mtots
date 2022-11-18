@@ -12,11 +12,11 @@
 #include "mtots_util_escape.h"
 #include "mtots_util_readfile.h"
 
-/* Not mtots specific, but maybe not the most useful generally */
+/* Not mtots specific, but also maybe not the most generally useful utilities */
 #include "mtots_util_filemode.h"
 
-/* somewhat mtots specific */
-#include "mtots_util_filemode.h"
+/* mtots specific */
 #include "mtots_util_env.h"
+#include "mtots_util_scanner.h"
 
 #endif/*mtots_util_h*/

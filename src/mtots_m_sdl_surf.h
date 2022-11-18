@@ -2,7 +2,6 @@
 #define mtots_m_sdl_surf_h
 
 #include "mtots_m_sdl_common.h"
-#include "mtots_memory.h"
 
 void blackenSurface(ObjNative *n) {
   ObjSurface *surface = (ObjSurface*)n;
