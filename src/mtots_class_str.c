@@ -1,6 +1,5 @@
 #include "mtots_class_str.h"
 #include "mtots_vm.h"
-#include "mtots_globals.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -89,109 +88,27 @@ static ubool implStrSlice(i16 argCount, Value *args, Value *out) {
 static CFunction funcStrSlice = { implStrSlice, "__slice__", 2 };
 
 static ubool implStrMod(i16 argCount, Value *args, Value *out) {
-  Value receiver = args[-1];
-  String *fmt;
-  ObjList *arglist, *strlist;
-  size_t i, j, k, length = 0;
-  char *buffer;
+  const char *fmt = AS_CSTRING(args[-1]);
+  ObjList *arglist = AS_LIST(args[0]);
+  StringBuffer sb;
 
-  /* i: index fmt->chars
-   * j: index arglist->buffer
-   * k: index buffer (output string buffer) */
+  initStringBuffer(&sb);
 
-  if (!IS_STRING(receiver)) {
-    runtimeError("Expected string as receiver to String.__mod__()");
-    return UFALSE;
-  }
-  fmt = AS_STRING(receiver);
-  if (!IS_LIST(args[0])) {
-    runtimeError("Expected List as argument to String.__mod__()");
-    return UFALSE;
-  }
-  arglist = AS_LIST(args[0]);
-  strlist = newList(arglist->length);
-  push(LIST_VAL(strlist));
-
-  /* compute length and convert all the arguments to strings */
-  for (i = j = 0; i < fmt->length; i++) {
-    if (fmt->chars[i] == '%') {
-      i++;
-      if (i < fmt->length && fmt->chars[i] != '%') {
-        Value itemstrval = NIL_VAL();
-        if (j >= arglist->length) {
-          if (fmt->chars[i] != 'r' && fmt->chars[i] != 's') {
-            runtimeError("Invalid format indicator '%%%c'", fmt->chars[i]);
-          } else {
-            runtimeError("Not enough arguments for format string");
-          }
-          return UFALSE;
-        }
-        switch (fmt->chars[i]) {
-          case 's':
-            if (!implStr(1, arglist->buffer + j, &itemstrval)) {
-              return UFALSE;
-            }
-            break;
-          case 'r':
-            if (!implRepr(1, arglist->buffer + j, &itemstrval)) {
-              return UFALSE;
-            }
-            break;
-          default:
-            runtimeError("Invalid format indicator '%%%c'", fmt->chars[i]);
-            return UFALSE;
-        }
-        if (!IS_STRING(itemstrval)) {
-          runtimeError("str or repr returned non-string value");
-          return UFALSE;
-        }
-        length += AS_STRING(itemstrval)->length;
-        strlist->buffer[j++] = itemstrval;
-      } else {
-        length++;
-      }
-    } else {
-      length++;
-    }
-  }
-  if (j < arglist->length) {
-    runtimeError("Too many arguments for format string");
+  if (!strMod(&sb, fmt, arglist)) {
     return UFALSE;
   }
 
-  /* construct the actual string */
-  buffer = ALLOCATE(char, length + 1);
-  for (i = j = k = 0; i < fmt->length; i++) {
-    if (fmt->chars[i] == '%') {
-      i++;
-      if (i < fmt->length && fmt->chars[i] != '%') {
-        String *itemstr = AS_STRING(strlist->buffer[j++]);
-        memcpy(buffer + k, itemstr->chars, itemstr->length);
-        k += itemstr->length;
-      } else {
-        buffer[k++] = '%';
-      }
-    } else {
-      buffer[k++] = fmt->chars[i];
-    }
-  }
-  buffer[k] = '\0';
+  *out = STRING_VAL(internString(sb.chars, sb.length));
+  freeStringBuffer(&sb);
 
-  /* check some assertions */
-  if (length != k) {
-    abort();
-  }
-  if (strlist->length != j) {
-    abort();
-  }
-
-  *out = STRING_VAL(internString(buffer, length));
-
-  pop(); /* strlist */
   return UTRUE;
 }
 
-static CFunction funcStrMod = { implStrMod, "__mod__", 1 };
+static TypePattern argsStrMod[] = {
+  { TYPE_PATTERN_LIST },
+};
+
+static CFunction funcStrMod = { implStrMod, "__mod__", 1, 0, argsStrMod };
 
 static char DEFAULT_STRIP_SET[] = " \t\r\n";
 

@@ -9,5 +9,6 @@ ubool valueLessThan(Value a, Value b);
 void sortList(ObjList *list, ObjList *keys);
 ubool valueRepr(StringBuffer *out, Value value);
 ubool valueStr(StringBuffer *out, Value value);
+ubool strMod(StringBuffer *out, const char *format, ObjList *args);
 
 #endif/*mtots_ops_h*/

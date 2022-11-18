@@ -34,7 +34,7 @@ static ubool implType(Ref out, RefSet args) {
 
 static CFunc cfuncType = { implType, "type", 1};
 
-ubool implRepr(i16 argCount, Value *args, Value *out) {
+static ubool implRepr(i16 argCount, Value *args, Value *out) {
   StringBuffer sb;
   initStringBuffer(&sb);
   if (!valueRepr(&sb, args[0])) {
@@ -48,7 +48,7 @@ ubool implRepr(i16 argCount, Value *args, Value *out) {
 
 static CFunction cfunctionRepr = { implRepr, "repr", 1 };
 
-ubool implStr(i16 argCount, Value *args, Value *out) {
+static ubool implStr(i16 argCount, Value *args, Value *out) {
   if (IS_STRING(*args)) {
     *out = *args;
     return UTRUE;

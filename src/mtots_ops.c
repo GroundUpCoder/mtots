@@ -382,3 +382,46 @@ ubool valueStr(StringBuffer *out, Value value) {
   }
   return valueRepr(out, value);
 }
+
+ubool strMod(StringBuffer *out, const char *format, ObjList *args) {
+  const char *p;
+  size_t j;
+
+  for (p = format, j = 0; *p != '\0'; p++) {
+    if (*p == '%') {
+      Value item;
+      p++;
+      if (*p == '%') {
+        sbputchar(out, '%');
+        continue;
+      }
+      if (j >= args->length) {
+        runtimeError("Not enough arguments for format string");
+        return UFALSE;
+      }
+      item = args->buffer[j++];
+      switch (*p) {
+        case 's':
+          if (!valueStr(out, item)) {
+            return UFALSE;
+          }
+          break;
+        case 'r':
+          if (!valueRepr(out, item)) {
+            return UFALSE;
+          }
+          break;
+        case '\0':
+          runtimeError("missing format indicator");
+          return UFALSE;
+        default:
+          runtimeError("invalid format indicator '%%%c'", *p);
+          return UFALSE;
+      }
+    } else {
+      sbputchar(out, *p);
+    }
+  }
+
+  return UTRUE;
+}
