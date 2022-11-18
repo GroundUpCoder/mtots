@@ -67,3 +67,7 @@ void clearErrorString() {
 void setErrorContextProvider(void (*contextProvider)(StringBuffer*)) {
   errorContextProvider = contextProvider;
 }
+
+NORETURN void assertionError() {
+  panic("assertion error");
+}

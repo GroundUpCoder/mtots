@@ -21,4 +21,7 @@ void clearErrorString();
  * The provider will be called for both 'panic' and 'runtimeError'. */
 void setErrorContextProvider(void (*contextProvider)(StringBuffer*));
 
+/* Basically a panic with a standandardized error message */
+NORETURN void assertionError();
+
 #endif/*mtots_util_error_h*/
