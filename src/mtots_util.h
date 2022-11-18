@@ -9,5 +9,6 @@
 #include "mtots_util_unicode.h"
 #include "mtots_util_strbuf.h"
 #include "mtots_util_escape.h"
+#include "mtots_util_readfile.h"
 
 #endif/*mtots_util_h*/

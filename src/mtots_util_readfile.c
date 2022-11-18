@@ -5,34 +5,32 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-ubool readFileToString(const char *filePath, String **out) {
-  FILE *fin = fopen(filePath, "r");
-  size_t fileSize;
-  char *chars;
-  if (fin == NULL) {
-    runtimeError("Could not open file %s", filePath);
-    return UFALSE;
+char *readFile(const char *path) {
+  char *buffer;
+  size_t fileSize, bytesRead;
+  FILE *file = fopen(path, "rb");
+
+  if (file == NULL) {
+    panic("Could not open file \"%s\"\n", path);
   }
 
-  if (fseek(fin, 0, SEEK_END) != 0) {
-    /* TODO: Support this case */
-    runtimeError("SEEK_END not supported");
-    return UFALSE;
-  }
-  fileSize = ftell(fin);
-  if (fseek(fin, 0, SEEK_SET) != 0) {
-    runtimeError("Could not seek to the beginning");
-    return UFALSE;
-  }
+  /* NOTE: This might not actually be standards
+   * compliant - i.e. this may fail on some platforms.
+   */
+  fseek(file, 0L, SEEK_END);
+  fileSize = ftell(file);
+  rewind(file);
 
-  chars = (char*)malloc(fileSize + 1);
-  if (fread(chars, 1, fileSize, fin) != fileSize) {
-    runtimeError("fread error");
-    return UFALSE;
+  buffer = (char*)malloc(fileSize + 1);
+  if (buffer == NULL) {
+    panic("Not enough memory to read \"%s\"\n", path);
   }
-  chars[fileSize] = '\0';
+  bytesRead = fread(buffer, sizeof(char), fileSize, file);
+  if (bytesRead < fileSize) {
+    panic("Could not read file \"%s\"\n", path);
+  }
+  buffer[bytesRead] = '\0';
 
-  *out = internString(chars, fileSize);
-
-  return UTRUE;
+  fclose(file);
+  return buffer;
 }
