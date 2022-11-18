@@ -24,7 +24,7 @@ static void repl() {
     }
 
     if (!interpret(line, module)) {
-      fprintf(stderr, "%s", vm.errorString);
+      fprintf(stderr, "%s", getErrorString());
     }
     pop(); /* return value */
   }
@@ -56,8 +56,8 @@ int main(int argc, const char *argv[]) {
     status = importModuleWithPath(mainModuleName, argv[1]);
     pop(); /* mainModuleName */
     if (!status) {
-      if (vm.errorString) {
-        fprintf(stderr, "%s", vm.errorString);
+      if (getErrorString()) {
+        fprintf(stderr, "%s", getErrorString());
       } else {
         fprintf(stderr, "(runtime-error, but no error message set)\n");
       }

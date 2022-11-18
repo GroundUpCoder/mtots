@@ -13,6 +13,7 @@
 #include "mtots_class_class.h"
 #include "mtots_import.h"
 #include "mtots_modules.h"
+#include "mtots_util.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,110 +34,29 @@ static void resetStack() {
   vm.trySnapshotsCount = 0;
 }
 
-static void printStack() {
+static void printStackToStringBuffer(StringBuffer *sb) {
   i16 i;
-  for (i = vm.frameCount - 1; i >= 0; i--) {
+  for (i = vm.frameCount - 1; i >=0; i--) {
     CallFrame *frame = &vm.frames[i];
     ObjThunk *thunk = frame->closure->thunk;
     size_t instruction = frame->ip - thunk->chunk.code - 1;
-    fprintf(
-      stderr, "[line %d] in ", thunk->chunk.lines[instruction]);
+    sbprintf(
+      sb, "[line %d] in ", thunk->chunk.lines[instruction]);
     if (thunk->name == NULL) {
       if (thunk->moduleName == NULL) {
-        fprintf(stderr, "[script]\n");
+        sbprintf(sb, "[script]\n");
       } else {
-        fprintf(stderr, "%s\n", thunk->moduleName->chars);
+        sbprintf(sb, "%s\n", thunk->moduleName->chars);
       }
     } else {
       if (thunk->moduleName == NULL) {
-        fprintf(stderr, "%s()\n", thunk->name->chars);
+        sbprintf(sb, "%s()\n", thunk->name->chars);
       } else {
-        fprintf(stderr, "%s:%s()\n",
+        sbprintf(sb, "%s:%s()\n",
           thunk->moduleName->chars, thunk->name->chars);
       }
     }
   }
-}
-
-static size_t printStackLength() {
-  i16 i;
-  size_t len = 0;
-  for (i = vm.frameCount - 1; i >= 0; i--) {
-    CallFrame *frame = &vm.frames[i];
-    ObjThunk *thunk = frame->closure->thunk;
-    size_t instruction = frame->ip - thunk->chunk.code - 1;
-    len += snprintf(NULL, 0, "[line %d] in ", thunk->chunk.lines[instruction]);
-    if (thunk->name == NULL) {
-      if (thunk->moduleName == NULL) {
-        len += snprintf(NULL, 0, "[script]\n");
-      } else {
-        len += snprintf(NULL, 0, "%s\n", thunk->moduleName->chars);
-      }
-    } else {
-      if (thunk->moduleName == NULL) {
-        len += snprintf(NULL, 0, "%s()\n", thunk->name->chars);
-      } else {
-        len += snprintf(NULL, 0, "%s:%s()\n",
-          thunk->moduleName->chars, thunk->name->chars);
-      }
-    }
-  }
-  return len;
-}
-
-static char *printStackToString(char *out) {
-  i16 i;
-  for (i = vm.frameCount - 1; i >= 0; i--) {
-    CallFrame *frame = &vm.frames[i];
-    ObjThunk *thunk = frame->closure->thunk;
-    size_t instruction = frame->ip - thunk->chunk.code - 1;
-    out += sprintf(out, "[line %d] in ", thunk->chunk.lines[instruction]);
-    if (thunk->name == NULL) {
-      if (thunk->moduleName == NULL) {
-        out += sprintf(out, "[script]\n");
-      } else {
-        out += sprintf(out, "%s\n", thunk->moduleName->chars);
-      }
-    } else {
-      if (thunk->moduleName == NULL) {
-        out += sprintf(out, "%s()\n", thunk->name->chars);
-      } else {
-        out += sprintf(out, "%s:%s()\n",
-          thunk->moduleName->chars, thunk->name->chars);
-      }
-    }
-  }
-  return out;
-}
-
-NORETURN void panic(const char *format, ...) {
-  va_list args;
-  va_start(args, format);
-  vfprintf(stderr, format, args);
-  va_end(args);
-  fputs("\n", stderr);
-  printStack();
-  exit(1);
-}
-
-void runtimeError(const char *format, ...) {
-  size_t len = 0;
-  va_list args;
-  char *ptr;
-
-  va_start(args, format);
-  len += vsnprintf(NULL, 0, format, args);
-  va_end(args);
-  len++; /* '\n' */
-  len += printStackLength();
-
-  ptr = vm.errorString = realloc(vm.errorString, sizeof(char) * (len + 1));
-
-  va_start(args, format);
-  ptr += vsprintf(ptr, format, args);
-  va_end(args);
-  ptr += sprintf(ptr, "\n");
-  printStackToString(ptr);
 }
 
 void defineGlobal(const char *name, Value value) {
@@ -186,6 +106,7 @@ static void initNoMethodClass(ObjClass **clsptr, const char *name) {
 }
 
 void initVM() {
+  setErrorContextProvider(printStackToStringBuffer);
   checkAssumptions();
   initParseRules();
   resetStack();
@@ -197,7 +118,6 @@ void initVM() {
   vm.grayCapacity = 0;
   vm.grayStack = NULL;
 
-  vm.errorString = NULL;
   vm.preludeString = NULL;
   vm.initString = NULL;
   vm.iterString = NULL;
@@ -280,7 +200,6 @@ void freeVM() {
   vm.nilString = NULL;
   vm.trueString = NULL;
   vm.falseString = NULL;
-  free(vm.errorString);
   freeObjects();
 }
 
@@ -762,8 +681,7 @@ ubool run() {
     vm.frameCount = snap->frameCount; \
     frame = &vm.frames[vm.frameCount - 1]; \
     frame->ip = snap->ip; \
-    free(vm.errorString); \
-    vm.errorString = NULL; \
+    clearErrorString(); \
     goto loop; \
   } while(0)
 #define BINARY_OP(valueType, op) \
@@ -1347,8 +1265,3 @@ static void prepPrelude() {
 ubool valueIsCString(Value value, const char *string) {
   return IS_STRING(value) && strcmp(AS_STRING(value)->chars, string) == 0;
 }
-
-const char *getErrorString() {
-  return vm.errorString;
-}
-
