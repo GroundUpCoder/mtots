@@ -1,5 +1,5 @@
-#ifndef mtots_file_h
-#define mtots_file_h
+#ifndef mtots_util_filemode_h
+#define mtots_util_filemode_h
 
 #include "mtots_common.h"
 
@@ -25,4 +25,4 @@ void fileModeToString(FileMode mode, char *out);
  */
 FileMode stringToFileMode(const char *modestr);
 
-#endif/*mtots_file_h*/
+#endif/*mtots_util_filemode_h*/

@@ -1,5 +1,4 @@
-#include "mtots_file.h"
-#include "mtots_memory.h"
+#include "mtots_util_filemode.h"
 
 #include <string.h>
 

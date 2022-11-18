@@ -4,7 +4,6 @@
 #include "mtots_common.h"
 #include "mtots_value.h"
 #include "mtots_chunk.h"
-#include "mtots_file.h"
 #include "mtots_map.h"
 
 #include <stdio.h>
