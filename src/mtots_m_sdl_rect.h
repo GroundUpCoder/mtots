@@ -13,7 +13,7 @@ static ObjRect *newRect(int x, int y, int w, int h) {
 }
 
 static ubool implRect(i16 argCount, Value *args, Value *out) {
-  *out = OBJ_VAL(newRect(
+  *out = OBJ_VAL_EXPLICIT((Obj*)newRect(
     AS_NUMBER(args[0]),
     AS_NUMBER(args[1]),
     AS_NUMBER(args[2]),
@@ -31,7 +31,7 @@ static TypePattern argsRect[] = {
 static CFunction funcRect = { implRect, "Rect",
   sizeof(argsRect)/sizeof(TypePattern), 0, argsRect };
 
-static ubool rectGetField(ObjNative *n, ObjString *key, Value *out) {
+static ubool rectGetField(ObjNative *n, String *key, Value *out) {
   ObjRect *rect = (ObjRect*)n;
   if (key == string_x) {
     *out = NUMBER_VAL(rect->data.x);
@@ -49,7 +49,7 @@ static ubool rectGetField(ObjNative *n, ObjString *key, Value *out) {
   return UFALSE;
 }
 
-static ubool rectSetField(ObjNative *n, ObjString *key, Value out) {
+static ubool rectSetField(ObjNative *n, String *key, Value out) {
   ObjRect *rect = (ObjRect*)n;
   if (!IS_NUMBER(out)) {
     panic("Rect.%s requires a number value but got %s",

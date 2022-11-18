@@ -9,7 +9,7 @@
 #include "mtots_m_json_write.h"
 
 static ubool implLoads(i16 argCount, Value *args, Value *out) {
-  ObjString *str = AS_STRING(args[0]);
+  String *str = AS_STRING(args[0]);
   JSONParseState state;
   initJSONParseState(&state, str->chars);
   if (!parseJSON(&state)) {
@@ -33,10 +33,10 @@ static ubool implDumps(i16 argCount, Value *args, Value *out) {
     runtimeError("Failed to handle error");
     return UFALSE;
   }
-  chars = ALLOCATE(char, len + 1);
+  chars = malloc(sizeof(char) * (len + 1));
   writeJSON(args[0], NULL, chars);
   chars[len] = '\0';
-  *out = OBJ_VAL(takeString(chars, len));
+  *out = STRING_VAL(internOwnedString(chars, len));
   return UTRUE;
 }
 

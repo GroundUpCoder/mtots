@@ -71,7 +71,7 @@ static ubool implDictIter(i16 argCount, Value *args, Value *out) {
     "MapIterator", 0, 0);
   iter->dict = dict;
   initMapIterator(&iter->di, &dict->dict);
-  *out = OBJ_VAL(iter);
+  *out = OBJ_VAL_EXPLICIT((Obj*)iter);
   return UTRUE;
 }
 
@@ -117,7 +117,7 @@ static ubool implDictRget(i16 argCount, Value *args, Value *out) {
 static CFunction funcDictRget = { implDictRget, "rget", 1, 2 };
 
 void initDictClass() {
-  ObjString *tmpstr;
+  String *tmpstr;
   CFunction *methods[] = {
     &funcDictGetItem,
     &funcDictSetItem,
@@ -129,8 +129,8 @@ void initDictClass() {
   size_t i;
   ObjClass *cls;
 
-  tmpstr = copyCString("Map");
-  push(OBJ_VAL(tmpstr));
+  tmpstr = internCString("Map");
+  push(STRING_VAL(tmpstr));
   cls = vm.mapClass = newClass(tmpstr);
   cls->isBuiltinClass = UTRUE;
   pop();

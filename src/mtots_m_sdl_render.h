@@ -120,7 +120,7 @@ static ubool implRendererCreateTextureFromSurface(
       SDL_GetError());
     return UFALSE;
   }
-  *out = OBJ_VAL(texture);
+  *out = OBJ_VAL_EXPLICIT((Obj*)texture);
   return UTRUE;
 }
 

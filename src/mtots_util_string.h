@@ -12,6 +12,7 @@ typedef struct String {
 
 String *internString(const char *chars, size_t length);
 String *internCString(const char *string);
+String *internOwnedString(char *chars, size_t length);
 void freeUnmarkedStrings();
 
 

@@ -46,7 +46,7 @@ ubool implRepr(i16 argCount, Value *args, Value *out) {
     freeStringBuffer(&sb);
     return UFALSE;
   }
-  *out = OBJ_VAL(copyString(sb.chars, sb.length));
+  *out = STRING_VAL(internString(sb.chars, sb.length));
   freeStringBuffer(&sb);
   return UTRUE;
 }
@@ -71,14 +71,14 @@ static ubool implChr(i16 argCount, Value *args, Value *out) {
     return UFALSE;
   }
   c = (char) (i32) AS_NUMBER(args[0]);
-  *out = OBJ_VAL(copyString(&c, 1));
+  *out = STRING_VAL(internString(&c, 1));
   return UTRUE;
 }
 
 static CFunction cfunctionChr = { implChr, "chr", 1 };
 
 static ubool implOrd(i16 argCount, Value *args, Value *out) {
-  ObjString *str;
+  String *str;
   if (!IS_STRING(args[0])) {
     runtimeError("ord() requires a string but got %s",
       getKindName(args[0]));
@@ -174,7 +174,7 @@ static ubool implRange(i16 argCount, Value *args, Value *out) {
       panic("Invalid argc to range() (%d)", argCount);
       return UFALSE;
   }
-  *out = OBJ_VAL(newRangeIterator(start, stop, step));
+  *out = OBJ_VAL_EXPLICIT((Obj*)newRangeIterator(start, stop, step));
   return UTRUE;
 }
 
@@ -201,7 +201,7 @@ static ubool implOpen(i16 argCount, Value *args, Value *out) {
       return UFALSE;
     }
   }
-  *out = OBJ_VAL(openFile(filename, mode));
+  *out = FILE_VAL(openFile(filename, mode));
   return UTRUE;
 }
 
@@ -214,7 +214,7 @@ static ubool implFloat(i16 argCount, Value *args, Value *out) {
     return UTRUE;
   }
   if (IS_STRING(arg)) {
-    ObjString *str = AS_STRING(arg);
+    String *str = AS_STRING(arg);
     const char *ptr = str->chars;
     ubool decimalPoint = UFALSE;
     if (*ptr == '-' || *ptr == '+') {
@@ -266,7 +266,7 @@ static ubool implInt(i16 argCount, Value *args, Value *out) {
     return UTRUE;
   }
   if (IS_STRING(arg)) {
-    ObjString *str = AS_STRING(arg);
+    String *str = AS_STRING(arg);
     const char *ptr = str->chars;
     if (*ptr == '-' || *ptr == '+') {
       ptr++;
@@ -341,7 +341,7 @@ static CFunction funcAbs = {
 
 static ubool implTuple(i16 argCount, Value *args, Value *out) {
   ObjList *list = AS_LIST(args[0]);
-  *out = OBJ_VAL(copyTuple(list->buffer, list->length));
+  *out = TUPLE_VAL(copyTuple(list->buffer, list->length));
   return UTRUE;
 }
 
@@ -371,25 +371,25 @@ static TypePattern argsSort[] = {
 static CFunction cfunctionSort = { implSort, "__sort__", 1, 2, argsSort };
 
 static void defineStandardIOGlobals() {
-  ObjString *name;
+  String *name;
 
-  name = copyCString("stdin");
-  push(OBJ_VAL(name));
+  name = internCString("stdin");
+  push(STRING_VAL(name));
   vm.stdinFile = newFile(stdin, UTRUE, name, FILE_MODE_READ);
   pop(); /* name */
-  defineGlobal("stdin", OBJ_VAL(vm.stdinFile));
+  defineGlobal("stdin", FILE_VAL(vm.stdinFile));
 
-  name = copyCString("stdout");
-  push(OBJ_VAL(name));
+  name = internCString("stdout");
+  push(STRING_VAL(name));
   vm.stdoutFile = newFile(stdout, UTRUE, name, FILE_MODE_WRITE);
   pop(); /* name */
-  defineGlobal("stdout", OBJ_VAL(vm.stdoutFile));
+  defineGlobal("stdout", FILE_VAL(vm.stdoutFile));
 
-  name = copyCString("stderr");
-  push(OBJ_VAL(name));
+  name = internCString("stderr");
+  push(STRING_VAL(name));
   vm.stderrFile = newFile(stderr, UTRUE, name, FILE_MODE_WRITE);
   pop(); /* name */
-  defineGlobal("stderr", OBJ_VAL(vm.stderrFile));
+  defineGlobal("stderr", FILE_VAL(vm.stderrFile));
 }
 
 void defineDefaultGlobals() {
@@ -430,20 +430,20 @@ void defineDefaultGlobals() {
   defineGlobal("__sort__", CFUNCTION_VAL(&cfunctionSort));
   defineGlobal("__tuple__", CFUNCTION_VAL(&cfunctionTuple));
 
-  mapSetStr(&vm.globals, vm.sentinelClass->name, OBJ_VAL(vm.sentinelClass));
-  mapSetStr(&vm.globals, vm.nilClass->name, OBJ_VAL(vm.nilClass));
-  mapSetStr(&vm.globals, vm.boolClass->name, OBJ_VAL(vm.boolClass));
-  mapSetStr(&vm.globals, vm.numberClass->name, OBJ_VAL(vm.numberClass));
-  mapSetStr(&vm.globals, vm.stringClass->name, OBJ_VAL(vm.stringClass));
-  mapSetStr(&vm.globals, vm.byteArrayClass->name, OBJ_VAL(vm.byteArrayClass));
-  mapSetStr(&vm.globals, vm.byteArrayViewClass->name, OBJ_VAL(vm.byteArrayViewClass));
-  mapSetStr(&vm.globals, vm.listClass->name, OBJ_VAL(vm.listClass));
-  mapSetStr(&vm.globals, vm.tupleClass->name, OBJ_VAL(vm.tupleClass));
-  mapSetStr(&vm.globals, vm.mapClass->name, OBJ_VAL(vm.mapClass));
-  mapSetStr(&vm.globals, vm.functionClass->name, OBJ_VAL(vm.functionClass));
-  mapSetStr(&vm.globals, vm.operatorClass->name, OBJ_VAL(vm.operatorClass));
-  mapSetStr(&vm.globals, vm.classClass->name, OBJ_VAL(vm.classClass));
-  mapSetStr(&vm.globals, vm.fileClass->name, OBJ_VAL(vm.fileClass));
+  mapSetStr(&vm.globals, vm.sentinelClass->name, CLASS_VAL(vm.sentinelClass));
+  mapSetStr(&vm.globals, vm.nilClass->name, CLASS_VAL(vm.nilClass));
+  mapSetStr(&vm.globals, vm.boolClass->name, CLASS_VAL(vm.boolClass));
+  mapSetStr(&vm.globals, vm.numberClass->name, CLASS_VAL(vm.numberClass));
+  mapSetStr(&vm.globals, vm.stringClass->name, CLASS_VAL(vm.stringClass));
+  mapSetStr(&vm.globals, vm.byteArrayClass->name, CLASS_VAL(vm.byteArrayClass));
+  mapSetStr(&vm.globals, vm.byteArrayViewClass->name, CLASS_VAL(vm.byteArrayViewClass));
+  mapSetStr(&vm.globals, vm.listClass->name, CLASS_VAL(vm.listClass));
+  mapSetStr(&vm.globals, vm.tupleClass->name, CLASS_VAL(vm.tupleClass));
+  mapSetStr(&vm.globals, vm.mapClass->name, CLASS_VAL(vm.mapClass));
+  mapSetStr(&vm.globals, vm.functionClass->name, CLASS_VAL(vm.functionClass));
+  mapSetStr(&vm.globals, vm.operatorClass->name, CLASS_VAL(vm.operatorClass));
+  mapSetStr(&vm.globals, vm.classClass->name, CLASS_VAL(vm.classClass));
+  mapSetStr(&vm.globals, vm.fileClass->name, CLASS_VAL(vm.fileClass));
 
   defineStandardIOGlobals();
 }

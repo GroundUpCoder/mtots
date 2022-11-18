@@ -24,7 +24,7 @@
 
 VM vm;
 
-static ubool invoke(ObjString *name, i16 argCount);
+static ubool invoke(String *name, i16 argCount);
 static void prepPrelude();
 
 static void resetStack() {
@@ -60,7 +60,7 @@ static void printStackToStringBuffer(StringBuffer *sb) {
 }
 
 void defineGlobal(const char *name, Value value) {
-  push(OBJ_VAL(copyString(name, strlen(name))));
+  push(STRING_VAL(internString(name, strlen(name))));
   push(value);
   mapSetStr(&vm.globals, AS_STRING(vm.stack[0]), vm.stack[1]);
   pop();
@@ -68,12 +68,12 @@ void defineGlobal(const char *name, Value value) {
 }
 
 void addNativeModuleCFunc(CFunc *cfunc) {
-  ObjString *name;
+  String *name;
   if (cfunc->arity != 1) {
     panic("Native modules must accept 1 argument but got %d", cfunc->arity);
   }
-  name = copyCString(cfunc->name);
-  push(OBJ_VAL(name));
+  name = internCString(cfunc->name);
+  push(STRING_VAL(name));
   if (!mapSetStr(&vm.nativeModuleThunks, name, CFUNC_VAL(cfunc))) {
     panic("Native module %s is already defined", name->chars);
   }
@@ -82,12 +82,12 @@ void addNativeModuleCFunc(CFunc *cfunc) {
 }
 
 void addNativeModule(CFunction *func) {
-  ObjString *name;
+  String *name;
   if (func->arity != 1) {
     panic("Native modules must accept 1 argument but got %d", func->arity);
   }
-  name = copyCString(func->name);
-  push(OBJ_VAL(name));
+  name = internCString(func->name);
+  push(STRING_VAL(name));
   if (!mapSetStr(&vm.nativeModuleThunks, name, CFUNCTION_VAL(func))) {
     panic("Native module %s is already defined", name->chars);
   }
@@ -96,10 +96,10 @@ void addNativeModule(CFunction *func) {
 }
 
 static void initNoMethodClass(ObjClass **clsptr, const char *name) {
-  ObjString *tmpstr;
+  String *tmpstr;
 
-  tmpstr = copyCString(name);
-  push(OBJ_VAL(tmpstr));
+  tmpstr = internCString(name);
+  push(STRING_VAL(tmpstr));
   *clsptr = newClass(tmpstr);
   (*clsptr)->isBuiltinClass = UTRUE;
   pop(); /* tmpstr */
@@ -147,21 +147,20 @@ void initVM() {
   vm.stderrFile = NULL;
 
   initMap(&vm.globals);
-  initMap(&vm.strings);
   initMap(&vm.modules);
   initMap(&vm.nativeModuleThunks);
   initMap(&vm.tuples);
 
-  vm.preludeString = copyCString("__prelude__");
-  vm.initString = copyCString("__init__");
-  vm.iterString = copyCString("__iter__");
-  vm.lenString = copyCString("__len__");
-  vm.mulString = copyCString("__mul__");
-  vm.modString = copyCString("__mod__");
-  vm.containsString = copyCString("__contains__");
-  vm.nilString = copyCString("nil");
-  vm.trueString = copyCString("true");
-  vm.falseString = copyCString("false");
+  vm.preludeString = internCString("__prelude__");
+  vm.initString = internCString("__init__");
+  vm.iterString = internCString("__iter__");
+  vm.lenString = internCString("__len__");
+  vm.mulString = internCString("__mul__");
+  vm.modString = internCString("__mod__");
+  vm.containsString = internCString("__contains__");
+  vm.nilString = internCString("nil");
+  vm.trueString = internCString("true");
+  vm.falseString = internCString("false");
 
   initNoMethodClass(&vm.sentinelClass, "Sentinel");
   initNoMethodClass(&vm.nilClass, "Nil");
@@ -186,7 +185,6 @@ void initVM() {
 
 void freeVM() {
   freeMap(&vm.globals);
-  freeMap(&vm.strings);
   freeMap(&vm.modules);
   freeMap(&vm.nativeModuleThunks);
   freeMap(&vm.tuples);
@@ -420,7 +418,7 @@ static ubool callByteArrayClass(i16 argCount) {
     ObjByteArray *ba = newByteArray(size);
     pop(); /* arg */
     pop(); /* ByeArray class */
-    push(OBJ_VAL(ba));
+    push(BYTE_ARRAY_VAL(ba));
     return UTRUE;
   }
   if (IS_BYTE_ARRAY(arg)) {
@@ -428,16 +426,16 @@ static ubool callByteArrayClass(i16 argCount) {
     ObjByteArray *ba = copyByteArray(otherBA->buffer, otherBA->length);
     pop(); /* arg */
     pop(); /* ByeArray class */
-    push(OBJ_VAL(ba));
+    push(BYTE_ARRAY_VAL(ba));
     return UTRUE;
   }
   if (IS_STRING(arg)) {
-    ObjString *str = AS_STRING(arg);
+    String *str = AS_STRING(arg);
     ObjByteArray *ba = copyByteArray(
       (const u8*)str->chars, str->length);
     pop(); /* arg */
     pop(); /* ByeArray class */
-    push(OBJ_VAL(ba));
+    push(BYTE_ARRAY_VAL(ba));
     return UTRUE;
   }
   if (IS_LIST(arg)) {
@@ -458,7 +456,7 @@ static ubool callByteArrayClass(i16 argCount) {
     }
     pop(); /* arg */
     pop(); /* ByeArray class */
-    push(OBJ_VAL(takeByteArray(buffer, len)));
+    push(BYTE_ARRAY_VAL(takeByteArray(buffer, len)));
     return UTRUE;
   }
   runtimeError(
@@ -494,7 +492,7 @@ static ubool callClass(ObjClass *klass, i16 argCount) {
     return UFALSE;
   } else {
     /* normal classes */
-    vm.stackTop[-argCount - 1] = OBJ_VAL(newInstance(klass));
+    vm.stackTop[-argCount - 1] = INSTANCE_VAL(newInstance(klass));
     if (mapGetStr(&klass->methods, vm.initString, &initializer)) {
       return call(AS_CLOSURE(initializer), argCount);
     } else if (argCount != 0) {
@@ -516,11 +514,11 @@ static ubool callOperator(Operator op, i16 argCount) {
       vm.stackTop--;
       vm.stackTop[-1] = receiver;
 
-      if (IS_OBJ(receiver)) {
+      if (IS_STRING(receiver)) {
+        vm.stackTop[-1] = NUMBER_VAL(AS_STRING(receiver)->length);
+        return UTRUE;
+      } else if (IS_OBJ(receiver)) {
         switch (AS_OBJ(receiver)->type) {
-          case OBJ_STRING:
-            vm.stackTop[-1] = NUMBER_VAL(AS_STRING(receiver)->length);
-            return UTRUE;
           case OBJ_BYTE_ARRAY:
             vm.stackTop[-1] = NUMBER_VAL(AS_BYTE_ARRAY(receiver)->length);
           case OBJ_LIST:
@@ -574,7 +572,7 @@ static ubool callValue(Value callee, i16 argCount) {
 }
 
 static ubool invokeFromClass(
-    ObjClass *klass, ObjString *name, i16 argCount) {
+    ObjClass *klass, String *name, i16 argCount) {
   Value method;
   if (!mapGetStr(&klass->methods, name, &method)) {
     runtimeError(
@@ -586,7 +584,7 @@ static ubool invokeFromClass(
   return callValue(method, argCount);
 }
 
-static ubool invoke(ObjString *name, i16 argCount) {
+static ubool invoke(String *name, i16 argCount) {
   ObjClass *klass;
   Value receiver = peek(argCount);
 
@@ -634,7 +632,7 @@ static void closeUpvalues(Value *last) {
   }
 }
 
-static void defineMethod(ObjString *name) {
+static void defineMethod(String *name) {
   Value method = peek(0);
   ObjClass *klass = AS_CLASS(peek(1));
   mapSetStr(&klass->methods, name, method);
@@ -648,18 +646,18 @@ static ubool isFalsey(Value value) {
 }
 
 static void concatenate() {
-  ObjString *result;
-  ObjString *b = AS_STRING(peek(0));
-  ObjString *a = AS_STRING(peek(1));
+  String *result;
+  String *b = AS_STRING(peek(0));
+  String *a = AS_STRING(peek(1));
   size_t length = a->length + b->length;
-  char *chars = ALLOCATE(char, length + 1);
+  char *chars = malloc(sizeof(char) * (length + 1));
   memcpy(chars, a->chars, a->length);
   memcpy(chars + a->length, b->chars, b->length);
   chars[length] = '\0';
-  result = takeString(chars, length);
+  result = internOwnedString(chars, length);
   pop();
   pop();
-  push(OBJ_VAL(result));
+  push(STRING_VAL(result));
 }
 
 ubool run() {
@@ -750,7 +748,7 @@ loop:
         break;
       }
       case OP_GET_GLOBAL: {
-        ObjString *name = READ_STRING();
+        String *name = READ_STRING();
         Value value;
         if (!mapGetStr(&frame->closure->module->fields, name, &value)) {
           runtimeError("Undefined variable '%s'", name->chars);
@@ -760,13 +758,13 @@ loop:
         break;
       }
       case OP_DEFINE_GLOBAL: {
-        ObjString *name = READ_STRING();
+        String *name = READ_STRING();
         mapSetStr(&frame->closure->module->fields, name, peek(0));
         pop();
         break;
       }
       case OP_SET_GLOBAL: {
-        ObjString *name = READ_STRING();
+        String *name = READ_STRING();
         if (mapSetStr(&frame->closure->module->fields, name, peek(0))) {
           mapDeleteStr(&frame->closure->module->fields, name);
           runtimeError("Undefined variable '%s'", name->chars);
@@ -785,7 +783,7 @@ loop:
         break;
       }
       case OP_GET_FIELD: {
-        ObjString *name;
+        String *name;
         Value value = NIL_VAL();
 
         if (IS_INSTANCE(peek(0))) {
@@ -806,7 +804,7 @@ loop:
         if (IS_DICT(peek(0))) {
           ObjDict *d = AS_DICT(peek(0));
           name = READ_STRING();
-          if (mapGet(&d->dict, OBJ_VAL(name), &value)) {
+          if (mapGet(&d->dict, STRING_VAL(name), &value)) {
             pop(); /* Instance */
             push(value);
             break;
@@ -852,7 +850,7 @@ loop:
 
         if (IS_DICT(peek(1))) {
           ObjDict *d = AS_DICT(peek(1));
-          mapSet(&d->dict, OBJ_VAL(READ_STRING()), peek(0));
+          mapSet(&d->dict, STRING_VAL(READ_STRING()), peek(0));
           value = pop();
           pop();
           push(value);
@@ -862,7 +860,7 @@ loop:
         if (IS_NATIVE(peek(1))) {
           ObjNative *n = AS_NATIVE(peek(1));
           if (n->descriptor->setField) {
-            ObjString *name = READ_STRING();
+            String *name = READ_STRING();
             if (n->descriptor->setField(n, name, peek(0))) {
               value = pop();
               pop();
@@ -1085,7 +1083,7 @@ loop:
         break;
       }
       case OP_INVOKE: {
-        ObjString *method = READ_STRING();
+        String *method = READ_STRING();
         i16 argCount = READ_BYTE();
         if (!invoke(method, argCount)) {
           RETURN_RUNTIME_ERROR();
@@ -1094,7 +1092,7 @@ loop:
         break;
       }
       case OP_SUPER_INVOKE: {
-        ObjString *method = READ_STRING();
+        String *method = READ_STRING();
         i16 argCount = READ_BYTE();
         ObjClass *superclass = AS_CLASS(pop());
         if (!invokeFromClass(superclass, method, argCount)) {
@@ -1107,7 +1105,7 @@ loop:
         ObjThunk *thunk = AS_THUNK(READ_CONSTANT());
         ObjClosure *closure = newClosure(thunk, frame->closure->module);
         i16 i;
-        push(OBJ_VAL(closure));
+        push(CLOSURE_VAL(closure));
         for (i = 0; i < closure->upvalueCount; i++) {
           u8 isLocal = READ_BYTE();
           u8 index = READ_BYTE();
@@ -1146,7 +1144,7 @@ loop:
         break;
       }
       case OP_IMPORT: {
-        ObjString *name = READ_STRING();
+        String *name = READ_STRING();
         if (!importModule(name)) {
           RETURN_RUNTIME_ERROR();
         }
@@ -1159,7 +1157,7 @@ loop:
         for (i = 0; i < length; i++) {
           list->buffer[i] = start[i];
         }
-        *start = OBJ_VAL(list);
+        *start = LIST_VAL(list);
         vm.stackTop = start + 1;
         break;
       }
@@ -1167,16 +1165,16 @@ loop:
         size_t i, length = READ_BYTE();
         ObjDict *dict = newDict();
         Value *start = vm.stackTop - 2 * length;
-        push(OBJ_VAL(dict)); /* preserve for GC */
+        push(DICT_VAL(dict)); /* preserve for GC */
         for (i = 0; i < 2 * length; i += 2) {
           mapSet(&dict->dict, start[i], start[i + 1]);
         }
         vm.stackTop = start;
-        push(OBJ_VAL(dict));
+        push(DICT_VAL(dict));
         break;
       }
       case OP_CLASS:
-        push(OBJ_VAL(newClass(READ_STRING())));
+        push(CLASS_VAL(newClass(READ_STRING())));
         break;
       case OP_INHERIT: {
         Value superclass;
@@ -1212,10 +1210,10 @@ ubool interpret(const char *source, ObjInstance *module) {
     return UFALSE;
   }
 
-  push(OBJ_VAL(thunk));
+  push(THUNK_VAL(thunk));
   closure = newClosure(thunk, module);
   pop();
-  push(OBJ_VAL(closure));
+  push(CLOSURE_VAL(closure));
   call(closure, 0);
 
   return run();

@@ -37,12 +37,12 @@ u32 hashval(Value value) {
         return (u32) ix;
       }
     }
+    case VAL_STRING: return AS_STRING(value)->hash;
     case VAL_CFUNC: break;
     case VAL_CFUNCTION: break;
     case VAL_OPERATOR: break;
     case VAL_SENTINEL: return (u32) AS_SENTINEL(value);
     case VAL_OBJ: switch (AS_OBJ(value)->type) {
-      case OBJ_STRING: return AS_STRING(value)->hash;
       case OBJ_TUPLE: return AS_TUPLE(value)->hash;
       default: break;
     }
@@ -95,8 +95,8 @@ ubool mapGet(Map *map, Value key, Value *value) {
   return UTRUE;
 }
 
-ubool mapGetStr(Map *map, ObjString *key, Value *value) {
-  return mapGet(map, OBJ_VAL(key), value);
+ubool mapGetStr(Map *map, String *key, Value *value) {
+  return mapGet(map, STRING_VAL(key), value);
 }
 
 static void adjustMapCapacity(Map *map, size_t capacity) {
@@ -174,26 +174,26 @@ ubool mapSet(Map *map, Value key, Value value) {
   return isNewKey;
 }
 
-ubool mapSetStr(Map *map, ObjString *key, Value value) {
-  return mapSet(map, OBJ_VAL(key), value);
+ubool mapSetStr(Map *map, String *key, Value value) {
+  return mapSet(map, STRING_VAL(key), value);
 }
 
 /* Like mapSet, but a version that's more convenient for use in
  * native code in two ways:
  *   1) the key parameter is a C-string that is automatically be converted
- *      to an ObjString and properly retained and released using the stack
+ *      to an String and properly retained and released using the stack
  *   2) the value parameter will retained and popped from the stack, so that
  *      even if mapSet or copyCString triggers a reallocation, the value
  *      will not be collected.
  */
 ubool mapSetN(Map *map, const char *key, Value value) {
   ubool result;
-  ObjString *keystr;
+  String *keystr;
 
   push(value);
-  keystr = copyCString(key);
-  push(OBJ_VAL(keystr));
-  result = mapSet(map, OBJ_VAL(keystr), value);
+  keystr = internCString(key);
+  push(STRING_VAL(keystr));
+  result = mapSet(map, STRING_VAL(keystr), value);
   pop(); /* keystr */
   pop(); /* value */
   return result;
@@ -231,8 +231,8 @@ ubool mapDelete(Map *map, Value key) {
   return UTRUE;
 }
 
-ubool mapDeleteStr(Map *map, ObjString *key) {
-  return mapDelete(map, OBJ_VAL(key));
+ubool mapDeleteStr(Map *map, String *key) {
+  return mapDelete(map, STRING_VAL(key));
 }
 
 void mapAddAll(Map *from, Map *to) {
@@ -245,7 +245,7 @@ void mapAddAll(Map *from, Map *to) {
   }
 }
 
-ObjString *mapFindString(
+String *mapFindString(
     Map *map, const char *chars, size_t length, u32 hash) {
   u32 index;
   if (map->occupied == 0) {
@@ -261,7 +261,7 @@ ObjString *mapFindString(
         return NULL;
       }
     } else if (IS_STRING(entry->key)) {
-      ObjString *key = AS_STRING(entry->key);
+      String *key = AS_STRING(entry->key);
       if (key->length == length &&
           key->hash == hash &&
           memcmp(key->chars, chars, length) == 0) {

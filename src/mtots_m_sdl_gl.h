@@ -163,7 +163,7 @@ static ObjInstance *createSDLGLModule() {
   MapIterator ti;
   MapEntry *entry;
   ObjInstance *module = newModuleFromCString("sdl.gl", UFALSE);
-  push(OBJ_VAL(module));
+  push(INSTANCE_VAL(module));
 
   for (i = 0; i < sizeof(sdlglfunctions)/sizeof(CFunction*); i++) {
     mapSetN(&module->fields, sdlglfunctions[i]->name, CFUNCTION_VAL(sdlglfunctions[i]));

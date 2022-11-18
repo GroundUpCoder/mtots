@@ -4,13 +4,13 @@
 #include "mtots_m_sdl_common.h"
 
 static ubool implEvent(i16 argCount, Value *args, Value *out) {
-  *out = OBJ_VAL(NEW_NATIVE(ObjEvent, &descriptorEvent));
+  *out = OBJ_VAL_EXPLICIT((Obj*)NEW_NATIVE(ObjEvent, &descriptorEvent));
   return UTRUE;
 }
 
 static CFunction funcEvent = { implEvent, "Event" , 0 };
 
-static ubool eventGetField(ObjNative *n, ObjString *key, Value *out) {
+static ubool eventGetField(ObjNative *n, String *key, Value *out) {
   ObjEvent *event = (ObjEvent*)n;
   if (key == string_type) {
     *out = NUMBER_VAL(event->data.type);

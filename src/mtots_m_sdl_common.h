@@ -29,23 +29,23 @@ typedef enum WaveForm {
  *********************************************************/
 
 typedef struct RetainedString {
-  ObjString **location;
+  String **location;
   const char *value;
 } RetainedString;
 
-static ObjString *string_type;
-static ObjString *string_key;
-static ObjString *string_button;
-static ObjString *string_timestamp;
-static ObjString *string_repeat;
-static ObjString *string_x;
-static ObjString *string_y;
-static ObjString *string_w;
-static ObjString *string_h;
-static ObjString *string_freq;
-static ObjString *string_format;
-static ObjString *string_channels;
-static ObjString *string_samples;
+static String *string_type;
+static String *string_key;
+static String *string_button;
+static String *string_timestamp;
+static String *string_repeat;
+static String *string_x;
+static String *string_y;
+static String *string_w;
+static String *string_h;
+static String *string_freq;
+static String *string_format;
+static String *string_channels;
+static String *string_samples;
 
 static void mtots_m_SDL_initStrings(ObjInstance *module) {
   size_t i;
@@ -66,10 +66,10 @@ static void mtots_m_SDL_initStrings(ObjInstance *module) {
     {&string_samples, "samples"},
   };
   list = newList(sizeof(rstrs)/sizeof(RetainedString));
-  mapSetN(&module->fields, "__retain__", OBJ_VAL(list));
+  mapSetN(&module->fields, "__retain__", LIST_VAL(list));
   for (i = 0; i < sizeof(rstrs)/sizeof(RetainedString); i++) {
-    *rstrs[i].location = copyCString(rstrs[i].value);
-    list->buffer[i] = OBJ_VAL(*rstrs[i].location);
+    *rstrs[i].location = internCString(rstrs[i].value);
+    list->buffer[i] = STRING_VAL(*rstrs[i].location);
   }
 }
 

@@ -37,14 +37,14 @@ u32 hashval(Value value);
 void initMap(Map *map);
 void freeMap(Map *map);
 ubool mapGet(Map *map, Value key, Value *value);
-ubool mapGetStr(Map *map, ObjString *key, Value *value);
+ubool mapGetStr(Map *map, String *key, Value *value);
 ubool mapSet(Map *map, Value key, Value value);
-ubool mapSetStr(Map *map, ObjString *key, Value value);
+ubool mapSetStr(Map *map, String *key, Value value);
 ubool mapSetN(Map *map, const char *key, Value value);
 ubool mapDelete(Map *map, Value key);
-ubool mapDeleteStr(Map *map, ObjString *key);
+ubool mapDeleteStr(Map *map, String *key);
 void mapAddAll(Map *from, Map *to);
-ObjString *mapFindString(
+String *mapFindString(
   Map *map, const char *chars, size_t length, u32 hash);
 struct ObjTuple *mapFindTuple(
     Map *map,

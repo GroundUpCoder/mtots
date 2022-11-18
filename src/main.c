@@ -9,12 +9,12 @@
 static void repl() {
   char line[1024];
   ObjInstance *module;
-  ObjString *mainModuleName;
-  mainModuleName = copyCString("__main__");
-  push(OBJ_VAL(mainModuleName));
+  String *mainModuleName;
+  mainModuleName = internCString("__main__");
+  push(STRING_VAL(mainModuleName));
   module = newModule(mainModuleName, UTRUE);
   pop(); /* mainModuleName */
-  push(OBJ_VAL(module));
+  push(INSTANCE_VAL(module));
   for (;;) {
     printf("> ");
 
@@ -51,8 +51,8 @@ int main(int argc, const char *argv[]) {
     repl();
   } else if (argc == 2) {
     ubool status;
-    ObjString *mainModuleName = copyCString("__main__");
-    push(OBJ_VAL(mainModuleName));
+    String *mainModuleName = internCString("__main__");
+    push(STRING_VAL(mainModuleName));
     status = importModuleWithPath(mainModuleName, argv[1]);
     pop(); /* mainModuleName */
     if (!status) {

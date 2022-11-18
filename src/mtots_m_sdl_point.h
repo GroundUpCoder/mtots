@@ -11,7 +11,7 @@ static ObjPoint *newPoint(int x, int y) {
 }
 
 static ubool implPoint(i16 argCount, Value *args, Value *out) {
-  *out = OBJ_VAL(newPoint(
+  *out = OBJ_VAL_EXPLICIT((Obj*)newPoint(
     AS_NUMBER(args[0]),
     AS_NUMBER(args[1])));
   return UTRUE;
@@ -25,7 +25,7 @@ static TypePattern argsPoint[] = {
 static CFunction funcPoint = { implPoint, "Point",
   sizeof(argsPoint)/sizeof(TypePattern), 0, argsPoint };
 
-static ubool pointGetField(ObjNative *n, ObjString *key, Value *out) {
+static ubool pointGetField(ObjNative *n, String *key, Value *out) {
   ObjPoint *point = (ObjPoint*)n;
   if (key == string_x) {
     *out = NUMBER_VAL(point->handle.x);
@@ -37,7 +37,7 @@ static ubool pointGetField(ObjNative *n, ObjString *key, Value *out) {
   return UFALSE;
 }
 
-static ubool pointSetField(ObjNative *n, ObjString *key, Value out) {
+static ubool pointSetField(ObjNative *n, String *key, Value out) {
   ObjPoint *point = (ObjPoint*)n;
   if (!IS_NUMBER(out)) {
     panic("Point.%s requires a number value but got %s",

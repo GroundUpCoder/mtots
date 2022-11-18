@@ -32,19 +32,19 @@ ubool IS_MODULE(Value value) {
   return IS_INSTANCE(value) && AS_INSTANCE(value)->klass->isModuleClass;
 }
 
-ObjInstance *newModule(ObjString *name, ubool includeGlobals) {
+ObjInstance *newModule(String *name, ubool includeGlobals) {
   ObjClass *klass;
   ObjInstance *instance;
 
   klass = newClass(name);
   klass->isModuleClass = UTRUE;
 
-  push(OBJ_VAL(klass));
+  push(CLASS_VAL(klass));
   instance = newInstance(klass);
   pop(); /* klass */
 
   if (includeGlobals) {
-    push(OBJ_VAL(instance));
+    push(INSTANCE_VAL(instance));
     mapAddAll(&vm.globals, &instance->fields);
     pop(); /* instance */
   }
@@ -53,18 +53,18 @@ ObjInstance *newModule(ObjString *name, ubool includeGlobals) {
 }
 
 ObjInstance *newModuleFromCString(const char *name, ubool includeGlobals) {
-  ObjString *nameStr;
+  String *nameStr;
   ObjInstance *instance;
 
-  nameStr = copyCString(name);
-  push(OBJ_VAL(nameStr));
+  nameStr = internCString(name);
+  push(STRING_VAL(nameStr));
   instance = newModule(nameStr, includeGlobals);
   pop(); /* nameStr */
 
   return instance;
 }
 
-ObjClass *newClass(ObjString *name) {
+ObjClass *newClass(String *name) {
   ObjClass *klass = ALLOCATE_OBJ(ObjClass, OBJ_CLASS);
   klass->name = name;
   initMap(&klass->methods);
@@ -76,8 +76,8 @@ ObjClass *newClass(ObjString *name) {
 
 ObjClass *newClassFromCString(const char *name) {
   ObjClass *klass;
-  ObjString *nameObj = copyCString(name);
-  push(OBJ_VAL(nameObj));
+  String *nameObj = internCString(name);
+  push(STRING_VAL(nameObj));
   klass = newClass(nameObj);
   pop(); /* nameObj */
   return klass;
@@ -148,30 +148,6 @@ ObjInstance *newInstance(ObjClass *klass) {
   return instance;
 }
 
-static ObjString *allocateString(char *chars, int length, u32 hash) {
-  ObjString *string = ALLOCATE_OBJ(ObjString, OBJ_STRING);
-  string->length = length;
-  string->chars = chars;
-  string->hash = hash;
-
-  push(OBJ_VAL(string));
-  mapSetStr(&vm.strings, string, NIL_VAL());
-  pop();
-
-  return string;
-}
-
-static u32 hashString(const char *key, size_t length) {
-  /* FNV-1a as presented in the Crafting Interpreters book */
-  size_t i;
-  u32 hash = 2166136261u;
-  for (i = 0; i < length; i++) {
-    hash ^= (u8) key[i];
-    hash *= 16777619;
-  }
-  return hash;
-}
-
 static u32 hashTuple(Value *buffer, size_t length) {
   /* FNV-1a as presented in the Crafting Interpreters book */
   size_t i;
@@ -188,39 +164,6 @@ static u32 hashTuple(Value *buffer, size_t length) {
     hash *= 16777619;
   }
   return hash;
-}
-
-/* NOTE: this function should be used with care.
- * This function computes a hash of the string the moment when it is called
- * to see if there is an interned version of this string.
- * Modifying the underlying chars array after making a call to this function
- * may lead to very strange bugs.
- */
-ObjString *takeString(char *chars, size_t length) {
-  u32 hash = hashString(chars, length);
-  ObjString *interned = mapFindString(&vm.strings, chars, length, hash);
-  if (interned != NULL) {
-    FREE_ARRAY(char, chars, length + 1);
-    return interned;
-  }
-  return allocateString(chars, length, hash);
-}
-
-ObjString *copyString(const char *chars, size_t length) {
-  u32 hash = hashString(chars, length);
-  ObjString *interned = mapFindString(&vm.strings, chars, length, hash);
-  char *heapChars;
-  if (interned != NULL) {
-    return interned;
-  }
-  heapChars = ALLOCATE(char, length + 1);
-  memcpy(heapChars, chars, length);
-  heapChars[length] = '\0';
-  return allocateString(heapChars, length, hash);
-}
-
-ObjString *copyCString(const char *chars) {
-  return copyString(chars, strlen(chars));
 }
 
 ObjByteArray *newByteArray(size_t length) {
@@ -279,7 +222,7 @@ ObjList *newList(size_t size) {
   /* Save onto stack, since we need to allocate more
    * before we return
    */
-  push(OBJ_VAL(list));
+  push(LIST_VAL(list));
 
   if (size > 0) {
     size_t i;
@@ -301,8 +244,8 @@ static ObjTuple *allocateTuple(Value *buffer, int length, u32 hash) {
   tuple->buffer = buffer;
   tuple->hash = hash;
 
-  push(OBJ_VAL(tuple));
-  mapSet(&vm.tuples, OBJ_VAL(tuple), NIL_VAL());
+  push(TUPLE_VAL(tuple));
+  mapSet(&vm.tuples, TUPLE_VAL(tuple), NIL_VAL());
   pop();
 
   return tuple;
@@ -326,7 +269,7 @@ ObjDict *newDict() {
   return dict;
 }
 
-ObjFile *newFile(FILE *file, ubool isOpen, ObjString *name, FileMode mode) {
+ObjFile *newFile(FILE *file, ubool isOpen, String *name, FileMode mode) {
   ObjFile *f = ALLOCATE_OBJ(ObjFile, OBJ_FILE);
   f->file = file;
   f->isOpen = isOpen;
@@ -342,8 +285,8 @@ ObjFile *openFile(const char *filename, FileMode mode) {
   char modestr[] = "\0\0\0";
   FILE *f;
   ObjFile *file;
-  ObjString *name = copyCString(filename);
-  push(OBJ_VAL(name));               /* GC: keep 'name' alive */
+  String *name = internCString(filename);
+  push(STRING_VAL(name));               /* GC: keep 'name' alive */
   fileModeToString(mode, modestr);
   f = fopen(filename, modestr);
   file = newFile(f, UTRUE, name, mode);
@@ -374,6 +317,7 @@ ObjClass *getClassOfValue(Value value) {
     case VAL_BOOL: return vm.boolClass;
     case VAL_NIL: return vm.nilClass;
     case VAL_NUMBER: return vm.numberClass;
+    case VAL_STRING: return vm.stringClass;
     case VAL_CFUNC: return vm.functionClass;
     case VAL_CFUNCTION: return vm.functionClass;
     case VAL_OPERATOR: return vm.operatorClass;
@@ -385,7 +329,6 @@ ObjClass *getClassOfValue(Value value) {
         case OBJ_THUNK: panic("function kinds do not have classes");
         case OBJ_NATIVE_CLOSURE: return vm.functionClass;
         case OBJ_INSTANCE: return AS_INSTANCE(value)->klass;
-        case OBJ_STRING: return vm.stringClass;
         case OBJ_BYTE_ARRAY: return vm.byteArrayClass;
         case OBJ_BYTE_ARRAY_VIEW: return vm.byteArrayViewClass;
         case OBJ_LIST: return vm.listClass;
@@ -432,9 +375,6 @@ void printObject(Value value) {
     case OBJ_INSTANCE:
       printf("<%s instance>", AS_INSTANCE(value)->klass->name->chars);
       break;
-    case OBJ_STRING:
-      printf("%s", AS_CSTRING(value));
-      break;
     case OBJ_BYTE_ARRAY:
       printf("<byteArray %lu>", (unsigned long)AS_BYTE_ARRAY(value)->length);
       break;
@@ -469,7 +409,6 @@ const char *getObjectTypeName(ObjType type) {
   case OBJ_THUNK: return "OBJ_THUNK";
   case OBJ_NATIVE_CLOSURE: return "OBJ_NATIVE_CLOSURE";
   case OBJ_INSTANCE: return "OBJ_INSTANCE";
-  case OBJ_STRING: return "OBJ_STRING";
   case OBJ_BYTE_ARRAY: return "OBJ_BYTE_ARRAY";
   case OBJ_BYTE_ARRAY_VIEW: return "OBJ_BYTE_ARRAY_VIEW";
   case OBJ_LIST: return "OBJ_LIST";
@@ -484,4 +423,44 @@ const char *getObjectTypeName(ObjType type) {
 
 ubool isNative(Value value, NativeObjectDescriptor *descriptor) {
   return IS_NATIVE(value) && AS_NATIVE(value)->descriptor == descriptor;
+}
+
+Value LIST_VAL(ObjList *list) {
+  return OBJ_VAL_EXPLICIT((Obj*)list);
+}
+
+Value DICT_VAL(ObjDict *dict) {
+  return OBJ_VAL_EXPLICIT((Obj*)dict);
+}
+
+Value INSTANCE_VAL(ObjInstance *instance) {
+  return OBJ_VAL_EXPLICIT((Obj*)instance);
+}
+
+Value BYTE_ARRAY_VAL(ObjByteArray *byteArray) {
+  return OBJ_VAL_EXPLICIT((Obj*)byteArray);
+}
+
+Value BYTE_ARRAY_VIEW_VAL(ObjByteArrayView *byteArrayView) {
+  return OBJ_VAL_EXPLICIT((Obj*)byteArrayView);
+}
+
+Value THUNK_VAL(ObjThunk *thunk) {
+  return OBJ_VAL_EXPLICIT((Obj*)thunk);
+}
+
+Value CLOSURE_VAL(ObjClosure *closure) {
+  return OBJ_VAL_EXPLICIT((Obj*)closure);
+}
+
+Value FILE_VAL(ObjFile *file) {
+  return OBJ_VAL_EXPLICIT((Obj*)file);
+}
+
+Value TUPLE_VAL(ObjTuple *tuple) {
+  return OBJ_VAL_EXPLICIT((Obj*)tuple);
+}
+
+Value CLASS_VAL(ObjClass *klass) {
+  return OBJ_VAL_EXPLICIT((Obj*)klass);
 }

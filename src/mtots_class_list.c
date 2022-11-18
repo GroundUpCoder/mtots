@@ -61,7 +61,7 @@ static ubool implListMul(i16 argCount, Value *args, Value *out) {
       result->buffer[r * list->length + i] = list->buffer[i];
     }
   }
-  *out = OBJ_VAL(result);
+  *out = LIST_VAL(result);
   return UTRUE;
 }
 
@@ -165,14 +165,14 @@ static ubool implListIter(i16 argCount, Value *args, Value *out) {
     "ListIterator", 0, 0);
   iter->list = list;
   iter->index = 0;
-  *out = OBJ_VAL(iter);
+  *out = OBJ_VAL_EXPLICIT((Obj*)iter);
   return UTRUE;
 }
 
 static CFunction funcListIter = { implListIter, "__iter__", 0 };
 
 void initListClass() {
-  ObjString *tmpstr;
+  String *tmpstr;
   CFunction *methods[] = {
     &funcListAppend,
     &funcListPop,
@@ -184,15 +184,15 @@ void initListClass() {
   size_t i;
   ObjClass *cls;
 
-  tmpstr = copyCString("List");
-  push(OBJ_VAL(tmpstr));
+  tmpstr = internCString("List");
+  push(STRING_VAL(tmpstr));
   cls = vm.listClass = newClass(tmpstr);
   cls->isBuiltinClass = UTRUE;
   pop();
 
   for (i = 0; i < sizeof(methods) / sizeof(CFunction*); i++) {
-    tmpstr = copyCString(methods[i]->name);
-    push(OBJ_VAL(tmpstr));
+    tmpstr = internCString(methods[i]->name);
+    push(STRING_VAL(tmpstr));
     mapSetStr(
       &cls->methods, tmpstr, CFUNCTION_VAL(methods[i]));
     pop();

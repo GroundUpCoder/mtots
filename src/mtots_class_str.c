@@ -11,7 +11,7 @@
 
 static ubool implStrGetItem(i16 argCount, Value *args, Value *out) {
   Value receiver = args[-1];
-  ObjString *str;
+  String *str;
   i32 index;
   if (!IS_STRING(receiver)) {
     runtimeError("Expected string as receiver to String.__getitem__()");
@@ -33,7 +33,7 @@ static ubool implStrGetItem(i16 argCount, Value *args, Value *out) {
     runtimeError("List index out of bounds");
     return UFALSE;
   }
-  *out = OBJ_VAL(copyString(str->chars + index, 1));
+  *out = STRING_VAL(internString(str->chars + index, 1));
   return UTRUE;
 }
 
@@ -41,7 +41,7 @@ static CFunction funcStrGetItem = { implStrGetItem, "__getitem__", 1 };
 
 static ubool implStrSlice(i16 argCount, Value *args, Value *out) {
   Value receiver = args[-1];
-  ObjString *str;
+  String *str;
   i32 lower, upper;
   if (!IS_STRING(receiver)) {
     runtimeError("Expected string as receiver to String.__slice__()");
@@ -86,7 +86,7 @@ static ubool implStrSlice(i16 argCount, Value *args, Value *out) {
     runtimeError("Upper slice index out of bounds");
     return UFALSE;
   }
-  *out = OBJ_VAL(copyString(str->chars + lower, upper - lower));
+  *out = STRING_VAL(internString(str->chars + lower, upper - lower));
   return UTRUE;
 }
 
@@ -94,7 +94,7 @@ static CFunction funcStrSlice = { implStrSlice, "__slice__", 2 };
 
 static ubool implStrMod(i16 argCount, Value *args, Value *out) {
   Value receiver = args[-1];
-  ObjString *fmt;
+  String *fmt;
   ObjList *arglist, *strlist;
   size_t i, j, k, length = 0;
   char *buffer;
@@ -114,7 +114,7 @@ static ubool implStrMod(i16 argCount, Value *args, Value *out) {
   }
   arglist = AS_LIST(args[0]);
   strlist = newList(arglist->length);
-  push(OBJ_VAL(strlist));
+  push(LIST_VAL(strlist));
 
   /* compute length and convert all the arguments to strings */
   for (i = j = 0; i < fmt->length; i++) {
@@ -169,7 +169,7 @@ static ubool implStrMod(i16 argCount, Value *args, Value *out) {
     if (fmt->chars[i] == '%') {
       i++;
       if (i < fmt->length && fmt->chars[i] != '%') {
-        ObjString *itemstr = AS_STRING(strlist->buffer[j++]);
+        String *itemstr = AS_STRING(strlist->buffer[j++]);
         memcpy(buffer + k, itemstr->chars, itemstr->length);
         k += itemstr->length;
       } else {
@@ -189,7 +189,7 @@ static ubool implStrMod(i16 argCount, Value *args, Value *out) {
     abort();
   }
 
-  *out = OBJ_VAL(copyString(buffer, length));
+  *out = STRING_VAL(internString(buffer, length));
 
   pop(); /* strlist */
   return UTRUE;
@@ -209,7 +209,7 @@ static ubool containsChar(const char *charSet, char ch) {
 }
 
 static ubool implStrStrip(i16 argCount, Value *args, Value *out) {
-  ObjString *str = AS_STRING(args[-1]);
+  String *str = AS_STRING(args[-1]);
   const char *stripSet = DEFAULT_STRIP_SET;
   const char *start = str->chars;
   const char *end = str->chars + str->length;
@@ -222,7 +222,7 @@ static ubool implStrStrip(i16 argCount, Value *args, Value *out) {
   while (start < end && containsChar(stripSet, end[-1])) {
     end--;
   }
-  *out = OBJ_VAL(copyString(start, end - start));
+  *out = STRING_VAL(internString(start, end - start));
   return UTRUE;
 }
 
@@ -256,14 +256,14 @@ static size_t cStrReplace(
 }
 
 static ubool implStrReplace(i16 argCount, Value *args, Value *out) {
-  ObjString *orig = AS_STRING(args[-1]);
-  ObjString *oldstr = AS_STRING(args[0]);
-  ObjString *newstr = AS_STRING(args[1]);
+  String *orig = AS_STRING(args[-1]);
+  String *oldstr = AS_STRING(args[0]);
+  String *newstr = AS_STRING(args[1]);
   size_t len = cStrReplace(orig->chars, oldstr->chars, newstr->chars, NULL);
-  char *chars = ALLOCATE(char, len + 1);
+  char *chars = malloc(sizeof(char) * (len + 1));
   cStrReplace(orig->chars, oldstr->chars, newstr->chars, chars);
   chars[len] = '\0';
-  *out = OBJ_VAL(takeString(chars, len));
+  *out = STRING_VAL(internOwnedString(chars, len));
   return UTRUE;
 }
 
@@ -276,7 +276,7 @@ static CFunction funcStrReplace = { implStrReplace, "replace", 2, 0,
   argsStrReplace };
 
 static ubool implStrJoin(i16 argCount, Value *args, Value *out) {
-  ObjString *sep = AS_STRING(args[-1]);
+  String *sep = AS_STRING(args[-1]);
   ObjList *list = AS_LIST(args[0]);
   size_t i, len = (list->length - 1) * sep->length;
   char *chars, *p;
@@ -289,9 +289,9 @@ static ubool implStrJoin(i16 argCount, Value *args, Value *out) {
     }
     len += AS_STRING(list->buffer[i])->length;
   }
-  chars = p = ALLOCATE(char, len + 1);
+  chars = p = malloc(sizeof(char) * (len + 1));
   for (i = 0; i < list->length; i++) {
-    ObjString *item = AS_STRING(list->buffer[i]);
+    String *item = AS_STRING(list->buffer[i]);
     if (i > 0) {
       memcpy(p, sep->chars, sep->length);
       p += sep->length;
@@ -303,7 +303,7 @@ static ubool implStrJoin(i16 argCount, Value *args, Value *out) {
   if (p - chars != len) {
     panic("Consistency error in String.join()");
   }
-  *out = OBJ_VAL(takeString(chars, len));
+  *out = STRING_VAL(internOwnedString(chars, len));
   return UTRUE;
 }
 
@@ -316,7 +316,7 @@ static CFunction funcStrJoin = {
 };
 
 void initStringClass() {
-  ObjString *tmpstr;
+  String *tmpstr;
   CFunction *methods[] = {
     &funcStrGetItem,
     &funcStrSlice,
@@ -328,16 +328,16 @@ void initStringClass() {
   size_t i;
   ObjClass *cls;
 
-  tmpstr = copyCString("String");
-  push(OBJ_VAL(tmpstr));
+  tmpstr = internCString("String");
+  push(STRING_VAL(tmpstr));
   cls = vm.stringClass = newClass(tmpstr);
   cls->isBuiltinClass = UTRUE;
   pop();
 
   for (i = 0; i < sizeof(methods) / sizeof(CFunction*); i++) {
     methods[i]->receiverType.type = TYPE_PATTERN_STRING;
-    tmpstr = copyCString(methods[i]->name);
-    push(OBJ_VAL(tmpstr));
+    tmpstr = internCString(methods[i]->name);
+    push(STRING_VAL(tmpstr));
     mapSetStr(
       &cls->methods, tmpstr, CFUNCTION_VAL(methods[i]));
     pop();

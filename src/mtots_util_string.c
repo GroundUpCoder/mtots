@@ -93,6 +93,13 @@ String *internCString(const char *string) {
   return internString(string, strlen(string));
 }
 
+String *internOwnedString(char *chars, size_t length) {
+  /* TODO actually reuse the memory provided by the caller */
+  String *string = internString(chars, length);
+  free(chars);
+  return string;
+}
+
 void freeUnmarkedStrings() {
   size_t i, cap = allStrings.capacity;
   String **oldEntries = allStrings.strings;
@@ -112,6 +119,7 @@ void freeUnmarkedStrings() {
         }
         *entry = str;
         str->isMarked = UFALSE;
+        allStrings.occupied++;
       } else {
         free(str->chars);
         free(str);

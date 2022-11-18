@@ -44,7 +44,7 @@ void markObject(Obj *object) {
   }
 #if DEBUG_LOG_GC
   printf("%p mark ", (void*) object);
-  printValue(OBJ_VAL(object));
+  printValue(OBJ_VAL_EXPLICIT(object));
   printf("\n");
 #endif
   object->isMarked = UTRUE;
@@ -60,9 +60,22 @@ void markObject(Obj *object) {
   vm.grayStack[vm.grayCount++] = object;
 }
 
+void markString(String *string) {
+  if (string) {
+    string->isMarked = UTRUE;
+  }
+}
+
 void markValue(Value value) {
-  if (IS_OBJ(value)) {
-    markObject(AS_OBJ(value));
+  switch (value.type) {
+    case VAL_STRING:
+      markString(AS_STRING(value));
+      break;
+    case VAL_OBJ:
+      markObject(AS_OBJ(value));
+      break;
+    default:
+      break;
   }
 }
 
@@ -76,14 +89,14 @@ static void markArray(ValueArray *array) {
 static void blackenObject(Obj *object) {
 #if DEBUG_LOG_GC
   printf("%p blacken ", (void*)object);
-  printValue(OBJ_VAL(object));
+  printValue(OBJ_VAL_EXPLICIT(object));
   printf("\n");
 #endif
 
   switch (object->type) {
     case OBJ_CLASS: {
       ObjClass *klass = (ObjClass*)object;
-      markObject((Obj*)klass->name);
+      markString(klass->name);
       markMap(&klass->methods);
       break;
     }
@@ -100,8 +113,8 @@ static void blackenObject(Obj *object) {
     case OBJ_THUNK: {
       ObjThunk *thunk = (ObjThunk*) object;
       size_t i;
-      markObject((Obj*)thunk->name);
-      markObject((Obj*)thunk->moduleName);
+      markString(thunk->name);
+      markString(thunk->moduleName);
       markArray(&thunk->chunk.constants);
       for (i = 0; i < thunk->defaultArgsCount; i++) {
         markValue(thunk->defaultArgs[i]);
@@ -124,7 +137,6 @@ static void blackenObject(Obj *object) {
     case OBJ_UPVALUE:
       markValue(((ObjUpvalue*)object)->closed);
       break;
-    case OBJ_STRING:
     case OBJ_BYTE_ARRAY:
       break;
     case OBJ_BYTE_ARRAY_VIEW:
@@ -153,7 +165,7 @@ static void blackenObject(Obj *object) {
     }
     case OBJ_FILE: {
       ObjFile *file = (ObjFile*)object;
-      markObject((Obj*)(file->name));
+      markString(file->name);
       break;
     }
     case OBJ_NATIVE: {
@@ -210,12 +222,6 @@ static void freeObject(Obj *object) {
       ObjInstance *instance = (ObjInstance*)object;
       freeMap(&instance->fields);
       FREE(ObjInstance, object);
-      break;
-    }
-    case OBJ_STRING: {
-      ObjString *string = (ObjString*)object;
-      FREE_ARRAY(char, string->chars, string->length + 1);
-      FREE(ObjString, object);
       break;
     }
     case OBJ_BYTE_ARRAY: {
@@ -286,16 +292,16 @@ static void markRoots() {
   markMap(&vm.modules);
   markMap(&vm.nativeModuleThunks);
   markCompilerRoots();
-  markObject((Obj*)vm.preludeString);
-  markObject((Obj*)vm.initString);
-  markObject((Obj*)vm.iterString);
-  markObject((Obj*)vm.lenString);
-  markObject((Obj*)vm.mulString);
-  markObject((Obj*)vm.modString);
-  markObject((Obj*)vm.containsString);
-  markObject((Obj*)vm.nilString);
-  markObject((Obj*)vm.trueString);
-  markObject((Obj*)vm.falseString);
+  markString(vm.preludeString);
+  markString(vm.initString);
+  markString(vm.iterString);
+  markString(vm.lenString);
+  markString(vm.mulString);
+  markString(vm.modString);
+  markString(vm.containsString);
+  markString(vm.nilString);
+  markString(vm.trueString);
+  markString(vm.falseString);
   markObject((Obj*)vm.sentinelClass);
   markObject((Obj*)vm.nilClass);
   markObject((Obj*)vm.boolClass);
@@ -362,7 +368,7 @@ void collectGarbage() {
 
   markRoots();
   traceReferences();
-  mapRemoveWhite(&vm.strings);
+  freeUnmarkedStrings();
   mapRemoveWhite(&vm.tuples);
   sweep();
 

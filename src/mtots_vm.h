@@ -35,21 +35,20 @@ typedef struct VM {
   TrySnapshot trySnapshots[TRY_SNAPSHOTS_MAX];
   i16 trySnapshotsCount;
   Map globals;
-  Map strings;            /* table of all interned strings */
   Map modules;            /* all preloaded modules */
   Map nativeModuleThunks; /* Map of CFunctions */
   Map tuples;              /* table of all interned tuples */
 
-  ObjString *preludeString;
-  ObjString *initString;
-  ObjString *iterString;
-  ObjString *lenString;
-  ObjString *mulString;
-  ObjString *modString;
-  ObjString *containsString;
-  ObjString *nilString;
-  ObjString *trueString;
-  ObjString *falseString;
+  String *preludeString;
+  String *initString;
+  String *iterString;
+  String *lenString;
+  String *mulString;
+  String *modString;
+  String *containsString;
+  String *nilString;
+  String *trueString;
+  String *falseString;
 
   ObjClass *sentinelClass;
   ObjClass *nilClass;

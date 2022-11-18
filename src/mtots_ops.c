@@ -13,6 +13,7 @@ ubool valuesIs(Value a, Value b) {
     case VAL_BOOL: return AS_BOOL(a) == AS_BOOL(b);
     case VAL_NIL: return UTRUE;
     case VAL_NUMBER: return AS_NUMBER(a) == AS_NUMBER(b);
+    case VAL_STRING: return AS_STRING(a) == AS_STRING(b);
     case VAL_CFUNC: return AS_CFUNC(a) == AS_CFUNC(b);
     case VAL_CFUNCTION: return AS_CFUNCTION(a) == AS_CFUNCTION(b);
     case VAL_OPERATOR: return AS_OPERATOR(a) == AS_OPERATOR(b);
@@ -31,6 +32,7 @@ ubool valuesEqual(Value a, Value b) {
     case VAL_BOOL: return AS_BOOL(a) == AS_BOOL(b);
     case VAL_NIL: return UTRUE;
     case VAL_NUMBER: return AS_NUMBER(a) == AS_NUMBER(b);
+    case VAL_STRING: return AS_STRING(a) == AS_STRING(b);
     case VAL_CFUNC: return AS_CFUNC(a) == AS_CFUNC(b);
     case VAL_CFUNCTION: return AS_CFUNCTION(a) == AS_CFUNCTION(b);
     case VAL_OPERATOR: return AS_OPERATOR(a) == AS_OPERATOR(b);
@@ -105,6 +107,25 @@ ubool valueLessThan(Value a, Value b) {
     case VAL_BOOL: return AS_BOOL(a) < AS_BOOL(b);
     case VAL_NIL: return UFALSE;
     case VAL_NUMBER: return AS_NUMBER(a) < AS_NUMBER(b);
+    case VAL_STRING: {
+      String *strA = AS_STRING(a);
+      String *strB = AS_STRING(b);
+      size_t lenA = strA->length;
+      size_t lenB = strB->length;
+      size_t len = lenA < lenB ? lenA : lenB;
+      size_t i;
+      const char *charsA = strA->chars;
+      const char *charsB = strB->chars;
+      if (strA == strB) {
+        return UFALSE;
+      }
+      for (i = 0; i < len; i++) {
+        if (charsA[i] != charsB[i]) {
+          return charsA[i] < charsB[i];
+        }
+      }
+      return lenA < lenB;
+    }
     case VAL_CFUNC: break;
     case VAL_CFUNCTION: break;
     case VAL_OPERATOR: break;
@@ -118,25 +139,6 @@ ubool valueLessThan(Value a, Value b) {
           getKindName(a), getKindName(b));
       }
       switch (objA->type) {
-        case OBJ_STRING: {
-          ObjString *strA = (ObjString*)objA;
-          ObjString *strB = (ObjString*)objB;
-          size_t lenA = strA->length;
-          size_t lenB = strB->length;
-          size_t len = lenA < lenB ? lenA : lenB;
-          size_t i;
-          const char *charsA = strA->chars;
-          const char *charsB = strB->chars;
-          if (strA == strB) {
-            return UFALSE;
-          }
-          for (i = 0; i < len; i++) {
-            if (charsA[i] != charsB[i]) {
-              return charsA[i] < charsB[i];
-            }
-          }
-          return lenA < lenB;
-        }
         case OBJ_LIST: {
           ObjList *listA = (ObjList*)objA;
           ObjList *listB = (ObjList*)objB;
@@ -252,6 +254,15 @@ ubool valueRepr(StringBuffer *out, Value value) {
     case VAL_BOOL: sbprintf(out, AS_BOOL(value) ? "true" : "false"); return UTRUE;
     case VAL_NIL: sbprintf(out, "nil"); return UTRUE;
     case VAL_NUMBER: StringBufferWriteNumber(out, AS_NUMBER(value)); return UTRUE;
+    case VAL_STRING: {
+      String *str = AS_STRING(value);
+      sbputchar(out, '"');
+      if (!escapeString2(out, str->chars, str->length, NULL)) {
+        return UFALSE;
+      }
+      sbputchar(out, '"');
+      return UTRUE;
+    }
     case VAL_CFUNC: sbprintf(out, "<function %s>", AS_CFUNC(value)->name); return UTRUE;
     case VAL_CFUNCTION: sbprintf(out, "<cfunction %s>", AS_CFUNCTION(value)->name); return UTRUE;
     case VAL_OPERATOR: sbprintf(out, "<operator %d>", AS_OPERATOR(value)); return UTRUE;
@@ -274,15 +285,6 @@ ubool valueRepr(StringBuffer *out, Value value) {
             sbprintf(out, "<%s instance>", AS_INSTANCE(value)->klass->name->chars);
           }
           return UTRUE;
-        case OBJ_STRING: {
-          ObjString *str = AS_STRING(value);
-          sbputchar(out, '"');
-          if (!escapeString2(out, str->chars, str->length, NULL)) {
-            return UFALSE;
-          }
-          sbputchar(out, '"');
-          return UTRUE;
-        }
         case OBJ_BYTE_ARRAY: {
           ObjByteArray *ba = AS_BYTE_ARRAY(value);
           StringEscapeOptions opts;
@@ -375,7 +377,7 @@ ubool valueRepr(StringBuffer *out, Value value) {
 
 ubool valueStr(StringBuffer *out, Value value) {
   if (IS_STRING(value)) {
-    ObjString *string = AS_STRING(value);
+    String *string = AS_STRING(value);
     sbputstrlen(out, string->chars, string->length);
     return UTRUE;
   }

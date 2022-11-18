@@ -54,7 +54,7 @@ static ubool writeJSON(Value value, size_t *outLen, char *out) {
     return UTRUE;
   }
   if (IS_STRING(value)) {
-    ObjString *str = AS_STRING(value);
+    String *str = AS_STRING(value);
     size_t len;
     StringEscapeOptions opts;
     initStringEscapeOptions(&opts);

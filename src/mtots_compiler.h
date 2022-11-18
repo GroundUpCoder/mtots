@@ -6,7 +6,7 @@
 
 void initParseRules();
 
-ObjThunk *compile(const char *source, ObjString *moduleName);
+ObjThunk *compile(const char *source, String *moduleName);
 void markCompilerRoots();
 
 #endif/*mtots_compiler_h*/

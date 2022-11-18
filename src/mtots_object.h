@@ -16,7 +16,6 @@
 #define IS_THUNK(value) isObjType(value, OBJ_THUNK)
 #define IS_NATIVE_CLOSURE(value) isObjType(value, OBJ_NATIVE_CLOSURE)
 #define IS_INSTANCE(value) isObjType(value, OBJ_INSTANCE)
-#define IS_STRING(value) isObjType(value, OBJ_STRING)
 #define IS_BYTE_ARRAY(value) isObjType(value, OBJ_BYTE_ARRAY)
 #define IS_BYTE_ARRAY_VIEW(value) isObjType(value, OBJ_BYTE_ARRAY_VIEW)
 #define IS_LIST(value) isObjType(value, OBJ_LIST)
@@ -30,10 +29,8 @@
 #define AS_THUNK(value) ((ObjThunk*)AS_OBJ(value))
 #define AS_NATIVE_CLOSURE(value) ((ObjNativeClosure*)AS_OBJ(value))
 #define AS_INSTANCE(value) ((ObjInstance*)AS_OBJ(value))
-#define AS_STRING(value) ((ObjString*)AS_OBJ(value))
 #define AS_BYTE_ARRAY(value) ((ObjByteArray*)AS_OBJ(value))
 #define AS_BYTE_ARRAY_VIEW(value) ((ObjByteArrayView*)AS_OBJ(value))
-#define AS_CSTRING(value) (((ObjString*)AS_OBJ(value))->chars)
 #define AS_LIST(value) ((ObjList*)AS_OBJ(value))
 #define AS_TUPLE(value) ((ObjTuple*)AS_OBJ(value))
 #define AS_DICT(value) ((ObjDict*)AS_OBJ(value))
@@ -58,7 +55,6 @@ typedef enum ObjType {
   OBJ_THUNK,
   OBJ_NATIVE_CLOSURE,
   OBJ_INSTANCE,
-  OBJ_STRING,
   OBJ_BYTE_ARRAY,
   OBJ_BYTE_ARRAY_VIEW,
   OBJ_LIST,
@@ -83,18 +79,11 @@ typedef struct ObjThunk {
   i16 arity;
   i16 upvalueCount;
   Chunk chunk;
-  ObjString *name;
+  String *name;
   Value *defaultArgs;
   i16 defaultArgsCount;
-  ObjString *moduleName;
+  String *moduleName;
 } ObjThunk;
-
-struct ObjString {
-  Obj obj;
-  size_t length;
-  char *chars;
-  u32 hash;
-};
 
 /* NOTE: ByteArray objects can never change size. This is because in many
  * cases, a ByteArray will be used as a backing buffer (e.g. for SDL_Surface)
@@ -136,8 +125,8 @@ typedef struct ObjDict {
 typedef struct NativeObjectDescriptor {
   void (*blacken)(ObjNative*);
   void (*free)(ObjNative*);
-  ubool (*getField)(ObjNative*, ObjString*, Value*);
-  ubool (*setField)(ObjNative*, ObjString*, Value);
+  ubool (*getField)(ObjNative*, String*, Value*);
+  ubool (*setField)(ObjNative*, String*, Value);
   CFunction *instantiate;
   size_t objectSize;
   const char *name;
@@ -161,7 +150,7 @@ typedef struct ObjFile {
   Obj obj;
   FILE *file;
   ubool isOpen;
-  ObjString *name;
+  String *name;
   FileMode mode;
 } ObjFile;
 
@@ -199,7 +188,7 @@ typedef struct ObjNativeClosure {
 
 struct ObjClass {
   Obj obj;
-  ObjString *name;
+  String *name;
   Map methods;
   ubool isModuleClass;
   ubool isBuiltinClass;
@@ -214,9 +203,9 @@ struct ObjInstance {
 
 ubool IS_MODULE(Value value);
 
-ObjInstance *newModule(ObjString *name, ubool includeGlobals);
+ObjInstance *newModule(String *name, ubool includeGlobals);
 ObjInstance *newModuleFromCString(const char *name, ubool includeGlobals);
-ObjClass *newClass(ObjString *name);
+ObjClass *newClass(String *name);
 ObjClass *newClassFromCString(const char *name);
 ObjClosure *newClosure(ObjThunk *function, ObjInstance *module);
 ObjThunk *newFunction();
@@ -229,9 +218,6 @@ ObjNativeClosure *newNativeClosure(
   i16 arity,
   i16 maxArity);
 ObjInstance *newInstance(ObjClass *klass);
-ObjString *takeString(char *chars, size_t length);
-ObjString *copyString(const char *chars, size_t length);
-ObjString *copyCString(const char *chars);
 ObjByteArray *newByteArray(size_t size);
 ObjByteArray *takeByteArray(u8 *buffer, size_t size);
 ObjByteArray *copyByteArray(const u8 *buffer, size_t size);
@@ -240,7 +226,7 @@ ObjByteArrayView *newByteArrayView(
 ObjList *newList(size_t size);
 ObjTuple *copyTuple(Value *buffer, size_t length);
 ObjDict *newDict();
-ObjFile *newFile(FILE *file, ubool isOpen, ObjString *name, FileMode mode);
+ObjFile *newFile(FILE *file, ubool isOpen, String *name, FileMode mode);
 ObjFile *openFile(const char *filename, FileMode mode);
 ObjNative *newNative(NativeObjectDescriptor *descriptor, size_t objectSize);
 ObjUpvalue *newUpvalue(Value *slot);
@@ -251,5 +237,16 @@ const char *getObjectTypeName(ObjType type);
 /* should-be-inline */ ubool isNative(
   Value value, NativeObjectDescriptor *descriptor);
 /* should-be-inline */ ubool isObjType(Value value, ObjType type);
+
+Value LIST_VAL(ObjList *list);
+Value DICT_VAL(ObjDict *dict);
+Value INSTANCE_VAL(ObjInstance *instance);
+Value BYTE_ARRAY_VAL(ObjByteArray *byteArray);
+Value BYTE_ARRAY_VIEW_VAL(ObjByteArrayView *byteArrayView);
+Value THUNK_VAL(ObjThunk *thunk);
+Value CLOSURE_VAL(ObjClosure *closure);
+Value FILE_VAL(ObjFile *file);
+Value TUPLE_VAL(ObjTuple *tuple);
+Value CLASS_VAL(ObjClass *klass);
 
 #endif/*mtots_object_h*/

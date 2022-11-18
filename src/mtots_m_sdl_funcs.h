@@ -44,7 +44,7 @@ static ubool implQuit(i16 argCount, Value *args, Value *out) {
 static CFunction funcQuit = { implQuit, "quit", 0 };
 
 static ubool implGetError(i16 argCount, Value *args, Value *out) {
-  *out = OBJ_VAL(copyCString(SDL_GetError()));
+  *out = STRING_VAL(internCString(SDL_GetError()));
   return UTRUE;
 }
 
@@ -64,7 +64,7 @@ static ubool implCreateWindow(i16 argCount, Value *args, Value *out) {
     runtimeError("SDL_CreateWindow failed: %s\n", SDL_GetError());
     return UFALSE;
   }
-  *out = OBJ_VAL(window);
+  *out = OBJ_VAL_EXPLICIT((Obj*)window);
   return UTRUE;
 }
 
@@ -140,7 +140,7 @@ static ubool implGetKeyboardState(i16 argCount, Value *args, Value *out) {
   ObjKeyboardState *kstate =
     NEW_NATIVE(ObjKeyboardState, &descriptorKeyboardState);
   kstate->state = SDL_GetKeyboardState(NULL);
-  *out = OBJ_VAL(kstate);
+  *out = OBJ_VAL_EXPLICIT((Obj*)kstate);
   return UTRUE;
 }
 
@@ -182,7 +182,7 @@ static ubool implCreateRenderer(i16 argCount, Value *args, Value *out) {
     return UFALSE;
   }
 
-  *out = OBJ_VAL(renderer);
+  *out = OBJ_VAL_EXPLICIT((Obj*)renderer);
   return UTRUE;
 }
 
@@ -216,7 +216,7 @@ static ubool implCreateRGBSurfaceFrom(i16 argCount, Value *args, Value *out) {
     runtimeError("Failed to create SDL Surface: %s", SDL_GetError());
     return UFALSE;
   }
-  *out = OBJ_VAL(surface);
+  *out = OBJ_VAL_EXPLICIT((Obj*)surface);
   return UTRUE;
 }
 
@@ -265,7 +265,7 @@ static ubool implOpenAudioDevice(i16 argCount, Value *args, Value *out) {
 
   ad = NEW_NATIVE(ObjAudioDevice, &descriptorAudioDevice);
   ad->handle = handle;
-  *out = OBJ_VAL(ad);
+  *out = OBJ_VAL_EXPLICIT((Obj*)ad);
   return UTRUE;
 }
 

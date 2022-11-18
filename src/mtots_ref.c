@@ -110,26 +110,26 @@ void setCFunc(Ref out, CFunc *value) {
 }
 
 void setString(Ref out, const char *value, size_t byteLength) {
-  DEREF(out) = OBJ_VAL(copyString(value, byteLength));
+  DEREF(out) = STRING_VAL(internString(value, byteLength));
 }
 
 void setCString(Ref out, const char *value) {
-  DEREF(out) = OBJ_VAL(copyCString(value));
+  DEREF(out) = STRING_VAL(internCString(value));
 }
 
 void setEmptyList(Ref out) {
-  DEREF(out) = OBJ_VAL(newList(0));
+  DEREF(out) = LIST_VAL(newList(0));
 }
 
 void setList(Ref out, RefSet items) {
   ObjList *list = newList(items.length);
-  DEREF(out) = OBJ_VAL(list);
+  DEREF(out) = LIST_VAL(list);
   memcpy(list->buffer, vm.stack + items.start, sizeof(Value) * items.length);
 }
 
 void setDict(Ref out) {
   ObjDict *dict = newDict();
-  DEREF(out) = OBJ_VAL(dict);
+  DEREF(out) = DICT_VAL(dict);
 }
 
 void setValue(Ref out, Ref src) {
@@ -200,7 +200,7 @@ Ref allocValue(Ref src) {
 }
 
 void getClass(Ref out, Ref value) {
-  DEREF(out) = OBJ_VAL(getClassOfValue(vm.stack[value.i]));
+  DEREF(out) = CLASS_VAL(getClassOfValue(vm.stack[value.i]));
 }
 
 ubool getBool(Ref r) {

@@ -236,7 +236,7 @@ static void initCompiler(Compiler *compiler, ThunkType type) {
 
   current = compiler;
   if (type != TYPE_SCRIPT) {
-    current->thunk->name = copyString(
+    current->thunk->name = internString(
       parser.previous.start, parser.previous.length);
   }
 
@@ -307,7 +307,7 @@ static ParseRule *getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
 
 static u8 parseIdentifierConstant(Token *name) {
-  return makeConstant(OBJ_VAL(copyString(name->start, name->length)));
+  return makeConstant(STRING_VAL(internString(name->start, name->length)));
 }
 
 static ubool parseIdentifiersEqual(Token *a, Token *b) {
@@ -648,18 +648,18 @@ static void parseOr(ubool canAssign) {
 }
 
 static void parseRawString(ubool canAssign) {
-  emitConstant(OBJ_VAL(copyString(
+  emitConstant(STRING_VAL(internString(
     parser.previous.start + 2,
     parser.previous.length - 3)));
 }
 
 static void parseTripleQuoteRawString(ubool canAssign) {
-  emitConstant(OBJ_VAL(copyString(
+  emitConstant(STRING_VAL(internString(
     parser.previous.start + 4,
     parser.previous.length - 7)));
 }
 
-static ObjString *stringTokenToObjString() {
+static String *stringTokenToObjString() {
   size_t size = 0;
   char *s;
   char quote = parser.previous.start[0];
@@ -669,17 +669,17 @@ static ObjString *stringTokenToObjString() {
     return NULL;
   }
 
-  s = ALLOCATE(char, size + 1);
+  s = malloc(sizeof(char) * size + 1);
   unescapeString(parser.previous.start + 1, quote, NULL, s);
   s[size] = '\0';
 
-  return takeString(s, size);
+  return internOwnedString(s, size);
 }
 
 static void parseString(ubool canAssign) {
-  ObjString *str = stringTokenToObjString();
+  String *str = stringTokenToObjString();
   if (str != NULL) {
-    emitConstant(OBJ_VAL(str));
+    emitConstant(STRING_VAL(str));
   }
 }
 
@@ -930,8 +930,8 @@ static Value parseDefaultArgument() {
     double value = strtod(parser.previous.start, NULL);
     return NUMBER_VAL(value);
   } else if (parseMatch(TOKEN_STRING)) {
-    ObjString *str = stringTokenToObjString();
-    return str ? OBJ_VAL(str) : NIL_VAL();
+    String *str = stringTokenToObjString();
+    return str ? STRING_VAL(str) : NIL_VAL();
   }
   error("Expected default argument expression");
   return NIL_VAL();
@@ -971,7 +971,7 @@ static void parseFunction(ThunkType type) {
   block(UFALSE);
 
   thunk = endCompiler();
-  emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(thunk)));
+  emitBytes(OP_CLOSURE, makeConstant(THUNK_VAL(thunk)));
 
   for (i = 0; i < thunk->upvalueCount; i++) {
     emitByte(compiler.upvalues[i].isLocal ? 1 : 0);
@@ -1382,7 +1382,7 @@ static void parseStatement() {
   }
 }
 
-ObjThunk *compile(const char *source, ObjString *moduleName) {
+ObjThunk *compile(const char *source, String *moduleName) {
   Compiler compiler;
   ObjThunk *thunk;
   initScanner(source);

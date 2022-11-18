@@ -43,19 +43,19 @@ static char *readFile(const char *path) {
  * Puts the result of running the module on the top of the stack
  * NOTE: Never cached (unlike importModule())
  */
-ubool importModuleWithPath(ObjString *moduleName, const char *path) {
+ubool importModuleWithPath(String *moduleName, const char *path) {
   char *source = readFile(path);
   ObjClosure *closure;
   ObjThunk *thunk;
   ObjInstance *module;
-  ObjString *pathStr;
+  String *pathStr;
 
   module = newModule(moduleName, UTRUE);
-  push(OBJ_VAL(module));
+  push(INSTANCE_VAL(module));
 
-  pathStr = copyCString(path);
-  push(OBJ_VAL(pathStr));
-  mapSetN(&module->fields, "__path__", OBJ_VAL(pathStr));
+  pathStr = internCString(path);
+  push(STRING_VAL(pathStr));
+  mapSetN(&module->fields, "__path__", STRING_VAL(pathStr));
   pop(); /* pathStr */
 
   thunk = compile(source, moduleName);
@@ -64,18 +64,18 @@ ubool importModuleWithPath(ObjString *moduleName, const char *path) {
     return UFALSE;
   }
 
-  push(OBJ_VAL(thunk));
+  push(THUNK_VAL(thunk));
   closure = newClosure(thunk, module);
   pop(); /* function */
 
-  push(OBJ_VAL(closure));
+  push(CLOSURE_VAL(closure));
 
   call(closure, 0);
 
   if (run()) {
     pop(); /* return value from run */
 
-    push(OBJ_VAL(module));
+    push(INSTANCE_VAL(module));
 
     /* We need to copy all fields of the instance to the class so
      * that method calls will properly call the functions in the module */
@@ -89,7 +89,7 @@ ubool importModuleWithPath(ObjString *moduleName, const char *path) {
   return UFALSE;
 }
 
-static ubool importModuleNoCache(ObjString *moduleName) {
+static ubool importModuleNoCache(String *moduleName) {
   Value nativeModuleThunkValue;
 
   /* Check for a native module with the given name */
@@ -101,8 +101,8 @@ static ubool importModuleNoCache(ObjString *moduleName) {
       CFunction *nativeModuleThunk;
       nativeModuleThunk = AS_CFUNCTION(nativeModuleThunkValue);
       module = newModule(moduleName, UFALSE);
-      moduleValue = OBJ_VAL(module);
-      push(OBJ_VAL(module));
+      moduleValue = INSTANCE_VAL(module);
+      push(INSTANCE_VAL(module));
       stackStart = vm.stackTop;
       if (!nativeModuleThunk->body(1, &moduleValue, &result)) {
         return UFALSE;
@@ -121,9 +121,9 @@ static ubool importModuleNoCache(ObjString *moduleName) {
       StackState stackState;
       nativeModuleThunk = AS_CFUNC(nativeModuleThunkValue);
       module = newModule(moduleName, UFALSE);
-      moduleValue = OBJ_VAL(module);
+      moduleValue = INSTANCE_VAL(module);
 
-      refSet(refAt(moduleRefSet, 0), OBJ_VAL(module));
+      refSet(refAt(moduleRefSet, 0), INSTANCE_VAL(module));
 
       stackState = getStackState();
       /* NOTE: We depend on the native module thunk NOT actually returning
@@ -160,7 +160,7 @@ static ubool importModuleNoCache(ObjString *moduleName) {
  * if not found, will call importModuleWithPath and add the
  * new entry into the cache
  */
-ubool importModule(ObjString *moduleName) {
+ubool importModule(String *moduleName) {
   Value module = NIL_VAL();
   if (mapGetStr(&vm.modules, moduleName, &module)) {
     if (!IS_MODULE(module)) {

@@ -35,7 +35,7 @@ static ubool impl(i16 argCount, Value *args, Value *out) {
     CFunction **method;
     NativeObjectDescriptor *descriptor = descriptors[i];
     ObjClass *klass = newClassFromCString(descriptor->name);
-    mapSetN(&module->fields, descriptor->name, OBJ_VAL(klass));
+    mapSetN(&module->fields, descriptor->name, CLASS_VAL(klass));
     descriptor->klass = klass;
     klass->descriptor = descriptor;
     for (method = descriptor->methods; method && *method; method++) {
@@ -50,26 +50,26 @@ static ubool impl(i16 argCount, Value *args, Value *out) {
   }
 
   sdlglModule = createSDLGLModule();
-  push(OBJ_VAL(sdlglModule));
-  mapSetN(&module->fields, "gl", OBJ_VAL(sdlglModule));
+  push(INSTANCE_VAL(sdlglModule));
+  mapSetN(&module->fields, "gl", INSTANCE_VAL(sdlglModule));
   pop(); /* sdlglModule */
 
   dict = newDict();
-  mapSetN(&module->fields, "key", OBJ_VAL(dict));
+  mapSetN(&module->fields, "key", DICT_VAL(dict));
   for (i = 0; i < sizeof(keyConstants)/sizeof(KeyConstant); i++) {
     KeyConstant c = keyConstants[i];
     mapSetN(&dict->dict, c.name, NUMBER_VAL(c.value));
   }
 
   dict = newDict();
-  mapSetN(&module->fields, "scancode", OBJ_VAL(dict));
+  mapSetN(&module->fields, "scancode", DICT_VAL(dict));
   for (i = 0; i < sizeof(scanConstants)/sizeof(KeyConstant); i++) {
     KeyConstant c = scanConstants[i];
     mapSetN(&dict->dict, c.name, NUMBER_VAL(c.value));
   }
 
   dict = newDict();
-  mapSetN(&module->fields, "button", OBJ_VAL(dict));
+  mapSetN(&module->fields, "button", DICT_VAL(dict));
   for (i = 0; i < sizeof(buttonConstants)/sizeof(KeyConstant); i++) {
     KeyConstant c = buttonConstants[i];
     mapSetN(&dict->dict, c.name, NUMBER_VAL(c.value));

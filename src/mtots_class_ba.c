@@ -5,7 +5,7 @@
 
 static ubool implByteArrayRaw(i16 argCount, Value *args, Value *out) {
   ObjByteArray *ba = AS_BYTE_ARRAY(args[-1]);
-  *out = OBJ_VAL(copyString((char*)ba->buffer, ba->length));
+  *out = STRING_VAL(internString((char*)ba->buffer, ba->length));
   return UTRUE;
 }
 
@@ -42,7 +42,7 @@ static ubool implByteArrayView(i16 argCount, Value *args, Value *out) {
   if (ihigh < ilow) {
     ihigh = ilow;
   }
-  *out = OBJ_VAL(newByteArrayView(ihigh - ilow, ba->buffer + ilow, ba));
+  *out = BYTE_ARRAY_VIEW_VAL(newByteArrayView(ihigh - ilow, ba->buffer + ilow, ba));
   return UTRUE;
 }
 
@@ -350,20 +350,20 @@ static CFunction *methods[] = {
 };
 
 void initByteArrayClass() {
-  ObjString *tmpstr;
+  String *tmpstr;
   size_t i;
   ObjClass *cls;
 
-  tmpstr = copyCString("ByteArray");
-  push(OBJ_VAL(tmpstr));
+  tmpstr = internCString("ByteArray");
+  push(STRING_VAL(tmpstr));
   cls = vm.byteArrayClass = newClass(tmpstr);
   cls->isBuiltinClass = UTRUE;
   pop();
 
   for (i = 0; i < sizeof(methods) / sizeof(CFunction*); i++) {
-    tmpstr = copyCString(methods[i]->name);
+    tmpstr = internCString(methods[i]->name);
     methods[i]->receiverType.type = TYPE_PATTERN_BYTE_ARRAY_OR_VIEW;
-    push(OBJ_VAL(tmpstr));
+    push(STRING_VAL(tmpstr));
     mapSetStr(
       &cls->methods, tmpstr, CFUNCTION_VAL(methods[i]));
     pop();
@@ -371,20 +371,20 @@ void initByteArrayClass() {
 }
 
 void initByteArrayViewClass() {
-  ObjString *tmpstr;
+  String *tmpstr;
   size_t i;
   ObjClass *cls;
 
-  tmpstr = copyCString("ByteArrayView");
-  push(OBJ_VAL(tmpstr));
+  tmpstr = internCString("ByteArrayView");
+  push(STRING_VAL(tmpstr));
   cls = vm.byteArrayViewClass = newClass(tmpstr);
   cls->isBuiltinClass = UTRUE;
   pop();
 
   for (i = 0; i < sizeof(methods) / sizeof(CFunction*); i++) {
-    tmpstr = copyCString(methods[i]->name);
+    tmpstr = internCString(methods[i]->name);
     methods[i]->receiverType.type = TYPE_PATTERN_BYTE_ARRAY_OR_VIEW;
-    push(OBJ_VAL(tmpstr));
+    push(STRING_VAL(tmpstr));
     mapSetStr(
       &cls->methods, tmpstr, CFUNCTION_VAL(methods[i]));
     pop();

@@ -6,7 +6,6 @@
 
 typedef struct CFunction CFunction;
 typedef struct Obj Obj;
-typedef struct ObjString ObjString;
 
 typedef enum TypePatternType {
   TYPE_PATTERN_ANY = 0,
@@ -42,6 +41,7 @@ typedef enum ValueType {
   VAL_BOOL,
   VAL_NIL,
   VAL_NUMBER,
+  VAL_STRING,
   VAL_CFUNC,
   VAL_CFUNCTION,
   VAL_OPERATOR,
@@ -54,6 +54,7 @@ typedef struct Value {
   union {
     ubool boolean;
     double number;
+    String *string;
     CFunc *cfunc;
     CFunction *cfunction; /* cfunction is deprecated, prefer cfunc */
     Operator op;
@@ -81,6 +82,7 @@ typedef struct ValueArray {
 #define IS_BOOL(value) ((value).type == VAL_BOOL)
 #define IS_NIL(value) ((value).type == VAL_NIL)
 #define IS_NUMBER(value) ((value).type == VAL_NUMBER)
+#define IS_STRING(value) ((value).type == VAL_STRING)
 #define IS_CFUNCTION(value) ((value).type == VAL_CFUNCTION)
 #define IS_CFUNC(value) ((value).type == VAL_CFUNC)
 #define IS_OPERATOR(value) ((value).type == VAL_OPERATOR)
@@ -89,6 +91,8 @@ typedef struct ValueArray {
 #define AS_OBJ(value) ((value).as.obj)
 #define AS_BOOL(value) ((value).as.boolean)
 #define AS_NUMBER(value) ((value).as.number)
+#define AS_STRING(value) ((value).as.string)
+#define AS_CSTRING(value) ((value).as.string->chars)
 #define AS_CFUNC(value) ((value).as.cfunc)
 #define AS_CFUNCTION(value) ((value).as.cfunction)
 #define AS_OPERATOR(value) ((value).as.op)
@@ -97,11 +101,10 @@ typedef struct ValueArray {
 /* should-be-inline */ u32 AS_U32(Value value);
 /* should-be-inline */ i32 AS_I32(Value value);
 
-#define OBJ_VAL(object) (OBJ_VAL_EXPLICIT((Obj*)(object)))
-
 Value BOOL_VAL(ubool value);
 Value NIL_VAL();
 Value NUMBER_VAL(double value);
+Value STRING_VAL(String *string);
 Value CFUNC_VAL(CFunc *func);
 Value CFUNCTION_VAL(CFunction *func);
 Value OPERATOR_VAL(Operator op);

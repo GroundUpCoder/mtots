@@ -193,7 +193,7 @@ static ubool parseString(JSONParseState *s) {
   if (!scanString(s, &len, NULL)) {
     return UFALSE;
   }
-  chars = ALLOCATE(char, len + 1);
+  chars = malloc(sizeof(char) * (len + 1));
 
   /* rewind now, and fill the buffer this time */
   *s = savedState;
@@ -213,7 +213,7 @@ static ubool parseString(JSONParseState *s) {
 
   incr(s); /* ending '"' */
 
-  push(OBJ_VAL(takeString(chars, len)));
+  push(STRING_VAL(internOwnedString(chars, len)));
   return UTRUE;
 }
 
@@ -256,7 +256,7 @@ static ubool parseObject(JSONParseState *s) {
   }
   incr(s); /* '}' */
   dict = newDict();
-  push(OBJ_VAL(dict));
+  push(DICT_VAL(dict));
   for (i = 0; i < count; i++) {
     Value key   = vm.stackTop[-(2 * count) - 1 + 2 * i];
     Value value = vm.stackTop[-(2 * count) - 1 + 2 * i + 1];
@@ -264,7 +264,7 @@ static ubool parseObject(JSONParseState *s) {
   }
   pop(); /* dict */
   vm.stackTop -= 2 * count;
-  push(OBJ_VAL(dict));
+  push(DICT_VAL(dict));
   return UTRUE;
 }
 
@@ -301,7 +301,7 @@ static ubool parseArray(JSONParseState *s) {
     list->buffer[i] = vm.stackTop[-count + i];
   }
   vm.stackTop -= count;
-  push(OBJ_VAL(list));
+  push(LIST_VAL(list));
   return UTRUE;
 }
 

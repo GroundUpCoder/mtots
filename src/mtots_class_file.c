@@ -6,11 +6,12 @@
 #include "mtots_memory.h"
 
 #include <string.h>
+#include <stdlib.h>
 
 static ubool implFileWrite(i16 argCount, Value *args, Value *out) {
   Value receiver = args[-1], arg = args[0];
   ObjFile *file;
-  ObjString *str;
+  String *str;
   size_t writeSize;
   if (!IS_FILE(receiver)) {
     runtimeError("Expected file as receiver to File.write()");
@@ -29,26 +30,26 @@ static ubool implFileWrite(i16 argCount, Value *args, Value *out) {
 
 static CFunction funcFileWrite = { implFileWrite, "write", 1 };
 
-static ObjString *readAll(FILE *fin) {
+static String *readAll(FILE *fin) {
   char buffer[FREAD_BUFFER_SIZE], *str = NULL;
   size_t nread, size = 0;
   nread = fread(buffer, 1, FREAD_BUFFER_SIZE, fin);
   while (nread == FREAD_BUFFER_SIZE) {
     size_t oldSize = size;
     size += FREAD_BUFFER_SIZE;
-    str = (char*) reallocate(str, oldSize, size);
+    str = (char*)realloc(str, size);
     memcpy(str + oldSize, buffer, nread);
     nread = fread(buffer, 1, FREAD_BUFFER_SIZE, fin);
   }
-  str = (char*) reallocate(str, size, size + nread + 1);
+  str = (char*)realloc(str, size + nread + 1);
   memcpy(str + size, buffer, nread);
   size += nread;
   str[size] = '\0';
-  return takeString(str, size);
+  return internOwnedString(str, size);
 }
 
-static ubool readBytes(FILE *fin, size_t count, ObjString **out) {
-  char *buffer = ALLOCATE(char, count + 1);
+static ubool readBytes(FILE *fin, size_t count, String **out) {
+  char *buffer = malloc(sizeof(char) * (count + 1));
   size_t nread;
   clearerr(fin);
   nread = fread(buffer, 1, count, fin);
@@ -63,7 +64,7 @@ static ubool readBytes(FILE *fin, size_t count, ObjString **out) {
     return UFALSE;
   }
   buffer[count] = '\0';
-  *out = takeString(buffer, count);
+  *out = internOwnedString(buffer, count);
   return UTRUE;
 }
 
@@ -80,7 +81,7 @@ static ubool implFileRead(i16 argCount, Value *args, Value *out) {
   if (argCount == 1) {
     double count;
     ubool result;
-    ObjString *outstr = NULL;
+    String *outstr = NULL;
     if (!IS_NUMBER(args[0])) {
       runtimeError(
         "File.write() requires number, but got %s",
@@ -96,7 +97,7 @@ static ubool implFileRead(i16 argCount, Value *args, Value *out) {
     }
     result = readBytes(file->file, count, &outstr);
     if (result) {
-      *out = OBJ_VAL(outstr);
+      *out = STRING_VAL(outstr);
       return UTRUE;
     }
     return UFALSE;
@@ -104,7 +105,7 @@ static ubool implFileRead(i16 argCount, Value *args, Value *out) {
 
   /* Read the entire string */
   clearerr(file->file);
-  *out = OBJ_VAL(readAll(file->file));
+  *out = STRING_VAL(readAll(file->file));
   if (ferror(file->file)) {
     runtimeError("Error reading file %s", file->name);
     return UFALSE;
@@ -132,7 +133,7 @@ static ubool implFileClose(i16 argCount, Value *args, Value *out) {
 static CFunction funcFileClose = { implFileClose, "close", 0 };
 
 void initFileClass() {
-  ObjString *tmpstr;
+  String *tmpstr;
   CFunction *methods[] = {
     &funcFileWrite,
     &funcFileRead,
@@ -141,15 +142,15 @@ void initFileClass() {
   size_t i;
   ObjClass *cls;
 
-  tmpstr = copyCString("File");
-  push(OBJ_VAL(tmpstr));
+  tmpstr = internCString("File");
+  push(STRING_VAL(tmpstr));
   cls = vm.fileClass = newClass(tmpstr);
   cls->isBuiltinClass = UTRUE;
   pop();
 
   for (i = 0; i < sizeof(methods) / sizeof(CFunction*); i++) {
-    tmpstr = copyCString(methods[i]->name);
-    push(OBJ_VAL(tmpstr));
+    tmpstr = internCString(methods[i]->name);
+    push(STRING_VAL(tmpstr));
     mapSetStr(
       &cls->methods, tmpstr, CFUNCTION_VAL(methods[i]));
     pop();
