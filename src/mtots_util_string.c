@@ -9,7 +9,7 @@
 
 typedef struct StringSet {
   String **strings;
-  size_t capacity, occupied;
+  size_t capacity, occupied, allocationSize;
 } StringSet;
 
 static StringSet allStrings;
@@ -54,6 +54,7 @@ String *internString(const char *chars, size_t length) {
     allStrings.strings = newStrings;
     allStrings.capacity = newCap;
     allStrings.occupied = 0;
+    allStrings.allocationSize = 0;
     for (i = 0; i < oldCap; i++) {
       String *oldString = oldStrings[i];
       if (oldString == NULL) {
@@ -65,6 +66,7 @@ String *internString(const char *chars, size_t length) {
       }
       *entry = oldString;
       allStrings.occupied++;
+      allStrings.allocationSize += sizeof(String) + oldString->length;
     }
     free(oldStrings);
   }
@@ -76,7 +78,6 @@ String *internString(const char *chars, size_t length) {
     if (*entry) {
       return *entry;
     }
-    allStrings.occupied++;
     string = (String*)malloc(sizeof(String));
     string->isMarked = UFALSE;
     string->length = length;
@@ -85,6 +86,8 @@ String *internString(const char *chars, size_t length) {
     memcpy(string->chars, chars, length);
     string->chars[length] = '\0';
     *entry = string;
+    allStrings.occupied++;
+    allStrings.allocationSize += sizeof(String) + string->length;
     return string;
   }
 }
@@ -100,6 +103,10 @@ String *internOwnedString(char *chars, size_t length) {
   return string;
 }
 
+size_t getInternedStringsAllocationSize() {
+  return allStrings.allocationSize;
+}
+
 void freeUnmarkedStrings() {
   size_t i, cap = allStrings.capacity;
   String **oldEntries = allStrings.strings;
@@ -108,6 +115,7 @@ void freeUnmarkedStrings() {
     newEntries[i] = NULL;
   }
   allStrings.occupied = 0;
+  allStrings.allocationSize = 0;
   allStrings.strings = newEntries;
   for (i = 0; i < cap; i++) {
     String *str = oldEntries[i];
@@ -120,6 +128,7 @@ void freeUnmarkedStrings() {
         *entry = str;
         str->isMarked = UFALSE;
         allStrings.occupied++;
+        allStrings.allocationSize += sizeof(String) + str->length;
       } else {
         free(str->chars);
         free(str);

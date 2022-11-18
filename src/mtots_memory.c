@@ -21,7 +21,7 @@ void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
 #if DEBUG_STRESS_GC
   collectGarbage();
 #endif
-    if (vm.bytesAllocated > vm.nextGC) {
+    if (vm.bytesAllocated + getInternedStringsAllocationSize() > vm.nextGC) {
       collectGarbage();
     }
   }
@@ -362,7 +362,7 @@ void freeObjects() {
 
 void collectGarbage() {
 #if DEBUG_LOG_GC
-  size_t before = vm.bytesAllocated;
+  size_t before = vm.bytesAllocated + getInternedStringsAllocationSize();
   printf("-- gc begin\n");
 #endif
 
@@ -372,13 +372,15 @@ void collectGarbage() {
   mapRemoveWhite(&vm.tuples);
   sweep();
 
-  vm.nextGC = vm.bytesAllocated * GC_HEAP_GROW_FACTOR;
+  vm.nextGC = (vm.bytesAllocated + getInternedStringsAllocationSize()) * GC_HEAP_GROW_FACTOR;
 
 #if DEBUG_LOG_GC
   printf("-- gc end \n");
   printf(
     "   collected %zu bytes (from %zu to %zu) next at %zu\n",
-    before - vm.bytesAllocated, before, vm.bytesAllocated,
+    before - (vm.bytesAllocated + getInternedStringsAllocationSize()),
+    before,
+    vm.bytesAllocated + getInternedStringsAllocationSize(),
     vm.nextGC);
 #endif
 }
