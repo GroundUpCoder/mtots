@@ -50,7 +50,20 @@ depsMap = {
   formatName(fileName): sorted(formatName(d) for d in getDeps(fileName)) for fileName in fileNames
 }
 
+# Remove the connection where source files depend on their corresponding header
+for target in depsMap:
+  if not (target.startswith('mtots_') and target.endswith('_c')):
+    continue
+  basename = target[len('mtots_'):-len('_c')]
+  if basename in depsMap[target]:
+    depsMap[target].remove(basename)
+
 emit("digraph headerDeps {")
+
+for target in depsMap:
+  if target.endswith('_c'):
+    emit(f'  {target} [shape=box]')
+
 for target in depsMap:
   for dep in depsMap[target]:
     emit(f'  {target} -> {dep}')
