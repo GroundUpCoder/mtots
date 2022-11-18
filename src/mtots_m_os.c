@@ -1,6 +1,6 @@
 #include "mtots_m_os.h"
 
-#include "mtots.h"
+#include "mtots_ref.h"
 
 #include <string.h>
 #include <stdlib.h>

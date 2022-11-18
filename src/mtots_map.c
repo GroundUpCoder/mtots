@@ -1,7 +1,4 @@
-#include "mtots_memory.h"
-#include "mtots_object.h"
-#include "mtots_stack.h"
-#include "mtots_ops.h"
+#include "mtots_vm.h"
 
 #include <string.h>
 

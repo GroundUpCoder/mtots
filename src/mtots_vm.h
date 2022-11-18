@@ -4,9 +4,7 @@
 #include "mtots_chunk.h"
 #include "mtots_object.h"
 #include "mtots_ops.h"
-
-/* headers with prototypes whose function definitions are in mtots_vm.c */
-#include "mtots_stack.h"
+#include "mtots_memory.h"
 
 #define FRAMES_MAX 64
 #define STACK_MAX (FRAMES_MAX * U8_COUNT)
@@ -96,5 +94,10 @@ void addNativeModule(CFunction *func);
 /* semi-private functions */
 ubool run();
 ubool call(ObjClosure *closure, i16 argCount);
+
+/* Stack manipulation.
+ * Alternative to using the Ref API. */
+void push(Value value);
+Value pop();
 
 #endif/*mtots_vm_h*/
