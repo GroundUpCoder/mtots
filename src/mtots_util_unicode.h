@@ -1,5 +1,5 @@
-#ifndef mtots_unicode_h
-#define mtots_unicode_h
+#ifndef mtots_util_unicode_h
+#define mtots_util_unicode_h
 
 /* Basic Unicode utilities */
 
@@ -24,4 +24,4 @@ int encodeUTF8Char(u32 codePoint, char *outBytes);
  */
 int decodeUTF8Char(const char *bytes, const char *limit, u32 *outCodePoint);
 
-#endif/*mtots_unicode_h*/
+#endif/*mtots_util_unicode_h*/
