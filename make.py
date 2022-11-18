@@ -17,6 +17,9 @@ TARGETS = (
     # Buildable targets
     'desktop',
     'web',
+
+    # Depdency graphs
+    'graph',
 )
 
 aparser = argparse.ArgumentParser()
@@ -128,6 +131,31 @@ def runTests():
     run([exe, join(mtotsDir, 'scripts', 'run-tests.py'), 'desktop'])
 
 
+def buildGraph():
+    os.makedirs(join(mtotsDir, 'out', 'graph'), exist_ok=True)
+    exe = (
+        'python' if sys.platform.startswith('win32') else
+        'python3')
+    run([
+        exe,
+        join(mtotsDir, 'scripts', 'deps-graph.py'),
+        '-o', join(mtotsDir, 'out', 'graph', 'header.dot')])
+    run([
+        'dot',
+        '-Tsvg',
+        join(mtotsDir, 'out', 'graph', 'header.dot'),
+        '-o', join(mtotsDir, 'out', 'graph', 'header.svg')])
+    run([
+        exe,
+        join(mtotsDir, 'scripts', 'deps-graph.py'),
+        '-o', join(mtotsDir, 'out', 'graph', 'sources.dot')])
+    run([
+        'dot',
+        '-Tsvg',
+        join(mtotsDir, 'out', 'graph', 'sources.dot'),
+        '-o', join(mtotsDir, 'out', 'graph', 'sources.svg')])
+
+
 if target == 'clean':
     shutil.rmtree(join(mtotsDir, 'out'), ignore_errors=True)
 elif target == 'desktop':
@@ -137,5 +165,7 @@ elif target == 'web':
 elif target == 'test':
     buildDesktop()
     runTests()
+elif target == 'graph':
+    buildGraph()
 else:
     raise Exception(f"Unrecognized target {target}")

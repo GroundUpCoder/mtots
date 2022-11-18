@@ -1,4 +1,4 @@
-graph foo {
+digraph foo {
   A -> B
   B -> C
 }
