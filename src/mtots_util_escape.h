@@ -4,6 +4,7 @@
 /* Some utilities for dealing with strings */
 
 #include "mtots_common.h"
+#include "mtots_util_strbuf.h"
 
 typedef struct StringEscapeOptions {
   ubool jsonSafe;
@@ -13,6 +14,12 @@ typedef struct StringEscapeOptions {
 
 /* Initializes StringEscapeOptions with defaults */
 void initStringEscapeOptions(StringEscapeOptions *opts);
+
+ubool escapeString2(
+    StringBuffer *out,
+    const char *str,
+    size_t length,
+    StringEscapeOptions *givenOpts);
 
 /* Takes a string and escapes it as necessary
  * When NULL is passed to out* parameters, they are ignored

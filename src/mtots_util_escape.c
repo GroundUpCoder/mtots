@@ -28,6 +28,132 @@ void initStringEscapeOptions(StringEscapeOptions *opts) {
   opts->tryUnicode = UTRUE;
 }
 
+ubool escapeString2(
+    StringBuffer *out,
+    const char *str,
+    size_t length,
+    StringEscapeOptions *givenOpts) {
+  size_t pos = 0;
+  StringEscapeOptions opts;
+
+  if (givenOpts) opts = *givenOpts;
+  else initStringEscapeOptions(&opts);
+
+  while (pos < length) {
+    int charlen;
+    u32 codePoint;
+
+    /* decode UTF-8 */
+    charlen = decodeUTF8Char(str + pos, str + length, &codePoint);
+
+    if (charlen == 0 || pos + charlen > length) {
+      /* invalid UTF-8 code sequence */
+      if (opts.jsonSafe) {
+        /* if we need to be JSON safe, we emit an error */
+        runtimeError("invalid unicode escape at %lu", (unsigned long)pos);
+        return UFALSE;
+      } else {
+        /* otherwise, we can just emit a single byte */
+        sbputchar(out, '\\');
+        sbputchar(out, 'x');
+        sbputchar(out, toHexChar(((u8)str[pos] >> 4) % 16));
+        sbputchar(out, toHexChar(((u8)str[pos]) % 16));
+        pos++;
+        continue;
+      }
+    }
+
+    /* interpret */
+    if (codePoint == '"' || codePoint == '\\') {
+      /* Characters that must be escaped */
+      sbputchar(out, '\\');
+      sbputchar(out, codePoint);
+    } else if (opts.shorthandControlCodes && (
+        (!opts.jsonSafe && codePoint == '\0') ||
+        codePoint == '\b' ||
+        codePoint == '\f' ||
+        codePoint == '\n' ||
+        codePoint == '\r' ||
+        codePoint == '\t')) {
+      /* Characters with shortcut escapes */
+      sbputchar(out, '\\');
+      switch (codePoint) {
+        case '\0': sbputchar(out, '0'); break;
+        case '\b': sbputchar(out, 'b'); break;
+        case '\f': sbputchar(out, 'f'); break;
+        case '\n': sbputchar(out, 'n'); break;
+        case '\r': sbputchar(out, 'r'); break;
+        case '\t': sbputchar(out, 't'); break;
+        default: abort();
+      }
+    } else if (codePoint >= 0x20 && codePoint < 0x7F) {
+      /* Printable ASCII */
+      if (charlen != 1) abort();
+      sbputchar(out, codePoint);
+    } else if ((opts.jsonSafe||opts.tryUnicode) && codePoint <= 0xFFFF) {
+      /* Escapable unicode in 16-bit range
+       * Unconditionally escape them */
+      sbputchar(out, '\\');
+      sbputchar(out, 'u');
+      sbputchar(out, toHexChar((codePoint >> 12) % 16));
+      sbputchar(out, toHexChar((codePoint >> 8) % 16));
+      sbputchar(out, toHexChar((codePoint >> 4) % 16));
+      sbputchar(out, toHexChar(codePoint % 16));
+    } else if (!opts.jsonSafe && codePoint <= 0x7F) {
+      /* All other ASCII
+       * If we don't have to worry about whether we're JSON safe,
+       * it makes sense to print these as just '\x' style byte sequences
+       *
+       * NOTE: it does not make sense to do this for codePoints that
+       * are between 0x7F and 0xFF. This is because code points in
+       * that range will in reality occupy 2 bytes in UTF-8, and so
+       * will actually require
+       *
+       * In other words, this would be the range at which
+       * \u00nn differs from \xnn. In such cases, we use one or the other
+       * format depending on whether the caller requested 'tryUnicode'
+       * or not.
+       */
+      sbputchar(out, '\\');
+      sbputchar(out, 'x');
+      sbputchar(out, toHexChar(((u8)codePoint >> 4) % 16));
+      sbputchar(out, toHexChar(((u8)codePoint) % 16));
+    } else if ((opts.jsonSafe||opts.tryUnicode) && codePoint <= 0x10FFFF) {
+      /* Other escapable unicode
+       * However, these are out of the 16-bit range, so we
+       * use a different syntax for them */
+      sbputchar(out, '\\');
+      sbputchar(out, 'U');
+      sbputchar(out, toHexChar((codePoint >> 28) % 16));
+      sbputchar(out, toHexChar((codePoint >> 24) % 16));
+      sbputchar(out, toHexChar((codePoint >> 20) % 16));
+      sbputchar(out, toHexChar((codePoint >> 16) % 16));
+      sbputchar(out, toHexChar((codePoint >> 12) % 16));
+      sbputchar(out, toHexChar((codePoint >> 8) % 16));
+      sbputchar(out, toHexChar((codePoint >> 4) % 16));
+      sbputchar(out, toHexChar(codePoint % 16));
+    } else if (opts.jsonSafe) {
+      /* At this point, the codepoint is not valid, so we can't be json safe */
+      runtimeError("invalid unicode codepoint %lu at %lu",
+        (unsigned long)codePoint, (unsigned long)pos);
+      return UFALSE;
+    } else {
+      /* Arbitrary bytes, and we don't have to worry about being jsonSafe */
+      size_t i;
+      for (i = 0; i < charlen; i++) {
+        sbputchar(out, '\\');
+        sbputchar(out, 'x');
+        sbputchar(out, toHexChar(((u8)str[pos + i] >> 4) % 16));
+        sbputchar(out, toHexChar(((u8)str[pos + i]) % 16));
+      }
+    }
+
+    /* incr */
+    pos += charlen;
+  }
+  return UTRUE;
+}
+
 /* TODO: Refactor to avoid passsing error messages back the same way
  * output is passed back. */
 ubool escapeString(

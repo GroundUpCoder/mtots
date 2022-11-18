@@ -246,3 +246,138 @@ void sortList(ObjList *list, ObjList *keys) {
 
   free(buffer);
 }
+
+ubool valueRepr(StringBuffer *out, Value value) {
+  switch (value.type) {
+    case VAL_BOOL: sbprintf(out, AS_BOOL(value) ? "true" : "false"); return UTRUE;
+    case VAL_NIL: sbprintf(out, "nil"); return UTRUE;
+    case VAL_NUMBER: StringBufferWriteNumber(out, AS_NUMBER(value)); return UTRUE;
+    case VAL_CFUNC: sbprintf(out, "<function %s>", AS_CFUNC(value)->name); return UTRUE;
+    case VAL_CFUNCTION: sbprintf(out, "<cfunction %s>", AS_CFUNCTION(value)->name); return UTRUE;
+    case VAL_OPERATOR: sbprintf(out, "<operator %d>", AS_OPERATOR(value)); return UTRUE;
+    case VAL_SENTINEL: sbprintf(out, "<sentinel %d>", AS_SENTINEL(value)); return UTRUE;
+    case VAL_OBJ: {
+      Obj *obj = AS_OBJ(value);
+      switch (obj->type) {
+        case OBJ_CLASS: sbprintf(out, "<class %s>", AS_CLASS(value)->name->chars); return UTRUE;
+        case OBJ_CLOSURE:
+          sbprintf(out, "<function %s>", AS_CLOSURE(value)->thunk->name->chars);
+          return UTRUE;
+        case OBJ_THUNK: sbprintf(out, "<thunk %s>", AS_THUNK(value)->name->chars); return UTRUE;
+        case OBJ_NATIVE_CLOSURE:
+          sbprintf(out, "<native-closure %s>", AS_NATIVE_CLOSURE(value)->name);
+          return UTRUE;
+        case OBJ_INSTANCE:
+          if (AS_INSTANCE(value)->klass->isModuleClass) {
+            sbprintf(out, "<module %s>", AS_INSTANCE(value)->klass->name->chars);
+          } else {
+            sbprintf(out, "<%s instance>", AS_INSTANCE(value)->klass->name->chars);
+          }
+          return UTRUE;
+        case OBJ_STRING: {
+          ObjString *str = AS_STRING(value);
+          sbputchar(out, '"');
+          if (!escapeString2(out, str->chars, str->length, NULL)) {
+            return UFALSE;
+          }
+          sbputchar(out, '"');
+          return UTRUE;
+        }
+        case OBJ_BYTE_ARRAY: {
+          ObjByteArray *ba = AS_BYTE_ARRAY(value);
+          StringEscapeOptions opts;
+          initStringEscapeOptions(&opts);
+          opts.shorthandControlCodes = UFALSE;
+          opts.tryUnicode = UFALSE;
+          sbputchar(out, 'b');
+          sbputchar(out, '"');
+          escapeString2(out, (const char*)ba->buffer, ba->length, &opts);
+          sbputchar(out, '"');
+          return UTRUE;
+        }
+        case OBJ_BYTE_ARRAY_VIEW:
+          panic("TODO: repr ByteArrayView");
+        case OBJ_LIST: {
+          ObjList *list = AS_LIST(value);
+          size_t i, len = list->length;
+          sbputchar(out, '[');
+          for (i = 0; i < len; i++) {
+            if (i > 0) {
+              sbputchar(out, ',');
+              sbputchar(out, ' ');
+            }
+            if (!valueRepr(out, list->buffer[i])) {
+              return UFALSE;
+            }
+          }
+          sbputchar(out, ']');
+          return UTRUE;
+        }
+        case OBJ_TUPLE: {
+          ObjTuple *tuple = AS_TUPLE(value);
+          size_t i, len = tuple->length;
+          sbputchar(out, '(');
+          for (i = 0; i < len; i++) {
+            if (i > 0) {
+              sbputchar(out, ',');
+              sbputchar(out, ' ');
+            }
+            if (!valueRepr(out, tuple->buffer[i])) {
+              return UFALSE;
+            }
+          }
+          sbputchar(out, ')');
+          return UTRUE;
+        }
+        case OBJ_DICT: {
+          ObjDict *dict = AS_DICT(value);
+          MapIterator mi;
+          MapEntry *entry;
+          size_t i;
+
+          sbputchar(out, '{');
+          initMapIterator(&mi, &dict->dict);
+          for (i = 0; mapIteratorNext(&mi, &entry); i++) {
+            if (i > 0) {
+              sbputchar(out, ',');
+              sbputchar(out, ' ');
+            }
+            if (!valueRepr(out, entry->key)) {
+              return UFALSE;
+            }
+            if (!IS_NIL(entry->value)) {
+              sbputchar(out, ':');
+              sbputchar(out, ' ');
+              if (!valueRepr(out, entry->value)) {
+                return UFALSE;
+              }
+            }
+          }
+          sbputchar(out, '}');
+          return UTRUE;
+        }
+        case OBJ_FILE:
+          sbprintf(out, "<file %s>", AS_FILE(value)->name->chars);
+          return UTRUE;
+        case OBJ_NATIVE:
+          sbprintf(out, "<%s native-instance>",
+            AS_NATIVE(value)->descriptor->klass->name->chars);
+          return UTRUE;
+        case OBJ_UPVALUE:
+          sbprintf(out, "<upvalue>");
+          return UTRUE;
+      }
+    }
+  }
+  panic("unrecognized value type %s", getKindName(value));
+  return UFALSE;
+}
+
+ubool valueStr(StringBuffer *out, Value value) {
+  if (IS_STRING(value)) {
+    ObjString *string = AS_STRING(value);
+    sbputstrlen(out, string->chars, string->length);
+    return UTRUE;
+  }
+  return valueRepr(out, value);
+}

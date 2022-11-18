@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 void initStringBuffer(StringBuffer *sb) {
   sb->chars = NULL;
@@ -17,6 +18,18 @@ void freeStringBuffer(StringBuffer *sb) {
   sb->capacity = sb->length = 0;
 }
 
+void sbputstrlen(StringBuffer *sb, const char *chars, size_t length) {
+  if (sb->length + 1 + length > sb->capacity) {
+    while (sb->length + length + 1 > sb->capacity) {
+      sb->capacity = sb->capacity < 8 ? 8 : sb->capacity * 2;
+    }
+    sb->chars = realloc(sb->chars, sb->capacity);
+  }
+  memcpy(sb->chars + sb->length, chars, length);
+  sb->length += length;
+  sb->chars[sb->length] = '\0';
+}
+
 void sbputchar(StringBuffer *sb, char ch) {
   if (sb->length + 2 > sb->capacity) {
     sb->capacity = sb->capacity < 8 ? 8 : sb->capacity * 2;
@@ -24,6 +37,10 @@ void sbputchar(StringBuffer *sb, char ch) {
   }
   sb->chars[sb->length++] = ch;
   sb->chars[sb->length] = '\0';
+}
+
+void sbputstr(StringBuffer *sb, const char *str) {
+  sbputstrlen(sb, str, strlen(str));
 }
 
 void sbprintf(StringBuffer *sb, const char *format, ...) {
