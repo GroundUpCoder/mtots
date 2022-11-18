@@ -1,6 +1,6 @@
 #include "mtots_util_strbuf.h"
 
-#include "mtots_panic.h"
+#include "mtots_util_error.h"
 
 #include <stdarg.h>
 #include <stdlib.h>

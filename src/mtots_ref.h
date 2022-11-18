@@ -1,8 +1,7 @@
 #ifndef mtots_ref_h
 #define mtots_ref_h
 
-#include "mtots_panic.h"
-#include "mtots_error.h"
+#include "mtots_util.h"
 
 /* Fields for these structs are meant to be private */
 typedef struct RefSet { i16 start, length; } RefSet;

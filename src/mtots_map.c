@@ -4,8 +4,8 @@
 #include "mtots_object.h"
 #include "mtots_value.h"
 #include "mtots_stack.h"
-#include "mtots_panic.h"
 #include "mtots_ops.h"
+#include "mtots_util.h"
 
 #include <string.h>
 

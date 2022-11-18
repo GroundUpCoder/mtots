@@ -3,7 +3,7 @@
 #include "mtots_scanner.h"
 #include "mtots_memory.h"
 #include "mtots_str.h"
-#include "mtots_panic.h"
+#include "mtots_util.h"
 
 #if DEBUG_PRINT_CODE
 #include "mtots_debug.h"
