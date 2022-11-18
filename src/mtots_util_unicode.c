@@ -1,4 +1,4 @@
-#include "mtots_unicode.h"
+#include "mtots_util_unicode.h"
 
 int encodeUTF8Char(u32 codePoint, char *outBytes) {
   int nbytes = 0;

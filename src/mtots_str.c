@@ -1,6 +1,6 @@
 #include "mtots_str.h"
 
-#include "mtots_unicode.h"
+#include "mtots_util.h"
 #include "mtots_error.h"
 
 #include <stdio.h>

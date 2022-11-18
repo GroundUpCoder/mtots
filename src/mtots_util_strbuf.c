@@ -1,7 +1,10 @@
-#include "mtots_strbuf.h"
+#include "mtots_util_strbuf.h"
+
+#include "mtots_panic.h"
 
 #include <stdarg.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 void initStringBuffer(StringBuffer *sb) {
   sb->chars = NULL;
