@@ -1,5 +1,3 @@
-#ifndef mtots_env_impl_h
-#define mtots_env_impl_h
 #include "mtots_env.h"
 
 #include <stdlib.h>
@@ -156,4 +154,3 @@ const char *findModulePath(const char *moduleName) {
 
   return NULL;
 }
-#endif/*mtots_env_impl_h*/

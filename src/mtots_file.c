@@ -1,5 +1,3 @@
-#ifndef mtots_file_impl_h
-#define mtots_file_impl_h
 #include "mtots_file.h"
 #include "mtots_memory.h"
 
@@ -33,4 +31,3 @@ FileMode stringToFileMode(const char *modestr) {
   }
   return FILE_MODE_INVALID;
 }
-#endif/*mtots_file_impl_h*/

@@ -1,5 +1,3 @@
-#ifndef mtots_value_impl_h
-#define mtots_value_impl_h
 #include "mtots_value.h"
 #include "mtots_memory.h"
 #include "mtots_value.h"
@@ -226,4 +224,3 @@ const char *getTypePatternName(TypePattern pattern) {
   panic("Unrecognized TypePattern type %d", pattern.type);
   return UFALSE;
 }
-#endif/*mtots_value_impl_h*/

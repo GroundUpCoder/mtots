@@ -1,5 +1,3 @@
-#ifndef mtots_debug_impl_h
-#define mtots_debug_impl_h
 #include "mtots_debug.h"
 #include "mtots_value.h"
 #include "mtots_object.h"
@@ -199,4 +197,3 @@ int disassembleInstruction(Chunk *chunk, int offset) {
       return offset + 1;
   }
 }
-#endif/*mtots_debug_impl_h*/

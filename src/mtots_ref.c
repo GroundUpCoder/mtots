@@ -1,10 +1,10 @@
-#ifndef mtots_ref_impl_h
-#define mtots_ref_impl_h
 
 #include "mtots_ref.h"
 #include "mtots_ref_private.h"
 
 #include "mtots_vm.h"
+
+#include <string.h>
 
 #define DEREF(x) ((vm.stack[(x).i]))
 
@@ -239,4 +239,3 @@ void refSet(Ref ref, Value value) {
   DEREF(ref) = value;
 }
 
-#endif/*mtots_ref_impl_h*/

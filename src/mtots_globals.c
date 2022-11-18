@@ -1,5 +1,3 @@
-#ifndef mtots_globals_impl_h
-#define mtots_globals_impl_h
 #include "mtots_globals.h"
 #include "mtots_value.h"
 #include "mtots_vm.h"
@@ -797,4 +795,3 @@ void defineDefaultGlobals() {
 
   defineStandardIOGlobals();
 }
-#endif/*mtots_globals_impl_h*/

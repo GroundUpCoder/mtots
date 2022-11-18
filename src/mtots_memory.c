@@ -1,5 +1,3 @@
-#ifndef mtots_memory_impl_h
-#define mtots_memory_impl_h
 #include "mtots_memory.h"
 #include "mtots_vm.h"
 #include "mtots_object.h"
@@ -378,4 +376,3 @@ void collectGarbage() {
     vm.nextGC);
 #endif
 }
-#endif/*mtots_memory_impl_h*/

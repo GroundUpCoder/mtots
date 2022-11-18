@@ -1,5 +1,3 @@
-#ifndef mtots_map_impl_h
-#define mtots_map_impl_h
 
 #include "mtots_map.h"
 #include "mtots_memory.h"
@@ -8,6 +6,8 @@
 #include "mtots_stack.h"
 #include "mtots_panic.h"
 #include "mtots_ops.h"
+
+#include <string.h>
 
 #define DICT_MAX_LOAD 0.75
 
@@ -361,4 +361,3 @@ ubool mapIteratorNextKey(MapIterator *di, Value *out) {
   return UFALSE;
 }
 
-#endif/*mtots_map_impl_h*/

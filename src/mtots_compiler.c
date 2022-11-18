@@ -1,5 +1,3 @@
-#ifndef mtots_compiler_impl_h
-#define mtots_compiler_impl_h
 #include "mtots_common.h"
 #include "mtots_compiler.h"
 #include "mtots_scanner.h"
@@ -1414,4 +1412,3 @@ void markCompilerRoots() {
     compiler = compiler->enclosing;
   }
 }
-#endif/*mtots_compiler_impl_h*/

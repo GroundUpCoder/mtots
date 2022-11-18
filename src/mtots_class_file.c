@@ -1,5 +1,3 @@
-#ifndef mtots_class_file_impl_h
-#define mtots_class_file_impl_h
 #include "mtots_class_file.h"
 #include "mtots_value.h"
 #include "mtots_object.h"
@@ -157,4 +155,3 @@ void initFileClass() {
     pop();
   }
 }
-#endif/*mtots_class_file_impl_h*/

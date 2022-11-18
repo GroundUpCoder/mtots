@@ -1,5 +1,3 @@
-#ifndef mtots_str_impl_h
-#define mtots_str_impl_h
 #include "mtots_str.h"
 
 #include "mtots_unicode.h"
@@ -270,4 +268,3 @@ ubool unescapeString(const char *str, char quote, size_t *outLen, char *outBytes
 
   return UTRUE;
 }
-#endif/*mtots_str_impl_h*/

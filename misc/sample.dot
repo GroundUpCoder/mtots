@@ -1,0 +1,4 @@
+graph foo {
+  A -> B
+  B -> C
+}

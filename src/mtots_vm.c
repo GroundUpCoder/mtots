@@ -1,5 +1,3 @@
-#ifndef mtots_vm_impl_h
-#define mtots_vm_impl_h
 #include "mtots_assumptions.h"
 #include "mtots_vm.h"
 #include "mtots_debug.h"
@@ -1350,4 +1348,7 @@ ubool valueIsCString(Value value, const char *string) {
   return IS_STRING(value) && strcmp(AS_STRING(value)->chars, string) == 0;
 }
 
-#endif/*mtots_vm_impl_h*/
+const char *getErrorString() {
+  return vm.errorString;
+}
+

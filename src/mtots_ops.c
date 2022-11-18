@@ -1,5 +1,3 @@
-#ifndef mtots_ops_impl_h
-#define mtots_ops_impl_h
 #include "mtots_ops.h"
 #include "mtots_object.h"
 #include "mtots_vm.h"
@@ -248,4 +246,3 @@ void sortList(ObjList *list, ObjList *keys) {
 
   free(buffer);
 }
-#endif/*mtots_ops_impl_h*/

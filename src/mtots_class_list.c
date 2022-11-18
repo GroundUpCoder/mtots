@@ -1,5 +1,3 @@
-#ifndef mtots_class_list_impl_h
-#define mtots_class_list_impl_h
 #include "mtots_class_list.h"
 #include "mtots_memory.h"
 #include "mtots_value.h"
@@ -200,4 +198,3 @@ void initListClass() {
     pop();
   }
 }
-#endif/*mtots_class_list_impl_h*/

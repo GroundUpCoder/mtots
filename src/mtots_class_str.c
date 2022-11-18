@@ -1,5 +1,3 @@
-#ifndef mtots_class_str_impl_h
-#define mtots_class_str_impl_h
 #include "mtots_class_str.h"
 #include "mtots_object.h"
 #include "mtots_value.h"
@@ -345,4 +343,3 @@ void initStringClass() {
     pop();
   }
 }
-#endif/*mtots_class_str_impl_h*/

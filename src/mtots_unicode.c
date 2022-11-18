@@ -1,5 +1,3 @@
-#ifndef mtots_unicode_impl_h
-#define mtots_unicode_impl_h
 #include "mtots_unicode.h"
 
 int encodeUTF8Char(u32 codePoint, char *outBytes) {
@@ -131,4 +129,3 @@ int decodeUTF8Char(const char *bytes, const char *limit, u32 *outCodePoint) {
 
   return nbytes;
 }
-#endif/*mtots_unicode_impl_h*/
