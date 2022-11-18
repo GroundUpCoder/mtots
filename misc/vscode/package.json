@@ -1,31 +1,69 @@
 {
-  "name": "mtots",
-  "displayName": "mtots",
-  "description": "Syntax highlighting for mtots scripts",
-  "version": "0.0.3",
-  "publisher": "mtots",
-  "license": "Apache-2.0",
-  "repository": {
-      "type": "git",
-      "url": "https://github.com/wombatnomad/mtots"
-  },
-  "engines": {
-      "vscode": "^1.45.0"
-  },
-  "categories": [
-      "Programming Languages"
-  ],
-  "contributes": {
-      "languages": [{
-          "id": "mtots",
-          "aliases": ["mtots", "mtots"],
-          "extensions": [".mtots"],
-          "configuration": "./language-configuration.json"
-      }],
-      "grammars": [{
-          "language": "mtots",
-          "scopeName": "source.mtots",
-          "path": "./syntaxes/mtots.tmLanguage.json"
-      }]
-  }
+    "name": "mtots",
+    "displayName": "mtots",
+    "description": "Syntax highlighting for mtots scripts",
+    "version": "0.0.3",
+    "publisher": "mtots",
+    "license": "Apache-2.0",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/wombatnomad/mtots"
+    },
+    "engines": {
+        "vscode": "^1.45.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "main": "./out/extension",
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "lint": "eslint \"src/**/*.ts\"",
+        "watch": "tsc -watch -p ./"
+    },
+    "contributes": {
+        "languages": [
+            {
+                "id": "mtots",
+                "aliases": [
+                    "mtots",
+                    "mtots"
+                ],
+                "extensions": [
+                    ".mtots"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "mtots",
+                "scopeName": "source.mtots",
+                "path": "./syntaxes/mtots.tmLanguage.json"
+            }
+        ],
+        "commands": [
+            {
+                "command": "mtots.tokenize",
+                "title": "Tokenize mtots code"
+            }
+        ],
+        "menus": {
+            "commandPalette": [
+                {
+                    "command": "mtots.tokenize",
+                    "when": "editorLangId == mtots"
+                }
+            ]
+        }
+    },
+    "activationEvents": [
+        "onLanguage:mtots",
+        "onCommand:mtots.tokenize"
+    ],
+    "devDependencies": {
+        "@types/node": "^16.11.7",
+        "@types/vscode": "^1.45.0"
+    }
 }

@@ -348,7 +348,7 @@ static Token scanRawString(char quote) {
   }
 
   if (isAtEnd()) {
-    return errorToken("Unterminated string");
+    return errorToken("Unterminated raw string literal");
   }
 
   advanceScanner(); /* The closing quote */
@@ -370,7 +370,7 @@ static Token scanRawTripleQuoteString(char quote) {
   }
 
   if (isAtEnd()) {
-    return errorToken("Unterminated string");
+    return errorToken("Unterminated raw triple quote string literal");
   }
 
   return makeToken(TOKEN_TRIPLE_QUOTE_RAW_STRING);
