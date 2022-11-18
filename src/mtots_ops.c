@@ -1,5 +1,4 @@
 #include "mtots_ops.h"
-#include "mtots_object.h"
 #include "mtots_vm.h"
 
 #include <stdlib.h>
