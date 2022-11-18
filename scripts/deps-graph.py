@@ -34,7 +34,14 @@ def getDeps(fileName):
       if line.startswith('#include "'):
         yield line[len('#include "'):-len('"')]
 
-depsMap = {fileName.replace('.', '_'): sorted(d.replace('.', '_') for d in getDeps(fileName)) for fileName in fileNames}
+def formatName(name):
+  if name.endswith('.h') and name.startswith('mtots_'):
+    return name[len('mtots_'):-len('.h')]
+  return name.replace('.', '_')
+
+depsMap = {
+  formatName(fileName): sorted(formatName(d) for d in getDeps(fileName)) for fileName in fileNames
+}
 
 emit("digraph headerDeps {")
 for target in depsMap:
