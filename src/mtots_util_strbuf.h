@@ -1,3 +1,6 @@
+#ifndef mtots_util_strbuf_h
+#define mtots_util_strbuf_h
+
 #include "mtots_common.h"
 
 typedef struct StringBuffer {
@@ -10,3 +13,5 @@ void freeStringBuffer(StringBuffer *sb);
 void sbputchar(StringBuffer *sb, char ch);
 void sbprintf(StringBuffer *sb, const char *format, ...);
 void StringBufferWriteNumber(StringBuffer *sb, double number);
+
+#endif/*mtots_util_strbuf_h*/
