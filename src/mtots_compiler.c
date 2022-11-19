@@ -129,7 +129,7 @@ static void advance() {
   }
 }
 
-static void consume(TokenType type, const char *message) {
+static void expectToken(TokenType type, const char *message) {
   if (parser.current.type == type) {
     advance();
     return;
@@ -137,7 +137,7 @@ static void consume(TokenType type, const char *message) {
   errorAtCurrent(message);
 }
 
-static ubool parseCheck(TokenType type) {
+static ubool atToken(TokenType type) {
   return parser.current.type == type;
 }
 
@@ -145,8 +145,8 @@ static ubool parseCheck(TokenType type) {
  * move past it and return true.
  * Otherwise, do nothing and return false.
  */
-static ubool parseMatch(TokenType type) {
-  if (!parseCheck(type)) {
+static ubool consumeToken(TokenType type) {
+  if (!atToken(type)) {
     return UFALSE;
   }
   advance();
@@ -401,7 +401,7 @@ static void parseDeclareVariable() {
 }
 
 static u8 parseAndGetVariable(const char *errorMessage) {
-  consume(TOKEN_IDENTIFIER, errorMessage);
+  expectToken(TOKEN_IDENTIFIER, errorMessage);
 
   parseDeclareVariable();
   if (current->scopeDepth > 0) {
@@ -430,9 +430,9 @@ static void parseDefineVariable(u8 global) {
 
 static u8 parseArgumentList() {
   u8 argCount = 0;
-  if (!parseCheck(TOKEN_RIGHT_PAREN)) {
+  if (!atToken(TOKEN_RIGHT_PAREN)) {
     do {
-      if (parseCheck(TOKEN_RIGHT_PAREN)) {
+      if (atToken(TOKEN_RIGHT_PAREN)) {
         break;
       }
       parseExpression();
@@ -440,9 +440,9 @@ static u8 parseArgumentList() {
         error("Can't have more than 255 arguments");
       }
       argCount++;
-    } while (parseMatch(TOKEN_COMMA));
+    } while (consumeToken(TOKEN_COMMA));
   }
-  consume(TOKEN_RIGHT_PAREN, "Expect ')' after arguments");
+  expectToken(TOKEN_RIGHT_PAREN, "Expect ')' after arguments");
   return argCount;
 }
 
@@ -459,10 +459,10 @@ static void parseBinary(ubool canAssign) {
   TokenType operatorType = parser.previous.type;
   ParseRule *rule = getRule(operatorType);
   ubool isNot = UFALSE, notIn = UFALSE;
-  if (operatorType == TOKEN_IS && parseMatch(TOKEN_NOT)) {
+  if (operatorType == TOKEN_IS && consumeToken(TOKEN_NOT)) {
     isNot = UTRUE;
   } else if (operatorType == TOKEN_NOT) {
-    consume(
+    expectToken(
       TOKEN_IN,
       "when used as a binary operator, 'not' must always be followed by 'in'");
     notIn = UTRUE;
@@ -504,13 +504,13 @@ static void parseCall(ubool canAssign) {
 static void parseDot(ubool canAssign) {
   u8 name;
 
-  consume(TOKEN_IDENTIFIER, "Expect property name after '.'");
+  expectToken(TOKEN_IDENTIFIER, "Expect property name after '.'");
   name = parseIdentifierConstant(&parser.previous);
 
-  if (canAssign && parseMatch(TOKEN_EQUAL)) {
+  if (canAssign && consumeToken(TOKEN_EQUAL)) {
     parseExpression();
     emitBytes(OP_SET_FIELD, name);
-  } else if (parseMatch(TOKEN_LEFT_PAREN)) {
+  } else if (consumeToken(TOKEN_LEFT_PAREN)) {
     u8 argCount = parseArgumentList();
     emitBytes(OP_INVOKE, name);
     emitByte(argCount);
@@ -527,27 +527,27 @@ static Token syntheticToken(const char *text) {
 }
 
 static void parseSubscript(ubool canAssign) {
-  if (parseCheck(TOKEN_COLON)) {
+  if (atToken(TOKEN_COLON)) {
     /* implicit 'nil' when first slice argument is missing */
     emitByte(OP_NIL);
   } else {
     parseExpression(); /* index */
   }
 
-  if (parseMatch(TOKEN_COLON)) {
+  if (consumeToken(TOKEN_COLON)) {
     Token nameToken = syntheticToken("__slice__");
     u8 name = parseIdentifierConstant(&nameToken);
-    if (parseCheck(TOKEN_RIGHT_BRACKET)) {
+    if (atToken(TOKEN_RIGHT_BRACKET)) {
       emitByte(OP_NIL); /* implicit nil second argument, if missing */
     } else {
       parseExpression();
     }
-    consume(TOKEN_RIGHT_BRACKET, "Expect ']' after slice index expression");
+    expectToken(TOKEN_RIGHT_BRACKET, "Expect ']' after slice index expression");
     emitBytes(OP_INVOKE, name);
     emitByte(2); /* argCount */
   } else {
-    consume(TOKEN_RIGHT_BRACKET, "Expect ']' after index expression");
-    if (canAssign && parseMatch(TOKEN_EQUAL)) {
+    expectToken(TOKEN_RIGHT_BRACKET, "Expect ']' after index expression");
+    if (canAssign && consumeToken(TOKEN_EQUAL)) {
       Token nameToken = syntheticToken("__setitem__");
       u8 name = parseIdentifierConstant(&nameToken);
       parseExpression();
@@ -575,7 +575,7 @@ static void parseLiteral(ubool canAssign) {
 
 static void parseGrouping(ubool canAssign) {
   parseExpression();
-  consume(TOKEN_RIGHT_PAREN, "Expected ')' after expression");
+  expectToken(TOKEN_RIGHT_PAREN, "Expected ')' after expression");
 }
 
 static void parseNumber(ubool canAssign) {
@@ -623,7 +623,7 @@ static void parseTry(ubool canAssign) {
   startJump = emitJump(OP_TRY_START);
   parseExpression();
   endJump = emitJump(OP_TRY_END);
-  consume(TOKEN_ELSE, "Expected 'else' in 'try' expression");
+  expectToken(TOKEN_ELSE, "Expected 'else' in 'try' expression");
   patchJump(startJump);
   parseExpression();
   patchJump(endJump);
@@ -696,7 +696,7 @@ static void parseNamedVariable(Token name, ubool canAssign) {
     setOp = OP_SET_GLOBAL;
   }
 
-  if (canAssign && parseMatch(TOKEN_EQUAL)) {
+  if (canAssign && consumeToken(TOKEN_EQUAL)) {
     parseExpression();
     emitBytes(setOp, (u8) arg);
   } else {
@@ -717,12 +717,12 @@ static void parseSuper(ubool canAssign) {
     error("Can't use 'super' in a class with no superclass");
   }
 
-  consume(TOKEN_DOT, "Expect '.' after 'super'");
-  consume(TOKEN_IDENTIFIER, "Expect superclass method name");
+  expectToken(TOKEN_DOT, "Expect '.' after 'super'");
+  expectToken(TOKEN_IDENTIFIER, "Expect superclass method name");
   name = parseIdentifierConstant(&parser.previous);
 
   parseNamedVariable(syntheticToken("this"), UFALSE);
-  consume(TOKEN_LEFT_PAREN, "Expect '(' to call super method");
+  expectToken(TOKEN_LEFT_PAREN, "Expect '(' to call super method");
   argCount = parseArgumentList();
   parseNamedVariable(syntheticToken("super"), UFALSE);
   emitBytes(OP_SUPER_INVOKE, name);
@@ -741,13 +741,13 @@ static void parseThis(ubool canAssign) {
 static void parseListDisplay(ubool canAssign) {
   size_t length = 0;
   for (;;) {
-    if (parseMatch(TOKEN_RIGHT_BRACKET)) {
+    if (consumeToken(TOKEN_RIGHT_BRACKET)) {
       break;
     }
     parseExpression();
     length++;
-    if (!parseMatch(TOKEN_COMMA)) {
-      consume(TOKEN_RIGHT_BRACKET, "Expect ']' at the end of a list display");
+    if (!consumeToken(TOKEN_COMMA)) {
+      expectToken(TOKEN_RIGHT_BRACKET, "Expect ']' at the end of a list display");
       break;
     }
   }
@@ -761,19 +761,19 @@ static void parseListDisplay(ubool canAssign) {
 static void parseMapDisplay(ubool canAssign) {
   size_t length = 0;
   for (;;) {
-    if (parseMatch(TOKEN_RIGHT_BRACE)) {
+    if (consumeToken(TOKEN_RIGHT_BRACE)) {
       break;
     }
     parseExpression();
-    if (parseMatch(TOKEN_COLON)) {
+    if (consumeToken(TOKEN_COLON)) {
       parseExpression();
     } else {
       /* if the value part is missing, 'nil' is implied */
       emitByte(OP_NIL);
     }
     length++;
-    if (!parseMatch(TOKEN_COMMA)) {
-      consume(TOKEN_RIGHT_BRACE, "Expect '}' at the end of a dict display");
+    if (!consumeToken(TOKEN_COMMA)) {
+      expectToken(TOKEN_RIGHT_BRACE, "Expect '}' at the end of a dict display");
       break;
     }
   }
@@ -897,16 +897,16 @@ static void block(ubool newScope) {
     beginScope();
   }
 
-  while (parseMatch(TOKEN_NEWLINE));
-  consume(TOKEN_INDENT, "Expect INDENT at begining of block");
-  while (parseMatch(TOKEN_NEWLINE));
-  while (!parseCheck(TOKEN_DEDENT) && !parseCheck(TOKEN_EOF)) {
+  while (consumeToken(TOKEN_NEWLINE));
+  expectToken(TOKEN_INDENT, "Expect INDENT at begining of block");
+  while (consumeToken(TOKEN_NEWLINE));
+  while (!atToken(TOKEN_DEDENT) && !atToken(TOKEN_EOF)) {
     atLeastOneDeclaration = UTRUE;
     parseDeclaration();
-    while (parseMatch(TOKEN_NEWLINE));
+    while (consumeToken(TOKEN_NEWLINE));
   }
 
-  consume(TOKEN_DEDENT, "Expect DEDENT after block");
+  expectToken(TOKEN_DEDENT, "Expect DEDENT after block");
 
   if (!atLeastOneDeclaration) {
     error("Expected an indented block");
@@ -918,16 +918,16 @@ static void block(ubool newScope) {
 }
 
 static Value parseDefaultArgument() {
-  if (parseMatch(TOKEN_NIL)) {
+  if (consumeToken(TOKEN_NIL)) {
     return NIL_VAL();
-  } else if (parseMatch(TOKEN_TRUE)) {
+  } else if (consumeToken(TOKEN_TRUE)) {
     return BOOL_VAL(UTRUE);
-  } else if (parseMatch(TOKEN_FALSE)) {
+  } else if (consumeToken(TOKEN_FALSE)) {
     return BOOL_VAL(UFALSE);
-  } else if (parseMatch(TOKEN_NUMBER)) {
+  } else if (consumeToken(TOKEN_NUMBER)) {
     double value = strtod(parser.previous.start, NULL);
     return NUMBER_VAL(value);
-  } else if (parseMatch(TOKEN_STRING)) {
+  } else if (consumeToken(TOKEN_STRING)) {
     String *str = stringTokenToObjString();
     return str ? STRING_VAL(str) : NIL_VAL();
   }
@@ -944,8 +944,8 @@ static void parseFunction(ThunkType type) {
   compiler.thunk->moduleName = compiler.enclosing->thunk->moduleName;
   beginScope();
 
-  consume(TOKEN_LEFT_PAREN, "Expect '(' after function name");
-  if (!parseCheck(TOKEN_RIGHT_PAREN)) {
+  expectToken(TOKEN_LEFT_PAREN, "Expect '(' after function name");
+  if (!atToken(TOKEN_RIGHT_PAREN)) {
     do {
       u8 constant;
       current->thunk->arity++;
@@ -954,25 +954,25 @@ static void parseFunction(ThunkType type) {
       }
       constant = parseAndGetVariable("Expect parameter name");
       parseDefineVariable(constant);
-      if (parseCheck(TOKEN_IDENTIFIER)) {
+      if (atToken(TOKEN_IDENTIFIER)) {
         parseTypeExpression();
       }
-      if (compiler.defaultArgsCount > 0 && !parseCheck(TOKEN_EQUAL)) {
+      if (compiler.defaultArgsCount > 0 && !atToken(TOKEN_EQUAL)) {
         error("non-optional argument may not follow an optional argument");
       }
-      if (parseMatch(TOKEN_EQUAL)) {
+      if (consumeToken(TOKEN_EQUAL)) {
         compiler.defaultArgs[compiler.defaultArgsCount++] = parseDefaultArgument();
       }
-    } while (parseMatch(TOKEN_COMMA));
+    } while (consumeToken(TOKEN_COMMA));
   }
-  consume(TOKEN_RIGHT_PAREN, "Expect ')' after parameters");
+  expectToken(TOKEN_RIGHT_PAREN, "Expect ')' after parameters");
 
-  if (parseCheck(TOKEN_IDENTIFIER)) {
+  if (atToken(TOKEN_IDENTIFIER)) {
     parseTypeExpression();
   }
 
-  consume(TOKEN_COLON, "Expect ':' before function body");
-  while (parseMatch(TOKEN_NEWLINE));
+  expectToken(TOKEN_COLON, "Expect ':' before function body");
+  while (consumeToken(TOKEN_NEWLINE));
   block(UFALSE);
 
   thunk = endCompiler();
@@ -987,8 +987,8 @@ static void parseFunction(ThunkType type) {
 static void parseMethod() {
   u8 constant;
   ThunkType type;
-  consume(TOKEN_DEF, "Expect 'def' to start method definition");
-  consume(TOKEN_IDENTIFIER, "Expect method name");
+  expectToken(TOKEN_DEF, "Expect 'def' to start method definition");
+  expectToken(TOKEN_IDENTIFIER, "Expect method name");
   constant = parseIdentifierConstant(&parser.previous);
 
   type = TYPE_METHOD;
@@ -1005,7 +1005,7 @@ static void parseClassDeclaration() {
   Token className;
   ClassCompiler classCompiler;
 
-  consume(TOKEN_IDENTIFIER, "Expect class name");
+  expectToken(TOKEN_IDENTIFIER, "Expect class name");
   className = parser.previous;
   nameConstant = parseIdentifierConstant(&parser.previous);
   parseDeclareVariable();
@@ -1017,11 +1017,11 @@ static void parseClassDeclaration() {
   classCompiler.enclosing = currentClass;
   currentClass = &classCompiler;
 
-  if (parseMatch(TOKEN_LEFT_PAREN)) {
-    if (!parseMatch(TOKEN_RIGHT_PAREN)) {
+  if (consumeToken(TOKEN_LEFT_PAREN)) {
+    if (!consumeToken(TOKEN_RIGHT_PAREN)) {
       parseExpression();
 
-      /* TODO: add a 'full-name' parseCheck instead - we should parseCheck
+      /* TODO: add a 'full-name' atToken instead - we should atToken
        * both the class name and module the class is from */
       /*
       if (parseIdentifiersEqual(&className, &parser.previous)) {
@@ -1037,28 +1037,28 @@ static void parseClassDeclaration() {
       emitByte(OP_INHERIT);
       classCompiler.hasSuperclass = UTRUE;
 
-      consume(TOKEN_RIGHT_PAREN, "Expect ')' after superclass expression");
+      expectToken(TOKEN_RIGHT_PAREN, "Expect ')' after superclass expression");
     }
   }
 
   parseNamedVariable(className, UFALSE);
-  consume(TOKEN_COLON, "Expect ':' before class body");
-  while (parseMatch(TOKEN_NEWLINE));
-  consume(TOKEN_INDENT, "Expect INDENT before class body");
-  while (parseMatch(TOKEN_NEWLINE));
-  if (parseMatch(TOKEN_STRING) ||
-      parseMatch(TOKEN_RAW_STRING) ||
-      parseMatch(TOKEN_TRIPLE_QUOTE_RAW_STRING)) {
-    while (parseMatch(TOKEN_NEWLINE));
+  expectToken(TOKEN_COLON, "Expect ':' before class body");
+  while (consumeToken(TOKEN_NEWLINE));
+  expectToken(TOKEN_INDENT, "Expect INDENT before class body");
+  while (consumeToken(TOKEN_NEWLINE));
+  if (consumeToken(TOKEN_STRING) ||
+      consumeToken(TOKEN_RAW_STRING) ||
+      consumeToken(TOKEN_TRIPLE_QUOTE_RAW_STRING)) {
+    while (consumeToken(TOKEN_NEWLINE));
   }
-  while (parseCheck(TOKEN_VAR) || parseCheck(TOKEN_FINAL)) {
+  while (atToken(TOKEN_VAR) || atToken(TOKEN_FINAL)) {
     parseFieldDeclaration();
   }
-  while (!parseCheck(TOKEN_DEDENT) && !parseCheck(TOKEN_EOF)) {
+  while (!atToken(TOKEN_DEDENT) && !atToken(TOKEN_EOF)) {
     parseMethod();
-    while (parseMatch(TOKEN_NEWLINE));
+    while (consumeToken(TOKEN_NEWLINE));
   }
-  consume(TOKEN_DEDENT, "Expect DEDENT after class body");
+  expectToken(TOKEN_DEDENT, "Expect DEDENT after class body");
   emitByte(OP_POP);
 
   if (classCompiler.hasSuperclass) {
@@ -1075,25 +1075,25 @@ static void parseFunDeclaration() {
   parseDefineVariable(global);
 }
 
-static void consumeStatementDelimiter(const char *message) {
-  if (!parseMatch(TOKEN_NEWLINE)) {
-    consume(TOKEN_SEMICOLON, message);
+static void expectStatementDelimiter(const char *message) {
+  if (!consumeToken(TOKEN_NEWLINE)) {
+    expectToken(TOKEN_SEMICOLON, message);
   }
 }
 
 static void parseVarDeclaration() {
   u8 global = parseAndGetVariable("Expect variable name");
 
-  if (parseCheck(TOKEN_IDENTIFIER)) {
+  if (atToken(TOKEN_IDENTIFIER)) {
     parseTypeExpression();
   }
 
-  if (parseMatch(TOKEN_EQUAL)) {
+  if (consumeToken(TOKEN_EQUAL)) {
     parseExpression();
   } else {
     emitByte(OP_NIL);
   }
-  consumeStatementDelimiter(
+  expectStatementDelimiter(
     "Expected statement delimiter after variable declaration");
 
   parseDefineVariable(global);
@@ -1101,7 +1101,7 @@ static void parseVarDeclaration() {
 
 static void parseExpressionStatement() {
   parseExpression();
-  consumeStatementDelimiter(
+  expectStatementDelimiter(
     "Expected statement delimiter after expression");
   emitByte(OP_POP);
 }
@@ -1113,10 +1113,10 @@ static void parseForInStatement() {
   beginScope(); /* ensures that scopeDepth > 0 */
 
   /* define the loop variable */
-  consume(TOKEN_IDENTIFIER, "Expect loop variable name for for-in statement");
+  expectToken(TOKEN_IDENTIFIER, "Expect loop variable name for for-in statement");
   variableToken = parser.previous;
 
-  consume(TOKEN_IN, "Expect 'in' in for-in statement");
+  expectToken(TOKEN_IN, "Expect 'in' in for-in statement");
   parseExpression();          /* container/iterable */
   emitByte(OP_GET_ITER); /* replace container/iterable with an iterator */
   addLocal(syntheticToken("@iterator"));
@@ -1128,7 +1128,7 @@ static void parseForInStatement() {
   beginScope();
   addLocal(variableToken); /* next item is already on TOS */
   parseDefineVariable(0);
-  consume(TOKEN_COLON, "Expect ':' to begin for-in loop body");
+  expectToken(TOKEN_COLON, "Expect ':' to begin for-in loop body");
   block(UFALSE);
   endScope();
 
@@ -1146,17 +1146,17 @@ static void parseForInStatement() {
 static void parseForStatement() {
   i32 loopStart, exitJump;
 
-  if (parseCheck(TOKEN_IDENTIFIER)) {
+  if (atToken(TOKEN_IDENTIFIER)) {
     parseForInStatement();
     return;
   }
 
   beginScope();
 
-  consume(TOKEN_LEFT_PAREN, "Expect '(' after 'for'");
-  if (parseMatch(TOKEN_SEMICOLON)) {
+  expectToken(TOKEN_LEFT_PAREN, "Expect '(' after 'for'");
+  if (consumeToken(TOKEN_SEMICOLON)) {
     /* No initializer */
-  } else if (parseMatch(TOKEN_VAR)) {
+  } else if (consumeToken(TOKEN_VAR)) {
     parseVarDeclaration();
   } else {
     parseExpressionStatement();
@@ -1164,28 +1164,28 @@ static void parseForStatement() {
 
   loopStart = currentChunk()->count;
   exitJump = -1;
-  if (!parseMatch(TOKEN_SEMICOLON)) {
+  if (!consumeToken(TOKEN_SEMICOLON)) {
     parseExpression();
-    consume(TOKEN_SEMICOLON, "Expect ';' after loop condition");
+    expectToken(TOKEN_SEMICOLON, "Expect ';' after loop condition");
 
     /* Jump out of hte loop if the condition is false */
     exitJump = emitJump(OP_JUMP_IF_FALSE);
     emitByte(OP_POP); /* Condition */
   }
 
-  if (!parseMatch(TOKEN_RIGHT_PAREN)) {
+  if (!consumeToken(TOKEN_RIGHT_PAREN)) {
     i32 bodyJump = emitJump(OP_JUMP);
     i32 incrementStart = currentChunk()->count;
     parseExpression();
     emitByte(OP_POP);
-    consume(TOKEN_RIGHT_PAREN, "Expect ')' after for clauses");
+    expectToken(TOKEN_RIGHT_PAREN, "Expect ')' after for clauses");
 
     emitLoop(loopStart);
     loopStart = incrementStart;
     patchJump(bodyJump);
   }
 
-  consume(TOKEN_COLON, "Expect ':' for for body");
+  expectToken(TOKEN_COLON, "Expect ':' for for body");
   block(UTRUE);
   emitLoop(loopStart);
 
@@ -1202,7 +1202,7 @@ static void parseIfStatement() {
   i32 endJumps[MAX_ELIF_CHAIN_COUNT], endJumpsCount = 0;
 
   parseExpression();
-  consume(TOKEN_COLON, "Expect ':' after condition");
+  expectToken(TOKEN_COLON, "Expect ':' after condition");
 
   thenJump = emitJump(OP_JUMP_IF_FALSE);
   emitByte(OP_POP);
@@ -1212,13 +1212,13 @@ static void parseIfStatement() {
   patchJump(thenJump);
   emitByte(OP_POP);
 
-  while (parseMatch(TOKEN_ELIF)) {
+  while (consumeToken(TOKEN_ELIF)) {
     i32 endJump;
     if (endJumpsCount >= MAX_ELIF_CHAIN_COUNT) {
       error("Too many chained 'elif' clauses");
     }
     parseExpression();
-    consume(TOKEN_COLON, "Expect ':' after elif condition");
+    expectToken(TOKEN_COLON, "Expect ':' after elif condition");
     thenJump = emitJump(OP_JUMP_IF_FALSE);
     emitByte(OP_POP);
     block(UTRUE);
@@ -1231,8 +1231,8 @@ static void parseIfStatement() {
     }
   }
 
-  if (parseMatch(TOKEN_ELSE)) {
-    consume(TOKEN_COLON, "Expect ':' after 'else'");
+  if (consumeToken(TOKEN_ELSE)) {
+    expectToken(TOKEN_COLON, "Expect ':' after 'else'");
     block(UTRUE);
   }
 
@@ -1244,11 +1244,11 @@ static void parseIfStatement() {
 static void parseImportStatement() {
   u8 moduleName, alias;
 
-  consume(TOKEN_IDENTIFIER, "Expect module name after 'import'");
+  expectToken(TOKEN_IDENTIFIER, "Expect module name after 'import'");
   moduleName = parseIdentifierConstant(&parser.previous);
 
-  if (parseMatch(TOKEN_AS)) {
-    consume(TOKEN_IDENTIFIER, "Expect module alias after 'as'");
+  if (consumeToken(TOKEN_AS)) {
+    expectToken(TOKEN_IDENTIFIER, "Expect module alias after 'as'");
   }
 
   /* parseAndGetVariable but without consuming */
@@ -1259,7 +1259,7 @@ static void parseImportStatement() {
   emitBytes(OP_IMPORT, moduleName);
   parseDefineVariable(alias); /* store in variable */
 
-  consumeStatementDelimiter(
+  expectStatementDelimiter(
     "Expect statement delimiter after import statement");
 }
 
@@ -1268,7 +1268,7 @@ static void parseReturnStatement() {
     error("Can't return from top-level code");
   }
 
-  if (parseMatch(TOKEN_SEMICOLON)) {
+  if (consumeToken(TOKEN_SEMICOLON)) {
     emitReturn();
   } else {
     if (current->type == TYPE_INITIALIZER) {
@@ -1276,7 +1276,7 @@ static void parseReturnStatement() {
     }
 
     parseExpression();
-    consumeStatementDelimiter("Expect newline or ';' after return value");
+    expectStatementDelimiter("Expect newline or ';' after return value");
     emitByte(OP_RETURN);
   }
 }
@@ -1286,7 +1286,7 @@ static void parseWhileStatement() {
 
   loopStart = currentChunk()->count;
   parseExpression();
-  consume(TOKEN_COLON, "Expect ':' after condition");
+  expectToken(TOKEN_COLON, "Expect ':' after condition");
 
   exitJump = emitJump(OP_JUMP_IF_FALSE);
   emitByte(OP_POP);
@@ -1322,11 +1322,11 @@ static void synchronizeParser() {
 }
 
 static void parseDeclaration() {
-  if (parseMatch(TOKEN_CLASS)) {
+  if (consumeToken(TOKEN_CLASS)) {
     parseClassDeclaration();
-  } else if (parseMatch(TOKEN_DEF)) {
+  } else if (consumeToken(TOKEN_DEF)) {
     parseFunDeclaration();
-  } else if (parseMatch(TOKEN_VAR) || parseMatch(TOKEN_FINAL)) {
+  } else if (consumeToken(TOKEN_VAR) || consumeToken(TOKEN_FINAL)) {
     parseVarDeclaration();
   } else {
     parseStatement();
@@ -1338,21 +1338,21 @@ static void parseDeclaration() {
 }
 
 static void parseStatement() {
-  if (parseMatch(TOKEN_FOR)) {
+  if (consumeToken(TOKEN_FOR)) {
     parseForStatement();
-  } else if (parseMatch(TOKEN_IF)) {
+  } else if (consumeToken(TOKEN_IF)) {
     parseIfStatement();
-  } else if (parseMatch(TOKEN_RETURN)) {
+  } else if (consumeToken(TOKEN_RETURN)) {
     parseReturnStatement();
-  } else if (parseMatch(TOKEN_WHILE)) {
+  } else if (consumeToken(TOKEN_WHILE)) {
     parseWhileStatement();
-  } else if (parseMatch(TOKEN_IMPORT)) {
+  } else if (consumeToken(TOKEN_IMPORT)) {
     parseImportStatement();
-  } else if (parseMatch(TOKEN_NEWLINE) || parseMatch(TOKEN_SEMICOLON)) {
+  } else if (consumeToken(TOKEN_NEWLINE) || consumeToken(TOKEN_SEMICOLON)) {
     /* nop statement */
-  } else if (parseMatch(TOKEN_PASS)) {
+  } else if (consumeToken(TOKEN_PASS)) {
     /* pass statement */
-    consumeStatementDelimiter(
+    expectStatementDelimiter(
       "Expected statement delimiter at end of pass statement");
   } else {
     parseExpressionStatement();
@@ -1362,38 +1362,38 @@ static void parseStatement() {
 static void parseFieldDeclaration() {
   /* Field declarations have no runtime effect whatsoever
    * They are purely for documentation */
-  if (!parseMatch(TOKEN_FINAL)) {
-    consume(TOKEN_VAR, "Expected 'var' for field declaration");
+  if (!consumeToken(TOKEN_FINAL)) {
+    expectToken(TOKEN_VAR, "Expected 'var' for field declaration");
   }
-  consume(TOKEN_IDENTIFIER, "Expected field identifier");
+  expectToken(TOKEN_IDENTIFIER, "Expected field identifier");
   parseTypeExpression();
-  consumeStatementDelimiter("Expected delimiter after field declaration");
+  expectStatementDelimiter("Expected delimiter after field declaration");
 }
 
 static void parseTypeExpression() {
   /* Type expressions are completely ignored by the runtime, and are used
    * purely for documentation */
-  consume(TOKEN_IDENTIFIER, "Expected type expression");
+  expectToken(TOKEN_IDENTIFIER, "Expected type expression");
   for (;;) {
-    if (parseMatch(TOKEN_QMARK)) {
+    if (consumeToken(TOKEN_QMARK)) {
       continue;
     }
-    if (parseMatch(TOKEN_DOT)) {
-      consume(TOKEN_IDENTIFIER, "Expected type member identifier");
+    if (consumeToken(TOKEN_DOT)) {
+      expectToken(TOKEN_IDENTIFIER, "Expected type member identifier");
       continue;
     }
-    if (parseMatch(TOKEN_PIPE)) {
+    if (consumeToken(TOKEN_PIPE)) {
       parseTypeExpression();
       continue;
     }
-    if (parseMatch(TOKEN_LEFT_BRACKET)) {
-      while (parseCheck(TOKEN_IDENTIFIER)) {
+    if (consumeToken(TOKEN_LEFT_BRACKET)) {
+      while (atToken(TOKEN_IDENTIFIER)) {
         parseTypeExpression();
-        if (!parseMatch(TOKEN_COMMA)) {
+        if (!consumeToken(TOKEN_COMMA)) {
           break;
         }
       }
-      consume(TOKEN_RIGHT_BRACKET, "Expected ']' to close matching bracket");
+      expectToken(TOKEN_RIGHT_BRACKET, "Expected ']' to close matching bracket");
       continue;
     }
     break;
@@ -1410,7 +1410,7 @@ ObjThunk *compile(const char *source, String *moduleName) {
   parser.panicMode = 0;
   advance();
 
-  while (!parseMatch(TOKEN_EOF)) {
+  while (!consumeToken(TOKEN_EOF)) {
     parseDeclaration();
   }
 
