@@ -1081,39 +1081,6 @@ static void consumeStatementDelimiter(const char *message) {
   }
 }
 
-static void parseDecoratedFunDeclaration() {
-  u8 global;
-  size_t wrapCount = 0, i;
-  ubool named = UFALSE;
-
-  do {
-    parseExpression();
-    consumeStatementDelimiter(
-      "Expected statement delimiter after decorator expression");
-    wrapCount++;
-  } while (parseMatch(TOKEN_AT));
-
-  consume(
-    TOKEN_DEF,
-    "Expect 'def' to start function after decorator expression");
-  if (parseCheck(TOKEN_IDENTIFIER)) {
-    named = UTRUE;
-    global = parseAndGetVariable("Expect function name");
-    markInitialized();
-  }
-  parseFunction(TYPE_FUNCTION);
-
-  for (i = 0; i < wrapCount; i++) {
-    emitBytes(OP_CALL, 1);
-  }
-
-  if (named) {
-    parseDefineVariable(global);
-  } else {
-    emitByte(OP_POP);
-  }
-}
-
 static void parseVarDeclaration() {
   u8 global = parseAndGetVariable("Expect variable name");
 
@@ -1361,8 +1328,6 @@ static void parseDeclaration() {
     parseFunDeclaration();
   } else if (parseMatch(TOKEN_VAR) || parseMatch(TOKEN_FINAL)) {
     parseVarDeclaration();
-  } else if (parseMatch(TOKEN_AT)) {
-    parseDecoratedFunDeclaration();
   } else {
     parseStatement();
   }
