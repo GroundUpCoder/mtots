@@ -1,3 +1,6 @@
+import { Uri } from 'vscode';
+import { MError } from './error';
+import { MLocation } from './location';
 import { MPosition } from './position';
 import { MRange } from './range';
 import { KeywordsMap, MToken, MTokenType, MTokenValue, SymbolsMap } from './token'
@@ -29,6 +32,7 @@ export class MScannerError extends Error {
 }
 
 export class MScanner {
+  filePath: string | Uri;
   s: string;
   i: number;
   startI: number;             /* current token start index */
@@ -62,7 +66,8 @@ export class MScanner {
    */
   processedSyntheticNewline: boolean;
 
-  constructor(s: string) {
+  constructor(filePath: string | Uri, s: string) {
+    this.filePath = filePath;
     this.s = s;
     this.i = 0;
     this.startI = 0;
@@ -72,6 +77,12 @@ export class MScanner {
     this.indentationLevel = 0;
     this.indentationPotential = 0;
     this.processedSyntheticNewline = false;
+  }
+
+  newError(message: string) {
+    return new MError(
+      new MLocation(this.filePath, this.makeRange()),
+      message);
   }
 
   getch(): string {
@@ -203,17 +214,14 @@ export class MScanner {
       if (this.peek() === '\\') {
         this.advance();
         if (this.isAtEnd()) {
-          throw new MScannerError(
-            this.makeRange(),
+          throw this.newError(
             "Expected string escape but got EOF");
         }
       }
       this.advance();
     }
     if (this.isAtEnd()) {
-      throw new MScannerError(
-        this.makeRange(),
-        "Unterminated string");
+      throw this.newError("Unterminated string");
     }
     this.advance(); // closing quote
     const unescapedString = this.sliceTokenString();
@@ -226,8 +234,7 @@ export class MScanner {
       this.advance();
     }
     if (this.isAtEnd()) {
-      throw new MScannerError(
-        this.makeRange(),
+      throw this.newError(
         "Unterminated raw string literal");
     }
     const value = this.sliceTokenString().slice(1);
@@ -251,8 +258,7 @@ export class MScanner {
       this.advance();
     }
     if (this.isAtEnd()) {
-      throw new MScannerError(
-        this.makeRange(),
+      throw this.newError(
         "Unterminated raw triple quote string literal");
     }
     const value = this.s.slice(stringStartI, stringEndI);
@@ -333,8 +339,7 @@ export class MScanner {
         spaceCount++;
       }
       if (spaceCount % 2 === 1) {
-        throw new MScannerError(
-          this.makeRange(),
+        throw this.newError(
           "Indentations must always be a multiple of 2");
       }
       const newIndentationLevel = spaceCount / 2;
@@ -344,8 +349,7 @@ export class MScanner {
       return newlineToken;
     }
 
-    throw new MScannerError(
-      this.makeRange(),
+    throw this.newError(
       `Unexpected character ${JSON.stringify(c)}`);
   }
 }

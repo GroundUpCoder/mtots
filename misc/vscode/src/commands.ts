@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
-import { MScanner, MScannerError } from './lang/scanner';
+import { MError } from './lang/error';
+import { MScanner } from './lang/scanner';
 
 export async function tokenize() {
   const editor = vscode.window.activeTextEditor;
@@ -15,12 +16,12 @@ export async function tokenize() {
         editor.selection.start,
         editor.selection.end);
   const text = editor.document.getText(selection);
-  const scanner = new MScanner(text);
-
   const document = await vscode.workspace.openTextDocument({
     content: '',
     language: 'plaintext',
   });
+
+  const scanner = new MScanner(document.uri, text);
 
   let insertText = '';
 
@@ -39,11 +40,12 @@ export async function tokenize() {
       }
     }
   } catch (e) {
-    if (!(e instanceof MScannerError)) {
+    if (!(e instanceof MError)) {
       throw e;
     }
     insertText += `ERROR: ${e.message}`;
-    insertText += `  ${e.range.start.line + 1}:${e.range.start.column + 1}`;
+    insertText += `  ${e.location.range.start.line + 1}:`;
+    insertText += `${e.location.range.start.column + 1}`;
   }
 
   const edit = new vscode.WorkspaceEdit();
