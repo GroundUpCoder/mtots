@@ -17,8 +17,6 @@ typedef struct Parser {
 
 typedef enum Precedence {
   PREC_NONE,
-  PREC_ASSIGNMENT,  /* = */
-  PREC_IF,          /* if and try */
   PREC_OR,          /* or */
   PREC_AND,         /* and */
   PREC_NOT,         /* not */
@@ -28,13 +26,13 @@ typedef enum Precedence {
   PREC_BITWISE_XOR, /* ^ */
   PREC_BITWISE_OR,  /* | */
   PREC_TERM,        /* + - */
-  PREC_FACTOR,      /* * / */
-  PREC_UNARY,       /* ! - ~ */
+  PREC_FACTOR,      /* * / // % */
+  PREC_UNARY,       /* - ~ */
   PREC_CALL,        /* . () [] */
   PREC_PRIMARY
 } Precedence;
 
-typedef void (*ParseFn)(ubool canAssign);
+typedef void (*ParseFn)();
 
 typedef struct ParseRule {
   ParseFn prefix;
@@ -321,7 +319,7 @@ static i16 resolveLocal(Compiler *compiler, Token *name) {
     Local *local = &compiler->locals[i];
     if (parseIdentifiersEqual(name, &local->name)) {
       if (local->depth == -1) {
-        error("Can't read local parseVariable in its own initializer");
+        error("Can't read local variable in its own initializer");
       }
       return i;
     }
@@ -446,7 +444,7 @@ static u8 parseArgumentList() {
   return argCount;
 }
 
-static void parseAnd(ubool canAssign) {
+static void parseAnd() {
   i32 endJump = emitJump(OP_JUMP_IF_FALSE);
 
   emitByte(OP_POP);
@@ -455,7 +453,7 @@ static void parseAnd(ubool canAssign) {
   patchJump(endJump);
 }
 
-static void parseBinary(ubool canAssign) {
+static void parseBinary() {
   TokenType operatorType = parser.previous.type;
   ParseRule *rule = getRule(operatorType);
   ubool isNot = UFALSE, notIn = UFALSE;
@@ -496,18 +494,18 @@ static void parseBinary(ubool canAssign) {
   }
 }
 
-static void parseCall(ubool canAssign) {
+static void parseCall() {
   u8 argCount = parseArgumentList();
   emitBytes(OP_CALL, argCount);
 }
 
-static void parseDot(ubool canAssign) {
+static void parseDot() {
   u8 name;
 
   expectToken(TOKEN_IDENTIFIER, "Expect property name after '.'");
   name = parseIdentifierConstant(&parser.previous);
 
-  if (canAssign && consumeToken(TOKEN_EQUAL)) {
+  if (consumeToken(TOKEN_EQUAL)) {
     parseExpression();
     emitBytes(OP_SET_FIELD, name);
   } else if (consumeToken(TOKEN_LEFT_PAREN)) {
@@ -526,7 +524,7 @@ static Token syntheticToken(const char *text) {
   return token;
 }
 
-static void parseSubscript(ubool canAssign) {
+static void parseSubscript() {
   if (atToken(TOKEN_COLON)) {
     /* implicit 'nil' when first slice argument is missing */
     emitByte(OP_NIL);
@@ -547,7 +545,7 @@ static void parseSubscript(ubool canAssign) {
     emitByte(2); /* argCount */
   } else {
     expectToken(TOKEN_RIGHT_BRACKET, "Expect ']' after index expression");
-    if (canAssign && consumeToken(TOKEN_EQUAL)) {
+    if (consumeToken(TOKEN_EQUAL)) {
       Token nameToken = syntheticToken("__setitem__");
       u8 name = parseIdentifierConstant(&nameToken);
       parseExpression();
@@ -562,7 +560,7 @@ static void parseSubscript(ubool canAssign) {
   }
 }
 
-static void parseLiteral(ubool canAssign) {
+static void parseLiteral() {
   switch (parser.previous.type) {
     case TOKEN_FALSE: emitByte(OP_FALSE); break;
     case TOKEN_NIL: emitByte(OP_NIL); break;
@@ -573,17 +571,17 @@ static void parseLiteral(ubool canAssign) {
   }
 }
 
-static void parseGrouping(ubool canAssign) {
+static void parseGrouping() {
   parseExpression();
   expectToken(TOKEN_RIGHT_PAREN, "Expected ')' after expression");
 }
 
-static void parseNumber(ubool canAssign) {
+static void parseNumber() {
   double value = strtod(parser.previous.start, NULL);
   emitConstant(NUMBER_VAL(value));
 }
 
-static void parseNumberHex(ubool canAssign) {
+static void parseNumberHex() {
   double value = 0;
   size_t i, len = parser.previous.length;
   for (i = 2; i < len; i++) {
@@ -602,7 +600,7 @@ static void parseNumberHex(ubool canAssign) {
   emitConstant(NUMBER_VAL(value));
 }
 
-static void parseNumberBin(ubool canAssign) {
+static void parseNumberBin() {
   double value = 0;
   size_t i, len = parser.previous.length;
   for (i = 2; i < len; i++) {
@@ -617,7 +615,7 @@ static void parseNumberBin(ubool canAssign) {
   emitConstant(NUMBER_VAL(value));
 }
 
-static void parseTry(ubool canAssign) {
+static void parseTry() {
   i32 startJump, endJump;
 
   startJump = emitJump(OP_TRY_START);
@@ -629,12 +627,12 @@ static void parseTry(ubool canAssign) {
   patchJump(endJump);
 }
 
-static void parseRaise(ubool canAssign) {
+static void parseRaise() {
   parseExpression();
   emitByte(OP_RAISE);
 }
 
-static void parseOr(ubool canAssign) {
+static void parseOr() {
   i32 elseJump = emitJump(OP_JUMP_IF_FALSE);
   i32 endJump = emitJump(OP_JUMP);
 
@@ -645,13 +643,13 @@ static void parseOr(ubool canAssign) {
   patchJump(endJump);
 }
 
-static void parseRawString(ubool canAssign) {
+static void parseRawString() {
   emitConstant(STRING_VAL(internString(
     parser.previous.start + 2,
     parser.previous.length - 3)));
 }
 
-static void parseTripleQuoteRawString(ubool canAssign) {
+static void parseTripleQuoteRawString() {
   emitConstant(STRING_VAL(internString(
     parser.previous.start + 4,
     parser.previous.length - 7)));
@@ -674,7 +672,7 @@ static String *stringTokenToObjString() {
   return internOwnedString(s, size);
 }
 
-static void parseString(ubool canAssign) {
+static void parseString() {
   String *str = stringTokenToObjString();
   if (str != NULL) {
     emitConstant(STRING_VAL(str));
@@ -704,11 +702,15 @@ static void parseNamedVariable(Token name, ubool canAssign) {
   }
 }
 
-static void parseVariable(ubool canAssign) {
-  parseNamedVariable(parser.previous, canAssign);
+static void parseVariable() {
+  parseNamedVariable(parser.previous, UTRUE);
 }
 
-static void parseSuper(ubool canAssign) {
+static void parseVariableNoAssignment() {
+  parseNamedVariable(parser.previous, UFALSE);
+}
+
+static void parseSuper() {
   u8 name, argCount;
 
   if (currentClass == NULL) {
@@ -729,16 +731,16 @@ static void parseSuper(ubool canAssign) {
   emitByte(argCount);
 }
 
-static void parseThis(ubool canAssign) {
+static void parseThis() {
   if (currentClass == NULL) {
     error("Can't use 'this' outside of a class");
     return;
   }
 
-  parseVariable(UFALSE);
+  parseVariableNoAssignment();
 }
 
-static void parseListDisplay(ubool canAssign) {
+static void parseListDisplay() {
   size_t length = 0;
   for (;;) {
     if (consumeToken(TOKEN_RIGHT_BRACKET)) {
@@ -758,7 +760,7 @@ static void parseListDisplay(ubool canAssign) {
   emitBytes(OP_NEW_LIST, length);
 }
 
-static void parseMapDisplay(ubool canAssign) {
+static void parseMapDisplay() {
   size_t length = 0;
   for (;;) {
     if (consumeToken(TOKEN_RIGHT_BRACE)) {
@@ -784,7 +786,7 @@ static void parseMapDisplay(ubool canAssign) {
   emitBytes(OP_NEW_DICT, length);
 }
 
-static void parseUnary(ubool canAssign) {
+static void parseUnary() {
   TokenType operatorType = parser.previous.type;
 
   /* compile the operand */
@@ -863,7 +865,6 @@ void initParseRules() {
 
 static void parsePrecedence(Precedence precedence) {
   ParseFn prefixRule;
-  ubool canAssign = precedence <= PREC_ASSIGNMENT;
   advance();
   prefixRule = getRule(parser.previous.type)->prefix;
   if (prefixRule == NULL) {
@@ -872,13 +873,13 @@ static void parsePrecedence(Precedence precedence) {
     abort();
     return;
   }
-  prefixRule(canAssign);
+  prefixRule();
 
   while (precedence <= getRule(parser.current.type)->precedence) {
     ParseFn infixRule;
     advance();
     infixRule = getRule(parser.previous.type)->infix;
-    infixRule(canAssign);
+    infixRule();
   }
 }
 
@@ -887,7 +888,7 @@ static ParseRule *getRule(TokenType type) {
 }
 
 static void parseExpression() {
-  parsePrecedence(PREC_ASSIGNMENT);
+  parsePrecedence(PREC_OR);
 }
 
 static void parseBlock(ubool newScope) {
