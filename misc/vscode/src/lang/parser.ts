@@ -225,7 +225,7 @@ export class MParser {
       `Expected expression but got '${this.peek.type}'`);
   }
 
-  parseInfix(lhs: ast.Expression): ast.Expression {
+  private parseInfix(lhs: ast.Expression): ast.Expression {
     const location = this.peek.location;
     const tokenType = this.peek.type;
     const precedence = PrecMap.get(tokenType);
@@ -281,7 +281,7 @@ export class MParser {
     throw this.newError(`assertionError ${tokenType}`);
   }
 
-  parsePrec(precedence: number): ast.Expression {
+  private parsePrec(precedence: number): ast.Expression {
     let expr = this.parsePrefix();
     while (precedence <= (PrecMap.get(this.peek.type) || 0)) {
       expr = this.parseInfix(expr);
@@ -289,35 +289,35 @@ export class MParser {
     return expr;
   }
 
-  parseExpression(): Ast {
+  private parseExpression(): Ast {
     return this.parsePrec(1);
   }
 
-  parseForStatement(): Ast {
+  private parseForStatement(): Ast {
     throw this.newError('TODO: parseForStatement');
   }
 
-  parseIfStatement(): Ast {
+  private parseIfStatement(): Ast {
     throw this.newError('TODO: parseIfStatement');
   }
 
-  parseReturnStatement(): Ast {
+  private parseReturnStatement(): Ast {
     throw this.newError('TODO: parseReturnStatement');
   }
 
-  parseWhileStatement(): Ast {
+  private parseWhileStatement(): Ast {
     throw this.newError('TODO: parseWhileStatement');
   }
 
-  parseImportStatement(): Ast {
+  private parseImportStatement(): Ast {
     throw this.newError('TODO: parseImportStatement');
   }
 
-  parseExpressionStatement(): Ast {
+  private parseExpressionStatement(): Ast {
     throw this.newError('TODO: parseExpressionStatement');
   }
 
-  parseStatement(): Ast {
+  private parseStatement(): Ast {
     if (this.at('for')) {
       return this.parseForStatement();
     } else if (this.at('if')) {
@@ -341,19 +341,19 @@ export class MParser {
     }
   }
 
-  parseClassDeclaration(): Ast {
+  private parseClassDeclaration(): Ast {
     throw this.newError('TODO: parseClassDeclaration');
   }
 
-  parseFunctionDeclaration(): Ast {
+  private parseFunctionDeclaration(): Ast {
     throw this.newError('TODO: parseFunctionDeclaration');
   }
 
-  parseVarDeclaration(): Ast {
+  private parseVarDeclaration(): Ast {
     throw this.newError('TODO: parseVarDeclaration');
   }
 
-  parseDeclaration(): Ast {
+  private parseDeclaration(): Ast {
     if (this.at('class')) {
       return this.parseClassDeclaration();
     } else if (this.at('def')) {
