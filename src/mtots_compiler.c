@@ -890,7 +890,7 @@ static void parseExpression() {
   parsePrecedence(PREC_ASSIGNMENT);
 }
 
-static void block(ubool newScope) {
+static void parseBlock(ubool newScope) {
   ubool atLeastOneDeclaration = UFALSE;
 
   if (newScope) {
@@ -973,7 +973,7 @@ static void parseFunction(ThunkType type) {
 
   expectToken(TOKEN_COLON, "Expect ':' before function body");
   while (consumeToken(TOKEN_NEWLINE));
-  block(UFALSE);
+  parseBlock(UFALSE);
 
   thunk = endCompiler();
   emitBytes(OP_CLOSURE, makeConstant(THUNK_VAL(thunk)));
@@ -1129,7 +1129,7 @@ static void parseForInStatement() {
   addLocal(variableToken); /* next item is already on TOS */
   parseDefineVariable(0);
   expectToken(TOKEN_COLON, "Expect ':' to begin for-in loop body");
-  block(UFALSE);
+  parseBlock(UFALSE);
   endScope();
 
   emitLoop(loopStart);
@@ -1186,7 +1186,7 @@ static void parseForStatement() {
   }
 
   expectToken(TOKEN_COLON, "Expect ':' for for body");
-  block(UTRUE);
+  parseBlock(UTRUE);
   emitLoop(loopStart);
 
   if (exitJump != -1) {
@@ -1206,7 +1206,7 @@ static void parseIfStatement() {
 
   thenJump = emitJump(OP_JUMP_IF_FALSE);
   emitByte(OP_POP);
-  block(UTRUE);
+  parseBlock(UTRUE);
   endJumps[endJumpsCount++] = emitJump(OP_JUMP);
 
   patchJump(thenJump);
@@ -1221,7 +1221,7 @@ static void parseIfStatement() {
     expectToken(TOKEN_COLON, "Expect ':' after elif condition");
     thenJump = emitJump(OP_JUMP_IF_FALSE);
     emitByte(OP_POP);
-    block(UTRUE);
+    parseBlock(UTRUE);
     endJump = emitJump(OP_JUMP);
     patchJump(thenJump);
     emitByte(OP_POP);
@@ -1233,7 +1233,7 @@ static void parseIfStatement() {
 
   if (consumeToken(TOKEN_ELSE)) {
     expectToken(TOKEN_COLON, "Expect ':' after 'else'");
-    block(UTRUE);
+    parseBlock(UTRUE);
   }
 
   for (i = 0; i < endJumpsCount; i++) {
@@ -1290,7 +1290,7 @@ static void parseWhileStatement() {
 
   exitJump = emitJump(OP_JUMP_IF_FALSE);
   emitByte(OP_POP);
-  block(UTRUE);
+  parseBlock(UTRUE);
   emitLoop(loopStart);
 
   patchJump(exitJump);
