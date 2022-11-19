@@ -1,5 +1,4 @@
-import { MPosition } from "./position";
-import { MRange } from "./range";
+import { MLocation } from "./location";
 
 type MTokenTypeKeyword = (
   'and' | 'class' | 'def' | 'elif' | 'else' | 'false' | 'for' |
@@ -65,11 +64,11 @@ export const KeywordsMap: Map<string, MTokenTypeKeyword> = new Map(
 );
 
 export class MToken {
-  range: MRange;
+  location: MLocation;
   type: MTokenType;
   value: MTokenValue;
-  constructor(range: MRange, type: MTokenType, value: MTokenValue = null) {
-    this.range = range;
+  constructor(location: MLocation, type: MTokenType, value: MTokenValue = null) {
+    this.location = location;
     this.type = type;
     this.value = value;
   }

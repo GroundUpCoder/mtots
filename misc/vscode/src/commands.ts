@@ -29,10 +29,10 @@ export async function tokenize() {
     while (true) {
       const token = scanner.scanToken();
       insertText += (
-        `${token.range.start.line + 1}:` +
-        `${token.range.start.column + 1} - ` +
-        `${token.range.end.line + 1}:` +
-        `${token.range.end.column + 1} - ` +
+        `${token.location.range.start.line + 1}:` +
+        `${token.location.range.start.column + 1} - ` +
+        `${token.location.range.end.line + 1}:` +
+        `${token.location.range.end.column + 1} - ` +
         `${token.type} ` +
         `${token.value === null ? '' : JSON.stringify(token.value)}\n`);
       if (token.type === 'EOF') {

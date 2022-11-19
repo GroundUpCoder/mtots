@@ -130,8 +130,12 @@ export class MScanner {
     return new MRange(this.startPosition, this.position);
   }
 
+  makeLocation(): MLocation {
+    return new MLocation(this.filePath, this.makeRange());
+  }
+
   makeToken(type: MTokenType, value: MTokenValue=null): MToken {
-    return new MToken(this.makeRange(), type, value);
+    return new MToken(this.makeLocation(), type, value);
   }
 
   skipWhitespace() {
