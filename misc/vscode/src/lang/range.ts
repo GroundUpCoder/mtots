@@ -9,4 +9,10 @@ export class MRange {
     this.start = start;
     this.end = end;
   }
+
+  merge(other: MRange) {
+    return new MRange(
+      (this.start.lt(other.start) ? this.start : other.start).clone(),
+      (this.end.lt(other.end) ? other.end : this.end).clone());
+  }
 }

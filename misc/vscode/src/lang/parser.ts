@@ -1,6 +1,7 @@
 import * as ast from './ast';
 import { Ast } from "./ast";
 import { MError } from "./error";
+import { MLocation } from './location';
 import { MScanner } from "./scanner";
 import { MScope } from "./scope";
 import { MSymbolTable } from "./symbol";
@@ -69,8 +70,10 @@ export class MParser {
     throw new MError(this.peek.location, message);
   }
 
-  private advance() {
+  private advance(): MToken {
+    const token = this.peek;
     this.peek = this.scanner.scanToken();
+    return token;
   }
 
   private at(tokenType: MTokenType): boolean {
@@ -102,52 +105,67 @@ export class MParser {
     }
   }
 
-  private parsePrimary(): Ast {
-    const location = this.peek.location;
-    if (this.consume('(')) {
-      const expression = this.parseExpression();
-      this.expect(')');
-      return expression;
-    } else if (this.at('NUMBER')) {
-      const expression = new ast.NumberLiteral(
-        location, <number>this.peek.value);
-      this.advance();
-      return expression;
-    } else if (this.at('STRING')) {
-      const expression = new ast.StringLiteral(
-        location, <string>this.peek.value);
-      this.advance();
-      return expression;
-    } else if (this.consume('true')) {
-      return new ast.BoolLiteral(location, true);
-    } else if (this.consume('false')) {
-      return new ast.BoolLiteral(location, false);
-    } else if (this.consume('nil')) {
-      return new ast.NilLiteral(location, null);
-    } else if (this.at('IDENTIFIER')) {
-      const name = <string>this.peek.value;
-      this.advance();
-      if (this.consume('=')) {
-        const value = this.parseExpression();
-        return new ast.SetVariable(location, name, value);
-      } else {
-        return new ast.GetVariable(location, name);
-      }
+  private parseIdentifier(): ast.Identifier {
+    const token = this.expect('IDENTIFIER');
+    return new ast.Identifier(token.location, <string>token.value);
+  }
+
+  private parseQualifiedIdentifier(): ast.QualifiedIdentifier {
+    let rawIdentifier = this.parseIdentifier();
+    let qualifiedIdentifier = new ast.QualifiedIdentifier(
+      rawIdentifier.location, null, rawIdentifier);
+    while (this.consume('.')) {
+      const memberIdentifier = this.parseIdentifier();
+      qualifiedIdentifier = new ast.QualifiedIdentifier(
+        qualifiedIdentifier.location.merge(memberIdentifier.location),
+        qualifiedIdentifier,
+        memberIdentifier);
     }
-    throw this.newError(
-      `Expected expression but got '${this.peek.type}'`);
+    return qualifiedIdentifier;
+  }
+
+  private parseTypeExpression(): ast.TypeExpression {
+    const identifier = this.parseQualifiedIdentifier();
+    const args: ast.TypeExpression[] = [];
+    let endLocation = identifier.location;
+    if (this.consume('[')) {
+      const args = [];
+      while (!this.at(']')) {
+        args.push(this.parseTypeExpression());
+        if (!this.consume(',')) {
+          break;
+        }
+      }
+      endLocation = this.expect(']').location;
+    }
+    let location = identifier.location.merge(endLocation);
+    let te = new ast.TypeExpression(location, identifier, args);
+    if (this.at('?')) {
+      const qmarkLocation = this.expect('?').location;
+      const identifier = new ast.QualifiedIdentifier(
+        qmarkLocation, null, new ast.Identifier(qmarkLocation, 'optional'));
+      location = location.merge(qmarkLocation);
+      te = new ast.TypeExpression(location, identifier, [te]);
+    }
+    if (this.at('|')) {
+      const pipeLocation = this.expect('|').location;
+      const identifer = new ast.QualifiedIdentifier(
+        pipeLocation, null, new ast.Identifier(pipeLocation, 'union'));
+      const rhs = this.parseTypeExpression();
+      location = location.merge(rhs.location);
+      te = new ast.TypeExpression(location, identifer, [te, rhs]);
+    }
+    return te;
   }
 
   private parseArguments(): Ast[] {
     const args: Ast[] = [];
-    this.expect('(');
     while (!this.at(')')) {
       args.push(this.parseExpression());
       if (!this.consume(',')) {
         break;
       }
     }
-    this.expect(')');
     return args;
   }
 
@@ -185,13 +203,12 @@ export class MParser {
         return new ast.NilLiteral(location, null);
       }
       case 'IDENTIFIER': {
-        const name = <string>this.peek.value;
-        this.advance();
+        const identifier = this.parseIdentifier();
         if (this.consume('=')) {
           const value = this.parseExpression();
-          return new ast.SetVariable(location, name, value);
+          return new ast.SetVariable(location, identifier, value);
         } else {
-          return new ast.GetVariable(location, name);
+          return new ast.GetVariable(location, identifier);
         }
       }
       case 'not': {
@@ -203,30 +220,20 @@ export class MParser {
       case '-':
       case '+':
         const tokenType = this.peek.type;
-        let methodName = 'invalid';
-        switch (tokenType) {
-          case '~':
-            methodName = '__not__';
-            break;
-          case '-':
-            methodName = '__neg__';
-            break;
-          case '+':
-            methodName = '__pos__';
-            break;
-          default:
-            throw this.newError(`assertionError ${tokenType}`);
-        }
+        const methodIdentifier = new ast.Identifier(
+          location,
+          tokenType === '~' ? '__not__' :
+          tokenType === '-' ? '__neg__' :
+          tokenType === '+' ? '__pos__' : 'invalid');
         this.advance();
         return new ast.MethodCall(
-          location, this.parsePrec(PREC_UNARY_MINUS), methodName, []);
+          location, this.parsePrec(PREC_UNARY_MINUS), methodIdentifier, []);
     }
     throw this.newError(
       `Expected expression but got '${this.peek.type}'`);
   }
 
-  private parseInfix(lhs: ast.Expression): ast.Expression {
-    const location = this.peek.location;
+  private parseInfix(lhs: ast.Expression, startLocation: MLocation): ast.Expression {
     const tokenType = this.peek.type;
     const precedence = PrecMap.get(tokenType);
     const methodName = BinopMethodMap.get(tokenType);
@@ -237,131 +244,281 @@ export class MParser {
     switch (tokenType) {
       case '.': {
         this.advance();
-        const token = this.expect(
-          'IDENTIFIER', 'Expected field or method identifier');
-        const nameLocation = token.location;
-        const name = <string>token.value;
+        const identifier = this.parseIdentifier();
         if (this.at('(')) {
+          this.advance();
           const args = this.parseArguments();
-          return new ast.MethodCall(nameLocation, lhs, name, args);
+          const endLocation = this.expect(')').location;
+          const location = startLocation.merge(endLocation);
+          return new ast.MethodCall(location, lhs, identifier, args);
         } else if (this.consume('=')) {
           const value = this.parseExpression();
-          return new ast.SetField(nameLocation, lhs, name, value);
+          const location = startLocation.merge(value.location);
+          return new ast.SetField(location, lhs, identifier, value);
         }
-        return new ast.GetField(nameLocation, lhs, name);
+        const location = startLocation.merge(identifier.location);
+        return new ast.GetField(location, lhs, identifier);
       }
       case '[': {
-        this.advance();
+        const openBracketLocation = this.advance().location;
         const index = this.parseExpression();
-        this.expect(']');
+        const closeBracketLocation = this.expect(']').location;
         if (this.consume('=')) {
           const value = this.parseExpression();
+          const location = startLocation.merge(value.location);
+          const identifier = new ast.Identifier(
+            openBracketLocation, '__setitem__');
           return new ast.MethodCall(
-            location, lhs, '__setitem__', [index, value]);
+            location, lhs, identifier, [index, value]);
         }
-        return new ast.MethodCall(location, lhs, '__getitem__', [index]);
+        const location = startLocation.merge(closeBracketLocation);
+        const identifier = new ast.Identifier(
+          openBracketLocation, '__getitem__');
+        return new ast.MethodCall(location, lhs, identifier, [index]);
       }
       case '(': {
         this.advance();
         const args = this.parseArguments();
+        const closeParenLocation = this.expect(')').location;
+        const location = startLocation.merge(closeParenLocation);
         return new ast.FunctionCall(location, lhs, args);
       }
     }
 
     if (methodName) {
-      this.advance();
+      const operatorLocation = this.advance().location;
       const rhs = this.parsePrec(precedence + 1);
-      return new ast.MethodCall(location, lhs, methodName, [rhs]);
+      const location = startLocation.merge(rhs.location);
+      const methodIdentifier = new ast.Identifier(
+        operatorLocation, methodName);
+      return new ast.MethodCall(location, lhs, methodIdentifier, [rhs]);
     }
     if (tokenType === 'and' || tokenType === 'or') {
       this.advance();
       const rhs = this.parsePrec(precedence + 1);
+      const location = startLocation.merge(rhs.location);
       return new ast.Logical(location, tokenType, [lhs, rhs]);
     }
     throw this.newError(`assertionError ${tokenType}`);
   }
 
   private parsePrec(precedence: number): ast.Expression {
+    const startLocation = this.peek.location;
     let expr = this.parsePrefix();
     while (precedence <= (PrecMap.get(this.peek.type) || 0)) {
-      expr = this.parseInfix(expr);
+      expr = this.parseInfix(expr, startLocation);
     }
     return expr;
   }
 
-  private parseExpression(): Ast {
+  private parseExpression(): ast.Expression {
     return this.parsePrec(1);
   }
 
   private parseForStatement(): Ast {
-    throw this.newError('TODO: parseForStatement');
+    const startLocation = this.expect('for').location;
+    const identifier = this.parseIdentifier();
+    this.expect('in');
+    const container = this.parseExpression();
+    const body = this.parseBlock();
+    const location = startLocation.merge(body.location);
+    return new ast.For(location, identifier, container, body);
   }
 
   private parseIfStatement(): Ast {
-    throw this.newError('TODO: parseIfStatement');
+    const startLocation = this.expect('if').location;
+    const pairs: [ast.Expression, ast.Block][] = [];
+    pairs.push([this.parseExpression(), this.parseBlock()]);
+    while (this.consume('elif')) {
+      pairs.push([this.parseExpression(), this.parseBlock()]);
+    }
+    const fallback = this.consume('else') ? this.parseBlock() : null;
+    const location = startLocation.merge(
+      fallback ? fallback.location : pairs[pairs.length - 1][1].location);
+    return new ast.If(location, pairs, fallback);
   }
 
   private parseReturnStatement(): Ast {
-    throw this.newError('TODO: parseReturnStatement');
+    const startLocation = this.expect('return').location;
+    const expression = this.parseExpression();
+    const location = startLocation.merge(expression.location);
+    this.expectStatementDelimiter();
+    return new ast.Return(location, expression);
   }
 
   private parseWhileStatement(): Ast {
-    throw this.newError('TODO: parseWhileStatement');
+    const startLocation = this.expect('while').location;
+    const condition = this.parseExpression();
+    const body = this.parseBlock();
+    const location = startLocation.merge(body.location);
+    return new ast.While(location, condition, body);
   }
 
   private parseImportStatement(): Ast {
-    throw this.newError('TODO: parseImportStatement');
+    const startLocation = this.peek.location;
+    this.expect('import');
+    const module = this.parseQualifiedIdentifier();
+    const alias = this.consume('as') ? this.parseIdentifier() : null;
+    const location = startLocation.merge(
+      alias === null ? module.location : alias.location);
+    return new ast.Import(location, module, alias);
   }
 
   private parseExpressionStatement(): Ast {
-    throw this.newError('TODO: parseExpressionStatement');
+    const startLocation = this.peek.location;
+    const expression = this.parseExpression();
+    const location = startLocation.merge(expression.location);
+    this.expectStatementDelimiter();
+    return new ast.ExpressionStatement(location, expression);
   }
 
-  private parseStatement(): Ast {
-    if (this.at('for')) {
-      return this.parseForStatement();
-    } else if (this.at('if')) {
-      return this.parseIfStatement();
-    } else if (this.at('return')) {
-      return this.parseReturnStatement();
-    } else if (this.at('while')) {
-      return this.parseWhileStatement();
-    } else if (this.at('import')) {
-      return this.parseImportStatement();
-    } else if (this.consume('NEWLINE') || this.consume(';')) {
-      return new ast.Nop(this.peek.location);
-    } else if (this.at('pass')) {
-      const node = new ast.Nop(this.peek.location);
-      this.advance();
-      this.expectStatementDelimiter(
-        'Expected statement delimiter at end of pass statement');
-      return node;
-    } else {
-      return this.parseExpressionStatement();
+  private parseBlock(): ast.Block {
+    const startLocation = this.expect(':').location;
+    while (this.consume('NEWLINE') || this.consume(';'));
+    this.expect('INDENT');
+    const statements: ast.Statement[] = [];
+    while (this.consume('NEWLINE') || this.consume(';'));
+    while (!this.at('DEDENT')) {
+      statements.push(this.parseDeclaration());
+      while (this.consume('NEWLINE') || this.consume(';'));
+    }
+    const location = startLocation.merge(this.expect('DEDENT').location);
+    while (this.consume('NEWLINE') || this.consume(';'));
+    return new ast.Block(location, statements);
+  }
+
+  private parseStatement(): ast.Statement {
+    switch (this.peek.type) {
+      case 'for': return this.parseForStatement();
+      case 'if': return this.parseIfStatement();
+      case 'return': return this.parseReturnStatement();
+      case 'while': return this.parseWhileStatement();
+      case 'import': return this.parseImportStatement();
+      case 'NEWLINE':
+      case ';':
+      case 'pass':
+        const node = new ast.Nop(this.peek.location);
+        while (this.consume('pass'));
+        this.expectStatementDelimiter();
+        while (this.consume('NEWLINE') || this.consume(';'));
+        return node;
+      default: return this.parseExpressionStatement();
     }
   }
 
-  private parseClassDeclaration(): Ast {
-    throw this.newError('TODO: parseClassDeclaration');
+  private parseFieldDeclaration(): ast.Field {
+    const startLocation = this.peek.location;
+    const final = this.consume('final');
+    if (!final) {
+      this.expect('var');
+    }
+    const identifier = this.parseIdentifier();
+    const type = this.parseTypeExpression();
+    const location = startLocation.merge(type.location);
+    this.expectStatementDelimiter();
+    return new ast.Field(location, final, identifier, type);
   }
 
-  private parseFunctionDeclaration(): Ast {
-    throw this.newError('TODO: parseFunctionDeclaration');
+  private parseClassDeclaration(): ast.Class {
+    const startLocation = this.expect('class').location;
+    const identifier = this.parseIdentifier();
+    const bases = [];
+    if (this.consume('(')) {
+      bases.push(...this.parseArguments());
+      this.expect(')');
+    }
+    this.expect(':');
+    while (this.consume('NEWLINE') || this.consume(';'));
+    this.expect('INDENT');
+    while (this.consume('NEWLINE') || this.consume(';'));
+    let documentation: ast.StringLiteral | null = null;
+    if (this.at('STRING')) {
+      const token = this.expect('STRING');
+      documentation = new ast.StringLiteral(
+        token.location, <string>token.value);
+    }
+    while (this.consume('NEWLINE') || this.consume(';'));
+    while (this.consume('pass'));
+    while (this.consume('NEWLINE') || this.consume(';'));
+    const fields = [];
+    while (this.at('var') || this.at('final')) {
+      fields.push(this.parseFieldDeclaration());
+      while (this.consume('NEWLINE') || this.consume(';'));
+    }
+    const methods = [];
+    while (this.at('def')) {
+      methods.push(this.parseFunctionDeclaration());
+      while (this.consume('NEWLINE') || this.consume(';'));
+    }
+    const endLocation = this.expect('DEDENT').location;
+    while (this.consume('NEWLINE') || this.consume(';'));
+    const location = startLocation.merge(endLocation);
+
+    return new ast.Class(
+      location, identifier, bases, documentation, fields, methods);
   }
 
-  private parseVarDeclaration(): Ast {
-    throw this.newError('TODO: parseVarDeclaration');
+  private parseParameter(): ast.Parameter {
+    const identifier = this.parseIdentifier();
+    const type = this.at('IDENTIFIER') ?
+      this.parseTypeExpression() :
+      this.newAnyType(identifier.location);
+    const defaultValue = this.consume('=') ? this.parseExpression() : null;
+    const location = identifier.location.merge(
+      defaultValue ? defaultValue.location : type.location);
+    return new ast.Parameter(location, identifier, type, defaultValue);
   }
 
-  private parseDeclaration(): Ast {
-    if (this.at('class')) {
-      return this.parseClassDeclaration();
-    } else if (this.at('def')) {
-      return this.parseFunctionDeclaration();
-    } else if (this.at('var')) {
-      return this.parseVarDeclaration();
-    } else {
-      return this.parseStatement();
+  private parseFunctionDeclaration(): ast.Function {
+    const startLocation = this.expect('def').location;
+    const identifier = this.parseIdentifier();
+    const parameters = [];
+    this.expect('(');
+    while (!this.at(')')) {
+      parameters.push(this.parseParameter());
+      if (!this.consume(',')) {
+        break;
+      }
+    }
+    this.expect(')');
+    const returnType = this.at(':') ?
+      this.newAnyType(startLocation) :
+      this.parseTypeExpression();
+    const body = this.parseBlock();
+    const location = startLocation.merge(body.location);
+    return new ast.Function(location, identifier, parameters, returnType, body);
+  }
+
+  private newAnyType(location: MLocation): ast.TypeExpression {
+    return new ast.TypeExpression(
+      location,
+      new ast.QualifiedIdentifier(
+        location,
+        null,
+        new ast.Identifier(location, 'any')
+      ),
+      []);
+  }
+
+  private parseVarDeclaration(): ast.Variable {
+    const startLocation = this.peek.location;
+    const final = this.consume('final');
+    if (!final) this.expect('var');
+    const identifier = this.parseIdentifier();
+    const type = this.at('=') ?
+      this.newAnyType(startLocation) :
+      this.parseTypeExpression();
+    const value = this.parseExpression();
+    const location = startLocation.merge(value.location);
+    return new ast.Variable(location, final, identifier, type, value);
+  }
+
+  private parseDeclaration(): ast.Statement {
+    switch (this.peek.type) {
+      case 'class': return this.parseClassDeclaration();
+      case 'def': return this.parseFunctionDeclaration();
+      case 'final': case 'var': return this.parseVarDeclaration();
+      default: return this.parseStatement();
     }
   }
 

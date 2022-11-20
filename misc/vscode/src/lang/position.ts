@@ -15,4 +15,10 @@ export class MPosition {
   clone(): MPosition {
     return new MPosition(this.line, this.column);
   }
+
+  lt(other: MPosition): boolean {
+    return this.line === other.line ?
+        this.column < other.column :
+        this.line < other.line;
+  }
 }

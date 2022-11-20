@@ -10,4 +10,13 @@ export class MLocation {
     this.filePath = filePath;
     this.range = range;
   }
+
+  merge(other: MLocation): MLocation {
+    if (this.filePath !== other.filePath) {
+      throw new Error(`assertionError ${this.filePath}, ${other.filePath}`);
+    }
+    return new MLocation(
+      this.filePath,
+      this.range.merge(other.range));
+  }
 }

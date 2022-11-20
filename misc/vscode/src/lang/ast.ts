@@ -13,6 +13,27 @@ export abstract class Ast {
   }
 }
 
+export class Identifier extends Ast {
+  name: string;
+  constructor(location: MLocation, name: string) {
+    super(location);
+    this.name = name;
+  }
+}
+
+export class QualifiedIdentifier extends Ast {
+  parent: QualifiedIdentifier | null;
+  identifier: Identifier;
+  constructor(
+      location: MLocation,
+      parent: QualifiedIdentifier | null,
+      identifier: Identifier) {
+    super(location);
+    this.parent = parent;
+    this.identifier = identifier;
+  }
+}
+
 export abstract class Statement extends Ast {}
 
 export abstract class Expression extends Ast {}
@@ -22,16 +43,20 @@ export abstract class Expression extends Ast {}
  * in some form.
  *
  * Some syntactic sugar:
- *   SomeType? => optional[SomeType]
- *   A.B       => member[A, B]
+ *   SomeType?  => optional[SomeType]
+ *   A.B        => member[A, B]
+ *   A | B | C  => union[A, union[B, C]]
  *
  */
 export class TypeExpression extends Ast {
-  name: string;
+  identifier: QualifiedIdentifier;
   args: TypeExpression[];
-  constructor(location: MLocation, name: string, args: TypeExpression[]) {
+  constructor(
+      location: MLocation,
+      identifier: QualifiedIdentifier,
+      args: TypeExpression[]) {
     super(location);
-    this.name = name;
+    this.identifier = identifier;
     this.args = args;
   }
 }
@@ -43,34 +68,34 @@ export class Nop extends Statement {
 }
 
 export class Parameter extends Ast {
-  name: string;
+  identifier: Identifier;
   type: TypeExpression;
   defaultValue: Expression | null;
   constructor(
       location: MLocation,
-      name: string,
+      identifier: Identifier,
       type: TypeExpression,
       defaultValue: Expression | null) {
     super(location);
-    this.name = name;
+    this.identifier = identifier;
     this.type = type;
     this.defaultValue = defaultValue;
   }
 }
 
 export class Function extends Statement {
-  name: string;
+  identifier: Identifier;
   parameters: Parameter[];
-  returnType: TypeExpression | null;
+  returnType: TypeExpression;
   body: Block;
   constructor(
       location: MLocation,
-      name: string,
+      identifier: Identifier,
       parameters: Parameter[],
-      returnType: TypeExpression | null,
+      returnType: TypeExpression,
       body: Block) {
     super(location);
-    this.name = name;
+    this.identifier = identifier;
     this.parameters = parameters;
     this.returnType = returnType;
     this.body = body;
@@ -78,61 +103,71 @@ export class Function extends Statement {
 }
 
 export class Field extends Ast {
-  name: string;
+  final: boolean;
+  identifier: Identifier;
   type: TypeExpression;
-  constructor(location: MLocation, name: string, type: TypeExpression) {
+  constructor(
+      location: MLocation,
+      final: boolean,
+      identifier: Identifier,
+      type: TypeExpression) {
     super(location);
-    this.name = name;
+    this.final = final;
+    this.identifier = identifier;
     this.type = type;
   }
 }
 
 export class Class extends Statement {
-  name: string;
+  identifier: Identifier;
   bases: Expression[];
+  documentation: StringLiteral | null;
   fields: Field[];
   methods: Function[];
   constructor(
       location: MLocation,
-      name: string,
+      identifier: Identifier,
       bases: Expression[],
+      documentation: StringLiteral | null,
       fields: Field[],
       methods: Function[]) {
     super(location);
-    this.name = name;
+    this.identifier = identifier;
     this.bases = bases;
+    this.documentation = documentation;
     this.fields = fields;
     this.methods = methods;
   }
 }
 
 export class Import extends Statement {
-  moduleName: string;
-  alias: string | null;
+  module: QualifiedIdentifier;
+  alias: Identifier;
   constructor(
       location: MLocation,
-      moduleName: string,
-      alias: string | null) {
+      module: QualifiedIdentifier,
+      alias: Identifier | null) {
     super(location);
-    this.moduleName = moduleName;
-    this.alias = alias;
+    this.module = module;
+    this.alias = alias || module.identifier;
   }
 }
 
-export class VariableDeclaration extends Statement {
+/** Variable Declaration */
+export class Variable extends Statement {
   final: boolean;
-  name: string;
+  identifier: Identifier;
   type: TypeExpression;
   value: Expression;
   constructor(
       location: MLocation,
       final: boolean,
-      name: string,
+      identifier: Identifier,
       type: TypeExpression,
       value: Expression) {
     super(location);
     this.final = final;
-    this.name = name;
+    this.identifier = identifier;
     this.type = type;
     this.value = value;
   }
@@ -149,10 +184,14 @@ export class While extends Statement {
 }
 
 export class For extends Statement {
-  variable: string;
+  variable: Identifier;
   container: Expression;
   body: Block;
-  constructor(location: MLocation, variable: string, container: Expression, body: Block) {
+  constructor(
+      location: MLocation,
+      variable: Identifier,
+      container: Expression,
+      body: Block) {
     super(location);
     this.variable = variable;
     this.container = container;
@@ -198,19 +237,19 @@ export class ExpressionStatement extends Statement {
 }
 
 export class GetVariable extends Expression {
-  name: string;
-  constructor(location: MLocation, name: string) {
+  identifier: Identifier;
+  constructor(location: MLocation, identifier: Identifier) {
     super(location);
-    this.name = name;
+    this.identifier = identifier;
   }
 }
 
 export class SetVariable extends Expression {
-  name: string;
+  identifier: Identifier;
   value: Expression;
-  constructor(location: MLocation, name: string, value: Expression) {
+  constructor(location: MLocation, identifier: Identifier, value: Expression) {
     super(location);
-    this.name = name;
+    this.identifier = identifier;
     this.value = value;
   }
 }
@@ -240,34 +279,42 @@ export class FunctionCall extends Expression {
 
 export class MethodCall extends Expression {
   owner: Expression;
-  name: string;
+  identifier: Identifier;
   args: Expression[];
-  constructor(location: MLocation, owner: Expression, name: string, args: Expression[]) {
+  constructor(
+      location: MLocation,
+      owner: Expression,
+      identifier: Identifier,
+      args: Expression[]) {
     super(location);
     this.owner = owner;
-    this.name = name;
+    this.identifier = identifier;
     this.args = args;
   }
 }
 
 export class GetField extends Expression {
   owner: Expression;
-  name: string;
-  constructor(location: MLocation, owner: Expression, name: string) {
+  identifier: Identifier;
+  constructor(location: MLocation, owner: Expression, identifier: Identifier) {
     super(location);
     this.owner = owner;
-    this.name = name;
+    this.identifier = identifier;
   }
 }
 
 export class SetField extends Expression {
   owner: Expression;
-  name: string;
+  identifier: Identifier;
   value: Expression;
-  constructor(location: MLocation, owner: Expression, name: string, value: Expression) {
+  constructor(
+      location: MLocation,
+      owner: Expression,
+      identifier: Identifier,
+      value: Expression) {
     super(location);
     this.owner = owner;
-    this.name = name;
+    this.identifier = identifier;
     this.value = value;
   }
 }
