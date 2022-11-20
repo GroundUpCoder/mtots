@@ -6,7 +6,7 @@ import { MLocation } from './location';
 import { MPosition } from './position';
 import { MScanner } from "./scanner";
 import { MScope } from "./scope";
-import { MSymbol, MSymbolDefinition, MSymbolUsage } from "./symbol";
+import { MModuleSymbolInfo, MSymbol, MSymbolDefinition, MSymbolInfo, MSymbolUsage, MUnknownSymbolInfo } from "./symbol";
 import { MToken, MTokenType } from "./token";
 
 const PrecList: MTokenType[][] = [
@@ -54,8 +54,8 @@ const BinopMethodMap: Map<MTokenType, string> = new Map([
 ])
 
 export class MParser {
-  symbols: MSymbol[];
   symbolSet: Set<MSymbol>;
+  symbolUsages: MSymbolUsage[];
   filePath: string | Uri;
   scanner: MScanner;
   scope: MScope;
@@ -73,8 +73,8 @@ export class MParser {
   gotoDefinitionTrigger: MPosition | null = null;
 
   constructor(scanner: MScanner) {
-    this.symbols = [];
     this.symbolSet = new Set();
+    this.symbolUsages = [];
     this.filePath = scanner.filePath;
     this.scanner = scanner;
     this.scope = new MScope();
@@ -193,13 +193,6 @@ export class MParser {
     return args;
   }
 
-  private addToSymbols(symbol: MSymbol) {
-    if (!this.symbolSet.has(symbol)) {
-      this.symbols.push(symbol);
-      this.symbolSet.add(symbol);
-    }
-  }
-
   private checkGotoDefinitionTrigger(symbol: MSymbol, identifier: ast.Identifier) {
     const trigger = this.gotoDefinitionTrigger;
     if (!trigger) {
@@ -213,17 +206,18 @@ export class MParser {
     }
   }
 
-  private recordSymbolDefinition(identifier: ast.Identifier) {
+  private recordSymbolDefinition(
+      identifier: ast.Identifier,
+      info: MSymbolInfo=new MUnknownSymbolInfo()) {
     const previous = this.scope.map.get(identifier.name);
     if (previous) {
-      throw this.newErrorAt(
+      this.newSemanticErrorAt(
         identifier.location,
-        `'${previous.name}' is already defiend in this scope`);
+        `'${previous.name}' is already defined in this scope`);
     }
-    const symbol = new MSymbol(identifier.name);
-    this.addToSymbols(symbol);
+    const symbol = new MSymbol(identifier.name, identifier.location, info);
     this.scope.set(symbol);
-    symbol.definition = new MSymbolDefinition(identifier.location);
+    this.symbolUsages.push(symbol.definition);
     this.checkGotoDefinitionTrigger(symbol, identifier);
   }
 
@@ -232,8 +226,9 @@ export class MParser {
     if (symbol === null) {
       return;
     }
-    this.addToSymbols(symbol);
-    symbol.usages.push(new MSymbolUsage(identifier.location));
+    const usage = new MSymbolUsage(identifier.location, symbol);
+    symbol.usages.push(usage);
+    this.symbolUsages.push(usage);
     this.checkGotoDefinitionTrigger(symbol, identifier);
   }
 
@@ -486,7 +481,9 @@ export class MParser {
     const location = startLocation.merge(
       alias === null ? module.location : alias.location);
     const importModule = new ast.Import(location, module, alias);
-    this.recordSymbolDefinition(importModule.alias);
+    this.recordSymbolDefinition(
+      importModule.alias,
+      new MModuleSymbolInfo('' + importModule.module));
     return importModule;
   }
 
@@ -670,6 +667,6 @@ export class MParser {
     }
     const location = startLocation.merge(this.peek.location);
     return new ast.Module(
-      location, statements, this.symbols, this.semanticErrors);
+      location, statements, this.symbolUsages, this.semanticErrors);
   }
 }

@@ -1,6 +1,6 @@
 import { MError } from "./error";
 import { MLocation } from "./location";
-import { MSymbol } from "./symbol";
+import { MSymbol, MSymbolUsage } from "./symbol";
 
 type LogicalOperator = (
   'not'     |
@@ -36,6 +36,10 @@ export class QualifiedIdentifier extends Ast {
     this.parent = parent;
     this.identifier = identifier;
   }
+  toString() {
+    const parent = this.parent;
+    return parent ? parent + this.identifier.name : this.identifier.name;
+  }
 }
 
 export abstract class Statement extends Ast {}
@@ -67,16 +71,16 @@ export class TypeExpression extends Ast {
 
 export class Module extends Ast {
   readonly statements: Statement[];
-  readonly symbols: MSymbol[];
+  readonly symbolUsages: MSymbolUsage[];
   readonly semanticErrors: MError[];
   constructor(
       location: MLocation,
       statements: Statement[],
-      symbols: MSymbol[],
+      symbolUsages: MSymbolUsage[],
       semanticErrors: MError[]) {
     super(location);
     this.statements = statements;
-    this.symbols = symbols;
+    this.symbolUsages = symbolUsages;
     this.semanticErrors = semanticErrors;
   }
 }
