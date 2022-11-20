@@ -47,6 +47,10 @@
             {
                 "command": "mtots.tokenize",
                 "title": "Tokenize mtots code"
+            },
+            {
+                "command": "mtots.parse",
+                "title": "Parse mtots code"
             }
         ],
         "menus": {
@@ -60,7 +64,8 @@
     },
     "activationEvents": [
         "onLanguage:mtots",
-        "onCommand:mtots.tokenize"
+        "onCommand:mtots.tokenize",
+        "onCommand:mtots.parse"
     ],
     "devDependencies": {
         "@types/node": "^16.11.7",

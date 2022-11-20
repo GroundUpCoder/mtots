@@ -1,3 +1,4 @@
+import { Uri } from 'vscode';
 import * as ast from './ast';
 import { Ast } from "./ast";
 import { MError } from "./error";
@@ -53,14 +54,14 @@ const BinopMethodMap: Map<MTokenType, string> = new Map([
 
 export class MParser {
   symbolTable: MSymbolTable;
-  filePath: string;
+  filePath: string | Uri;
   scanner: MScanner;
   scope: MScope;
   peek: MToken;
 
-  constructor(symbolTable: MSymbolTable, filePath: string, scanner: MScanner) {
+  constructor(symbolTable: MSymbolTable, scanner: MScanner) {
     this.symbolTable = symbolTable;
-    this.filePath = filePath;
+    this.filePath = scanner.filePath;
     this.scanner = scanner;
     this.scope = new MScope();
     this.peek = scanner.scanToken();
@@ -170,7 +171,7 @@ export class MParser {
   }
 
   private parsePrefix(): ast.Expression {
-    const location = this.peek.location;
+    const startLocation = this.peek.location;
     switch (this.peek.type) {
       case '(': {
         this.advance();
@@ -178,56 +179,88 @@ export class MParser {
         this.expect(')');
         return expression;
       }
+      case '[': {
+        this.advance();
+        const items: ast.Expression[] = [];
+        while (!this.at(']')) {
+          items.push(this.parseExpression());
+          if (!this.consume(',')) {
+            break;
+          }
+        }
+        const endLocation = this.expect(']').location;
+        const location = startLocation.merge(endLocation);
+        return new ast.ListDisplay(location, items);
+      }
+      case '{': {
+        this.advance();
+        const pairs: [ast.Expression, ast.Expression][] = [];
+        while (!this.at('}')) {
+          const key = this.parseExpression();
+          const value = this.consume(':') ?
+            this.parseExpression() :
+            this.newNil(key.location);
+          pairs.push([key, value]);
+          if (!this.consume(',')) {
+            break;
+          }
+        }
+        const endLocation = this.expect('}').location;
+        const location = startLocation.merge(endLocation);
+        return new ast.DictDisplay(location, pairs);
+      }
       case 'NUMBER': {
         const expression = new ast.NumberLiteral(
-          location, <number>this.peek.value);
+          startLocation, <number>this.peek.value);
         this.advance();
         return expression;
       }
       case 'STRING': {
         const expression = new ast.StringLiteral(
-          location, <string>this.peek.value);
+          startLocation, <string>this.peek.value);
         this.advance();
         return expression;
       }
       case 'true': {
         this.advance();
-        return new ast.BoolLiteral(location, true);
+        return new ast.BoolLiteral(startLocation, true);
       }
       case 'false': {
         this.advance();
-        return new ast.BoolLiteral(location, false);
+        return new ast.BoolLiteral(startLocation, false);
       }
       case 'nil': {
         this.advance();
-        return new ast.NilLiteral(location, null);
+        return new ast.NilLiteral(startLocation, null);
       }
       case 'IDENTIFIER': {
         const identifier = this.parseIdentifier();
         if (this.consume('=')) {
           const value = this.parseExpression();
-          return new ast.SetVariable(location, identifier, value);
+          return new ast.SetVariable(startLocation, identifier, value);
         } else {
-          return new ast.GetVariable(location, identifier);
+          return new ast.GetVariable(startLocation, identifier);
         }
       }
       case 'not': {
         this.advance();
-        return new ast.Logical(location, 'not', [
-          this.parsePrec(PREC_UNARY_NOT)]);
+        const arg = this.parsePrec(PREC_UNARY_NOT);
+        const location = startLocation.merge(arg.location);
+        return new ast.Logical(location, 'not', [arg]);
       }
       case '~':
       case '-':
       case '+':
         const tokenType = this.peek.type;
         const methodIdentifier = new ast.Identifier(
-          location,
+          startLocation,
           tokenType === '~' ? '__not__' :
           tokenType === '-' ? '__neg__' :
           tokenType === '+' ? '__pos__' : 'invalid');
         this.advance();
-        return new ast.MethodCall(
-          location, this.parsePrec(PREC_UNARY_MINUS), methodIdentifier, []);
+        const arg = this.parsePrec(PREC_UNARY_MINUS);
+        const location = startLocation.merge(arg.location);
+        return new ast.MethodCall(location, arg, methodIdentifier, []);
     }
     throw this.newError(
       `Expected expression but got '${this.peek.type}'`);
@@ -238,7 +271,7 @@ export class MParser {
     const precedence = PrecMap.get(tokenType);
     const methodName = BinopMethodMap.get(tokenType);
     if (!precedence) {
-      throw this.newError('assertionError');
+      throw this.newError(`assertionError infix precedence=${precedence}`);
     }
 
     switch (tokenType) {
@@ -293,13 +326,35 @@ export class MParser {
         operatorLocation, methodName);
       return new ast.MethodCall(location, lhs, methodIdentifier, [rhs]);
     }
+    if (tokenType === 'not') {
+      let operatorLocation = this.advance().location;
+      operatorLocation = operatorLocation.merge(this.expect('in').location);
+      const rhs = this.parsePrec(precedence + 1);
+      const location = startLocation.merge(rhs.location);
+      const methodIdentifier = new ast.Identifier(
+        operatorLocation, '__notcontains__');
+      return new ast.MethodCall(location, lhs, methodIdentifier, [rhs]);
+    }
+    if (tokenType === 'is') {
+      let operatorLocation = this.advance().location;
+      let methodName = '__is__';
+      if (this.at('not')) {
+        operatorLocation = operatorLocation.merge(this.advance().location);
+        methodName = '__isnot__';
+      }
+      const rhs = this.parsePrec(precedence + 1);
+      const location = startLocation.merge(rhs.location);
+      const methodIdentifier = new ast.Identifier(
+        operatorLocation, methodName);
+      return new ast.MethodCall(location, lhs, methodIdentifier, [rhs]);
+    }
     if (tokenType === 'and' || tokenType === 'or') {
       this.advance();
       const rhs = this.parsePrec(precedence + 1);
       const location = startLocation.merge(rhs.location);
       return new ast.Logical(location, tokenType, [lhs, rhs]);
     }
-    throw this.newError(`assertionError ${tokenType}`);
+    throw this.newError(`assertionError tokenType=${tokenType}`);
   }
 
   private parsePrec(precedence: number): ast.Expression {
@@ -500,7 +555,11 @@ export class MParser {
       []);
   }
 
-  private parseVarDeclaration(): ast.Variable {
+  private newNil(location: MLocation): ast.NilLiteral {
+    return new ast.NilLiteral(location, null);
+  }
+
+  private parseVariableDeclaration(): ast.Variable {
     const startLocation = this.peek.location;
     const final = this.consume('final');
     if (!final) this.expect('var');
@@ -508,6 +567,7 @@ export class MParser {
     const type = this.at('=') ?
       this.newAnyType(startLocation) :
       this.parseTypeExpression();
+    this.expect('=');
     const value = this.parseExpression();
     const location = startLocation.merge(value.location);
     return new ast.Variable(location, final, identifier, type, value);
@@ -517,14 +577,18 @@ export class MParser {
     switch (this.peek.type) {
       case 'class': return this.parseClassDeclaration();
       case 'def': return this.parseFunctionDeclaration();
-      case 'final': case 'var': return this.parseVarDeclaration();
+      case 'final': case 'var': return this.parseVariableDeclaration();
       default: return this.parseStatement();
     }
   }
 
-  parseProgram() {
+  parseModule(): ast.Module {
+    const startLocation = this.peek.location;
+    const statements: ast.Statement[] = [];
     while (!this.at('EOF')) {
-      this.parseDeclaration();
+      statements.push(this.parseDeclaration());
     }
+    const location = startLocation.merge(this.peek.location);
+    return new ast.Module(location, statements);
   }
 }

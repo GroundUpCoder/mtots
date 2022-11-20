@@ -120,14 +120,14 @@ export class MScanner {
       return false;
     }
     if (this.getch() === expected) {
-      return false;
+      this.advance();
+      return true;
     }
-    this.advance();
-    return true;
+    return false;
   }
 
   makeRange(): MRange {
-    return new MRange(this.startPosition, this.position);
+    return new MRange(this.startPosition.clone(), this.position.clone());
   }
 
   makeLocation(): MLocation {
@@ -323,6 +323,18 @@ export class MScanner {
     }
     const oneCharSymbol = SymbolsMap.get(c);
     if (oneCharSymbol) {
+      switch (oneCharSymbol) {
+        case '(':
+        case '[':
+        case '{':
+          this.depth++;
+          break;
+        case ')':
+        case ']':
+        case '}':
+          this.depth--;
+          break;
+      }
       return this.makeToken(oneCharSymbol);
     }
 

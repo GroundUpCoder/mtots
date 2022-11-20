@@ -6,4 +6,7 @@ export function activate(context: ExtensionContext) {
   context.subscriptions.push(vscode.commands.registerCommand(
     'mtots.tokenize',
     commands.tokenize));
+  context.subscriptions.push(vscode.commands.registerCommand(
+    'mtots.parse',
+    commands.parse));
 }

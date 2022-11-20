@@ -7,8 +7,10 @@ type LogicalOperator = (
 )
 
 export abstract class Ast {
+  className: string;    // makes JSON.stringify a bit more readable
   location: MLocation;
   constructor(location: MLocation) {
+    this.className = this.constructor.name;
     this.location = location;
   }
 }
@@ -58,6 +60,14 @@ export class TypeExpression extends Ast {
     super(location);
     this.identifier = identifier;
     this.args = args;
+  }
+}
+
+export class Module extends Ast {
+  statements: Statement[];
+  constructor(location: MLocation, statements: Statement[]) {
+    super(location);
+    this.statements = statements;
   }
 }
 
@@ -266,6 +276,22 @@ export class NilLiteral extends Literal<null> {}
 export class BoolLiteral extends Literal<boolean> {}
 export class NumberLiteral extends Literal<number> {}
 export class StringLiteral extends Literal<string> {}
+
+export class ListDisplay extends Expression {
+  items: Expression[];
+  constructor(location: MLocation, items: Expression[]) {
+    super(location);
+    this.items = items;
+  }
+}
+
+export class DictDisplay extends Expression {
+  pairs: [Expression, Expression][];
+  constructor(location: MLocation, pairs: [Expression, Expression][]) {
+    super(location);
+    this.pairs = pairs;
+  }
+}
 
 export class FunctionCall extends Expression {
   func: Expression;

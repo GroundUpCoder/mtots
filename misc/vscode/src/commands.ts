@@ -1,12 +1,39 @@
 import * as vscode from 'vscode';
 import { MError } from './lang/error';
+import { MParser } from './lang/parser';
 import { MScanner } from './lang/scanner';
+import { MSymbolTable } from './lang/symbol';
 
-export async function tokenize() {
-  const editor = vscode.window.activeTextEditor;
-  if (!editor) {
-    return;
+async function writeToNewEditor(
+    f: (emit: (m: string) => void) => void,
+    language: string = 'plaintext') {
+  const document = await vscode.workspace.openTextDocument({
+    content: '',
+    language: language,
+  });
+  let insertText = '';
+  function emit(m: string) {
+    insertText += m;
   }
+  try {
+    f(emit);
+  } catch (e) {
+    if (e instanceof MError) {
+      insertText += `ERROR: ${e.message}`;
+      insertText += `  ${e.location.range.start.line + 1}:`;
+      insertText += `${e.location.range.start.column + 1}`;
+    } else {
+      throw e;
+    }
+  }
+  const edit = new vscode.WorkspaceEdit();
+  edit.insert(document.uri, new vscode.Position(0, 0), insertText);
+  if (await vscode.workspace.applyEdit(edit)) {
+    vscode.window.showTextDocument(document);
+  }
+}
+
+function getSelectionOrAllText(editor: vscode.TextEditor) {
   const selection =
     editor.selection.isEmpty ?
       new vscode.Range(
@@ -15,20 +42,21 @@ export async function tokenize() {
       new vscode.Range(
         editor.selection.start,
         editor.selection.end);
-  const text = editor.document.getText(selection);
-  const document = await vscode.workspace.openTextDocument({
-    content: '',
-    language: 'plaintext',
-  });
+  return editor.document.getText(selection);
+}
 
-  const scanner = new MScanner(document.uri, text);
+export async function tokenize() {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) {
+    return;
+  }
+  const text = getSelectionOrAllText(editor);
+  const scanner = new MScanner('<input>', text);
 
-  let insertText = '';
-
-  try {
+  await writeToNewEditor(emit => {
     while (true) {
       const token = scanner.scanToken();
-      insertText += (
+      emit(
         `${token.location.range.start.line + 1}:` +
         `${token.location.range.start.column + 1} - ` +
         `${token.location.range.end.line + 1}:` +
@@ -39,18 +67,20 @@ export async function tokenize() {
         break;
       }
     }
-  } catch (e) {
-    if (!(e instanceof MError)) {
-      throw e;
-    }
-    insertText += `ERROR: ${e.message}`;
-    insertText += `  ${e.location.range.start.line + 1}:`;
-    insertText += `${e.location.range.start.column + 1}`;
-  }
+  });
+}
 
-  const edit = new vscode.WorkspaceEdit();
-  edit.insert(document.uri, new vscode.Position(0, 0), insertText);
-  if (await vscode.workspace.applyEdit(edit)) {
-    vscode.window.showTextDocument(document);
+export async function parse() {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) {
+    return;
   }
+  const symbolTable = new MSymbolTable();
+  const text = getSelectionOrAllText(editor);
+  await writeToNewEditor(emit => {
+    const scanner = new MScanner('<input>', text);
+    const parser = new MParser(symbolTable, scanner);
+    const moduleAst = parser.parseModule();
+    emit(JSON.stringify(moduleAst));
+  }, 'json');
 }
