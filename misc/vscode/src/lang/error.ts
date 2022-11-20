@@ -9,3 +9,10 @@ export class MError {
     this.message = message;
   }
 }
+
+export class MGotoDefinitionException {
+  location: MLocation;
+  constructor(location: MLocation) {
+    this.location = location;
+  }
+}

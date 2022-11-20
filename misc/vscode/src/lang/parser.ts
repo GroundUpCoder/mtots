@@ -1,11 +1,12 @@
 import { Uri } from 'vscode';
 import * as ast from './ast';
 import { Ast } from "./ast";
-import { MError } from "./error";
+import { MError, MGotoDefinitionException } from "./error";
 import { MLocation } from './location';
+import { MPosition } from './position';
 import { MScanner } from "./scanner";
 import { MScope } from "./scope";
-import { MSymbolTable } from "./symbol";
+import { MSymbol, MSymbolDefinition, MSymbolUsage } from "./symbol";
 import { MToken, MTokenType } from "./token";
 
 const PrecList: MTokenType[][] = [
@@ -53,14 +54,18 @@ const BinopMethodMap: Map<MTokenType, string> = new Map([
 ])
 
 export class MParser {
-  symbolTable: MSymbolTable;
+  symbols: MSymbol[];
+  symbolSet: Set<MSymbol>;
   filePath: string | Uri;
   scanner: MScanner;
   scope: MScope;
   peek: MToken;
 
-  constructor(symbolTable: MSymbolTable, scanner: MScanner) {
-    this.symbolTable = symbolTable;
+  gotoDefinitionTrigger: MPosition | null = null;
+
+  constructor(scanner: MScanner) {
+    this.symbols = [];
+    this.symbolSet = new Set();
     this.filePath = scanner.filePath;
     this.scanner = scanner;
     this.scope = new MScope();
@@ -68,7 +73,11 @@ export class MParser {
   }
 
   private newError(message: string) {
-    throw new MError(this.peek.location, message);
+    return this.newErrorAt(this.peek.location, message);
+  }
+
+  private newErrorAt(location: MLocation, message: string) {
+    return new MError(location, message);
   }
 
   private advance(): MToken {
@@ -170,6 +179,49 @@ export class MParser {
     return args;
   }
 
+  private addToSymbols(symbol: MSymbol) {
+    if (!this.symbolSet.has(symbol)) {
+      this.symbols.push(symbol);
+      this.symbolSet.add(symbol);
+    }
+  }
+
+  private checkGotoDefinitionTrigger(symbol: MSymbol, identifier: ast.Identifier) {
+    const trigger = this.gotoDefinitionTrigger;
+    if (!trigger) {
+      return;
+    }
+    if (identifier.location.range.contains(trigger)) {
+      const definition = symbol.definition;
+      if (definition) {
+        throw new MGotoDefinitionException(definition.location);
+      }
+    }
+  }
+
+  private recordSymbolDefinition(identifier: ast.Identifier) {
+    const previous = this.scope.get(identifier.name);
+    if (previous) {
+      throw this.newErrorAt(
+        identifier.location,
+        `'${previous.name}' is already defiend in this scope`);
+    }
+    const symbol = new MSymbol(identifier.name);
+    this.addToSymbols(symbol);
+    this.scope.set(symbol);
+    symbol.definition = new MSymbolDefinition(identifier.location);
+  }
+
+  private recordSymbolUsage(identifier: ast.Identifier) {
+    const symbol = this.scope.get(identifier.name);
+    if (symbol === null) {
+      return;
+    }
+    this.addToSymbols(symbol);
+    symbol.usages.push(new MSymbolUsage(identifier.location));
+    this.checkGotoDefinitionTrigger(symbol, identifier);
+  }
+
   private parsePrefix(): ast.Expression {
     const startLocation = this.peek.location;
     switch (this.peek.type) {
@@ -235,6 +287,7 @@ export class MParser {
       }
       case 'IDENTIFIER': {
         const identifier = this.parseIdentifier();
+        this.recordSymbolUsage(identifier);
         if (this.consume('=')) {
           const value = this.parseExpression();
           return new ast.SetVariable(startLocation, identifier, value);
@@ -428,6 +481,8 @@ export class MParser {
   }
 
   private parseBlock(): ast.Block {
+    const oldScope = this.scope;
+    this.scope = new MScope(oldScope);
     const startLocation = this.expect(':').location;
     while (this.consume('NEWLINE') || this.consume(';'));
     this.expect('INDENT');
@@ -439,6 +494,7 @@ export class MParser {
     }
     const location = startLocation.merge(this.expect('DEDENT').location);
     while (this.consume('NEWLINE') || this.consume(';'));
+    this.scope = oldScope;
     return new ast.Block(location, statements);
   }
 
@@ -564,6 +620,7 @@ export class MParser {
     const final = this.consume('final');
     if (!final) this.expect('var');
     const identifier = this.parseIdentifier();
+    this.recordSymbolDefinition(identifier);
     const type = this.at('=') ?
       this.newAnyType(startLocation) :
       this.parseTypeExpression();
@@ -589,6 +646,6 @@ export class MParser {
       statements.push(this.parseDeclaration());
     }
     const location = startLocation.merge(this.peek.location);
-    return new ast.Module(location, statements);
+    return new ast.Module(location, statements, this.symbols);
   }
 }

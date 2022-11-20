@@ -1,4 +1,5 @@
 import { MLocation } from "./location";
+import { MSymbol } from "./symbol";
 
 type LogicalOperator = (
   'not'     |
@@ -65,9 +66,11 @@ export class TypeExpression extends Ast {
 
 export class Module extends Ast {
   statements: Statement[];
-  constructor(location: MLocation, statements: Statement[]) {
+  symbols: MSymbol[];
+  constructor(location: MLocation, statements: Statement[], symbols: MSymbol[]) {
     super(location);
     this.statements = statements;
+    this.symbols = symbols;
   }
 }
 

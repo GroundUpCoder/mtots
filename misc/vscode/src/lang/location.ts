@@ -19,4 +19,8 @@ export class MLocation {
       this.filePath,
       this.range.merge(other.range));
   }
+
+  overlaps(other: MLocation): boolean {
+    return this.filePath === other.filePath && this.range.overlaps(other.range);
+  }
 }

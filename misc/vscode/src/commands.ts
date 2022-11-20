@@ -2,7 +2,6 @@ import * as vscode from 'vscode';
 import { MError } from './lang/error';
 import { MParser } from './lang/parser';
 import { MScanner } from './lang/scanner';
-import { MSymbolTable } from './lang/symbol';
 
 async function writeToNewEditor(
     f: (emit: (m: string) => void) => void,
@@ -23,6 +22,7 @@ async function writeToNewEditor(
       insertText += `  ${e.location.range.start.line + 1}:`;
       insertText += `${e.location.range.start.column + 1}`;
     } else {
+      console.log(e);
       throw e;
     }
   }
@@ -75,11 +75,10 @@ export async function parse() {
   if (!editor) {
     return;
   }
-  const symbolTable = new MSymbolTable();
   const text = getSelectionOrAllText(editor);
   await writeToNewEditor(emit => {
     const scanner = new MScanner('<input>', text);
-    const parser = new MParser(symbolTable, scanner);
+    const parser = new MParser(scanner);
     const moduleAst = parser.parseModule();
     emit(JSON.stringify(moduleAst));
   }, 'json');
