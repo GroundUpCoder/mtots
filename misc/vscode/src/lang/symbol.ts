@@ -28,15 +28,11 @@ export class MSymbolUsage {
 }
 
 export class MSymbolTable {
-  symbols: MSymbol[];
   nextID: number;
   constructor() {
-    this.symbols = [];
     this.nextID = 0;
   }
   newSymbol(name: string): MSymbol {
-    const symbol = new MSymbol(this.nextID++, name);
-    this.symbols.push(symbol);
-    return symbol;
+    return new MSymbol(this.nextID++, name);
   }
 }
