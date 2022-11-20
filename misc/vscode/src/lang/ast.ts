@@ -9,8 +9,8 @@ type LogicalOperator = (
 )
 
 export abstract class Ast {
-  className: string;    // makes JSON.stringify a bit more readable
-  location: MLocation;
+  readonly className: string;    // makes JSON.stringify a bit more readable
+  readonly location: MLocation;
   constructor(location: MLocation) {
     this.className = this.constructor.name;
     this.location = location;
@@ -18,7 +18,7 @@ export abstract class Ast {
 }
 
 export class Identifier extends Ast {
-  name: string;
+  readonly name: string;
   constructor(location: MLocation, name: string) {
     super(location);
     this.name = name;
@@ -26,8 +26,8 @@ export class Identifier extends Ast {
 }
 
 export class QualifiedIdentifier extends Ast {
-  parent: QualifiedIdentifier | null;
-  identifier: Identifier;
+  readonly parent: QualifiedIdentifier | null;
+  readonly identifier: Identifier;
   constructor(
       location: MLocation,
       parent: QualifiedIdentifier | null,
@@ -53,8 +53,8 @@ export abstract class Expression extends Ast {}
  *
  */
 export class TypeExpression extends Ast {
-  identifier: QualifiedIdentifier;
-  args: TypeExpression[];
+  readonly identifier: QualifiedIdentifier;
+  readonly args: TypeExpression[];
   constructor(
       location: MLocation,
       identifier: QualifiedIdentifier,
@@ -66,9 +66,9 @@ export class TypeExpression extends Ast {
 }
 
 export class Module extends Ast {
-  statements: Statement[];
-  symbols: MSymbol[];
-  semanticErrors: MError[];
+  readonly statements: Statement[];
+  readonly symbols: MSymbol[];
+  readonly semanticErrors: MError[];
   constructor(
       location: MLocation,
       statements: Statement[],
@@ -88,9 +88,9 @@ export class Nop extends Statement {
 }
 
 export class Parameter extends Ast {
-  identifier: Identifier;
-  type: TypeExpression;
-  defaultValue: Expression | null;
+  readonly identifier: Identifier;
+  readonly type: TypeExpression;
+  readonly defaultValue: Expression | null;
   constructor(
       location: MLocation,
       identifier: Identifier,
@@ -104,10 +104,10 @@ export class Parameter extends Ast {
 }
 
 export class Function extends Statement {
-  identifier: Identifier;
-  parameters: Parameter[];
-  returnType: TypeExpression;
-  body: Block;
+  readonly identifier: Identifier;
+  readonly parameters: Parameter[];
+  readonly returnType: TypeExpression;
+  readonly body: Block;
   constructor(
       location: MLocation,
       identifier: Identifier,
@@ -123,9 +123,9 @@ export class Function extends Statement {
 }
 
 export class Field extends Ast {
-  final: boolean;
-  identifier: Identifier;
-  type: TypeExpression;
+  readonly final: boolean;
+  readonly identifier: Identifier;
+  readonly type: TypeExpression;
   constructor(
       location: MLocation,
       final: boolean,
@@ -139,11 +139,11 @@ export class Field extends Ast {
 }
 
 export class Class extends Statement {
-  identifier: Identifier;
-  bases: Expression[];
-  documentation: StringLiteral | null;
-  fields: Field[];
-  methods: Function[];
+  readonly identifier: Identifier;
+  readonly bases: Expression[];
+  readonly documentation: StringLiteral | null;
+  readonly fields: Field[];
+  readonly methods: Function[];
   constructor(
       location: MLocation,
       identifier: Identifier,
@@ -161,8 +161,8 @@ export class Class extends Statement {
 }
 
 export class Import extends Statement {
-  module: QualifiedIdentifier;
-  alias: Identifier;
+  readonly module: QualifiedIdentifier;
+  readonly alias: Identifier;
   constructor(
       location: MLocation,
       module: QualifiedIdentifier,
@@ -175,10 +175,10 @@ export class Import extends Statement {
 
 /** Variable Declaration */
 export class Variable extends Statement {
-  final: boolean;
-  identifier: Identifier;
-  type: TypeExpression;
-  value: Expression;
+  readonly final: boolean;
+  readonly identifier: Identifier;
+  readonly type: TypeExpression;
+  readonly value: Expression;
   constructor(
       location: MLocation,
       final: boolean,
@@ -194,8 +194,8 @@ export class Variable extends Statement {
 }
 
 export class While extends Statement {
-  condition: Expression;
-  body: Block;
+  readonly condition: Expression;
+  readonly body: Block;
   constructor(location: MLocation, condition: Expression, body: Block) {
     super(location);
     this.condition = condition;
@@ -204,9 +204,9 @@ export class While extends Statement {
 }
 
 export class For extends Statement {
-  variable: Identifier;
-  container: Expression;
-  body: Block;
+  readonly variable: Identifier;
+  readonly container: Expression;
+  readonly body: Block;
   constructor(
       location: MLocation,
       variable: Identifier,
@@ -220,8 +220,8 @@ export class For extends Statement {
 }
 
 export class If extends Statement {
-  pairs: [Expression, Block][];
-  fallback: Block | null;
+  readonly pairs: [Expression, Block][];
+  readonly fallback: Block | null;
   constructor(
       location: MLocation,
       pairs: [Expression, Block][],
@@ -233,7 +233,7 @@ export class If extends Statement {
 }
 
 export class Block extends Statement {
-  statements: Statement[];
+  readonly statements: Statement[];
   constructor(location: MLocation, statements: Statement[]) {
     super(location);
     this.statements = statements;
@@ -241,7 +241,7 @@ export class Block extends Statement {
 }
 
 export class Return extends Statement {
-  expression: Expression;
+  readonly expression: Expression;
   constructor(location: MLocation, expression: Expression) {
     super(location);
     this.expression = expression;
@@ -249,7 +249,7 @@ export class Return extends Statement {
 }
 
 export class ExpressionStatement extends Statement {
-  expression: Expression;
+  readonly expression: Expression;
   constructor(location: MLocation, expression: Expression) {
     super(location);
     this.expression = expression;
@@ -257,7 +257,7 @@ export class ExpressionStatement extends Statement {
 }
 
 export class GetVariable extends Expression {
-  identifier: Identifier;
+  readonly identifier: Identifier;
   constructor(location: MLocation, identifier: Identifier) {
     super(location);
     this.identifier = identifier;
@@ -265,8 +265,8 @@ export class GetVariable extends Expression {
 }
 
 export class SetVariable extends Expression {
-  identifier: Identifier;
-  value: Expression;
+  readonly identifier: Identifier;
+  readonly value: Expression;
   constructor(location: MLocation, identifier: Identifier, value: Expression) {
     super(location);
     this.identifier = identifier;
@@ -275,7 +275,7 @@ export class SetVariable extends Expression {
 }
 
 export abstract class Literal<T> extends Expression {
-  value: T;
+  readonly value: T;
   constructor(location: MLocation, value: T) {
     super(location);
     this.value = value;
@@ -288,7 +288,7 @@ export class NumberLiteral extends Literal<number> {}
 export class StringLiteral extends Literal<string> {}
 
 export class ListDisplay extends Expression {
-  items: Expression[];
+  readonly items: Expression[];
   constructor(location: MLocation, items: Expression[]) {
     super(location);
     this.items = items;
@@ -296,7 +296,7 @@ export class ListDisplay extends Expression {
 }
 
 export class DictDisplay extends Expression {
-  pairs: [Expression, Expression][];
+  readonly pairs: [Expression, Expression][];
   constructor(location: MLocation, pairs: [Expression, Expression][]) {
     super(location);
     this.pairs = pairs;
@@ -304,8 +304,8 @@ export class DictDisplay extends Expression {
 }
 
 export class FunctionCall extends Expression {
-  func: Expression;
-  args: Expression[];
+  readonly func: Expression;
+  readonly args: Expression[];
   constructor(location: MLocation, func: Expression, args: Expression[]) {
     super(location);
     this.func = func;
@@ -314,9 +314,9 @@ export class FunctionCall extends Expression {
 }
 
 export class MethodCall extends Expression {
-  owner: Expression;
-  identifier: Identifier;
-  args: Expression[];
+  readonly owner: Expression;
+  readonly identifier: Identifier;
+  readonly args: Expression[];
   constructor(
       location: MLocation,
       owner: Expression,
@@ -330,8 +330,8 @@ export class MethodCall extends Expression {
 }
 
 export class GetField extends Expression {
-  owner: Expression;
-  identifier: Identifier;
+  readonly owner: Expression;
+  readonly identifier: Identifier;
   constructor(location: MLocation, owner: Expression, identifier: Identifier) {
     super(location);
     this.owner = owner;
@@ -340,9 +340,9 @@ export class GetField extends Expression {
 }
 
 export class SetField extends Expression {
-  owner: Expression;
-  identifier: Identifier;
-  value: Expression;
+  readonly owner: Expression;
+  readonly identifier: Identifier;
+  readonly value: Expression;
   constructor(
       location: MLocation,
       owner: Expression,
@@ -356,8 +356,8 @@ export class SetField extends Expression {
 }
 
 export class Logical extends Expression {
-  op: LogicalOperator;
-  args: Expression[];
+  readonly op: LogicalOperator;
+  readonly args: Expression[];
   constructor(
       location: MLocation,
       op: LogicalOperator,
