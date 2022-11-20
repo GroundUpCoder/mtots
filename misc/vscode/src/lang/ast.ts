@@ -111,17 +111,20 @@ export class Function extends Statement {
   readonly identifier: Identifier;
   readonly parameters: Parameter[];
   readonly returnType: TypeExpression;
+  readonly documentation: StringLiteral | null;
   readonly body: Block;
   constructor(
       location: MLocation,
       identifier: Identifier,
       parameters: Parameter[],
       returnType: TypeExpression,
+      documentation: StringLiteral | null,
       body: Block) {
     super(location);
     this.identifier = identifier;
     this.parameters = parameters;
     this.returnType = returnType;
+    this.documentation = documentation;
     this.body = body;
   }
 }

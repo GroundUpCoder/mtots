@@ -1,12 +1,12 @@
 import { Uri } from 'vscode';
 import * as ast from './ast';
 import { Ast } from "./ast";
-import { MError, MGotoDefinitionException } from "./error";
+import { MError, MGotoDefinitionException, MProvideHoverException } from "./error";
 import { MLocation } from './location';
 import { MPosition } from './position';
 import { MScanner } from "./scanner";
 import { MScope } from "./scope";
-import { MModuleSymbolInfo, MSymbol, MSymbolDefinition, MSymbolInfo, MSymbolUsage, MUnknownSymbolInfo } from "./symbol";
+import { MSymbol, MSymbolDefinition, MSymbolUsage } from "./symbol";
 import { MToken, MTokenType } from "./token";
 
 const PrecList: MTokenType[][] = [
@@ -54,12 +54,10 @@ const BinopMethodMap: Map<MTokenType, string> = new Map([
 ])
 
 export class MParser {
-  symbolSet: Set<MSymbol>;
-  symbolUsages: MSymbolUsage[];
-  filePath: string | Uri;
-  scanner: MScanner;
-  scope: MScope;
-  peek: MToken;
+  private symbolUsages: MSymbolUsage[];
+  private scanner: MScanner;
+  private scope: MScope;
+  private peek: MToken;
 
   /**
    * Semantic errors are useful to alert about, but they should not
@@ -68,14 +66,13 @@ export class MParser {
    * such an error means we cannot be sure if anything we parse going forward
    * is at all meaningful.
    */
-  semanticErrors: MError[];
+  private semanticErrors: MError[];
 
   gotoDefinitionTrigger: MPosition | null = null;
+  provideHoverTrigger: MPosition | null = null;
 
   constructor(scanner: MScanner) {
-    this.symbolSet = new Set();
     this.symbolUsages = [];
-    this.filePath = scanner.filePath;
     this.scanner = scanner;
     this.scope = new MScope();
     this.peek = scanner.scanToken();
@@ -193,32 +190,43 @@ export class MParser {
     return args;
   }
 
+  private checkTriggers(symbol: MSymbol, identifier: ast.Identifier) {
+    this.checkGotoDefinitionTrigger(symbol, identifier);
+    this.checkProvideHoverTrigger(symbol, identifier);
+  }
+
   private checkGotoDefinitionTrigger(symbol: MSymbol, identifier: ast.Identifier) {
     const trigger = this.gotoDefinitionTrigger;
     if (!trigger) {
       return;
     }
     if (identifier.location.range.contains(trigger)) {
-      const definition = symbol.definition;
-      if (definition) {
-        throw new MGotoDefinitionException(definition.location);
-      }
+      throw new MGotoDefinitionException(symbol.definition.location);
     }
   }
 
-  private recordSymbolDefinition(
-      identifier: ast.Identifier,
-      info: MSymbolInfo=new MUnknownSymbolInfo()) {
+  private checkProvideHoverTrigger(symbol: MSymbol, identifier: ast.Identifier) {
+    const trigger = this.provideHoverTrigger;
+    if (!trigger) {
+      return;
+    }
+    if (identifier.location.range.contains(trigger)) {
+      throw new MProvideHoverException(symbol);
+    }
+  }
+
+  private recordSymbolDefinition(identifier: ast.Identifier): MSymbolDefinition {
     const previous = this.scope.map.get(identifier.name);
     if (previous) {
       this.newSemanticErrorAt(
         identifier.location,
         `'${previous.name}' is already defined in this scope`);
     }
-    const symbol = new MSymbol(identifier.name, identifier.location, info);
+    const symbol = new MSymbol(identifier.name, identifier.location);
     this.scope.set(symbol);
     this.symbolUsages.push(symbol.definition);
-    this.checkGotoDefinitionTrigger(symbol, identifier);
+    this.checkTriggers(symbol, identifier);
+    return symbol.definition;
   }
 
   private recordSymbolUsage(identifier: ast.Identifier) {
@@ -229,7 +237,7 @@ export class MParser {
     const usage = new MSymbolUsage(identifier.location, symbol);
     symbol.usages.push(usage);
     this.symbolUsages.push(usage);
-    this.checkGotoDefinitionTrigger(symbol, identifier);
+    this.checkTriggers(symbol, identifier);
   }
 
   private parsePrefix(): ast.Expression {
@@ -481,9 +489,7 @@ export class MParser {
     const location = startLocation.merge(
       alias === null ? module.location : alias.location);
     const importModule = new ast.Import(location, module, alias);
-    this.recordSymbolDefinition(
-      importModule.alias,
-      new MModuleSymbolInfo('' + importModule.module));
+    this.recordSymbolDefinition(importModule.alias);
     return importModule;
   }
 
@@ -599,7 +605,7 @@ export class MParser {
   private parseFunctionDeclaration(): ast.Function {
     const startLocation = this.expect('def').location;
     const identifier = this.parseIdentifier();
-    this.recordSymbolDefinition(identifier);
+    const functionSymbol = this.recordSymbolDefinition(identifier);
     const outerScope = this.scope;
     this.scope = new MScope(outerScope);
     const parameters = [];
@@ -615,9 +621,31 @@ export class MParser {
       this.newAnyType(startLocation) :
       this.parseTypeExpression();
     const body = this.parseBlock();
+    if (body.statements.length &&
+        body.statements[0] instanceof ast.ExpressionStatement &&
+        body.statements[0].expression instanceof ast.StringLiteral) {
+      functionSymbol.documentation = body.statements[0].expression;
+    }
+    let documentation: ast.StringLiteral | null = null;
+    const bodyStatements = body.statements;
+    if (bodyStatements.length > 0) {
+      const firstStatement = body.statements[0];
+      if (firstStatement instanceof ast.ExpressionStatement) {
+        const innerExpression = firstStatement.expression;
+        if (innerExpression instanceof ast.StringLiteral) {
+          documentation = innerExpression;
+        }
+      }
+    }
     const location = startLocation.merge(body.location);
     this.scope = outerScope;
-    return new ast.Function(location, identifier, parameters, returnType, body);
+    return new ast.Function(
+      location,
+      identifier,
+      parameters,
+      returnType,
+      documentation,
+      body);
   }
 
   private newAnyType(location: MLocation): ast.TypeExpression {

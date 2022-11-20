@@ -1,4 +1,5 @@
 import { MLocation } from "./location";
+import { MSymbol } from "./symbol";
 
 
 export class MError {
@@ -14,5 +15,12 @@ export class MGotoDefinitionException {
   location: MLocation;
   constructor(location: MLocation) {
     this.location = location;
+  }
+}
+
+export class MProvideHoverException {
+  symbol: MSymbol;
+  constructor(symbol: MSymbol) {
+    this.symbol = symbol;
   }
 }

@@ -166,6 +166,7 @@ final colors = {
 }
 
 def eventLoop():
+  "some event loop documentation"
   final event = sdl.Event()
   final rect1 = sdl.Rect(0, 0, 0, 0)
   final rect2 = sdl.Rect(0, 0, 0, 0)
