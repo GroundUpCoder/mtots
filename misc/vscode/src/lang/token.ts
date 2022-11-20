@@ -64,9 +64,9 @@ export const KeywordsMap: Map<string, MTokenTypeKeyword> = new Map(
 );
 
 export class MToken {
-  location: MLocation;
-  type: MTokenType;
-  value: MTokenValue;
+  readonly location: MLocation;
+  readonly type: MTokenType;
+  readonly value: MTokenValue;
   constructor(location: MLocation, type: MTokenType, value: MTokenValue = null) {
     this.location = location;
     this.type = type;
