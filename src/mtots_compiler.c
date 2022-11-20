@@ -1144,60 +1144,6 @@ static void parseForInStatement() {
   endScope();
 }
 
-static void parseForStatement() {
-  i32 loopStart, exitJump;
-
-  if (atToken(TOKEN_IDENTIFIER)) {
-    parseForInStatement();
-    return;
-  }
-
-  beginScope();
-
-  expectToken(TOKEN_LEFT_PAREN, "Expect '(' after 'for'");
-  if (consumeToken(TOKEN_SEMICOLON)) {
-    /* No initializer */
-  } else if (consumeToken(TOKEN_VAR)) {
-    parseVarDeclaration();
-  } else {
-    parseExpressionStatement();
-  }
-
-  loopStart = currentChunk()->count;
-  exitJump = -1;
-  if (!consumeToken(TOKEN_SEMICOLON)) {
-    parseExpression();
-    expectToken(TOKEN_SEMICOLON, "Expect ';' after loop condition");
-
-    /* Jump out of hte loop if the condition is false */
-    exitJump = emitJump(OP_JUMP_IF_FALSE);
-    emitByte(OP_POP); /* Condition */
-  }
-
-  if (!consumeToken(TOKEN_RIGHT_PAREN)) {
-    i32 bodyJump = emitJump(OP_JUMP);
-    i32 incrementStart = currentChunk()->count;
-    parseExpression();
-    emitByte(OP_POP);
-    expectToken(TOKEN_RIGHT_PAREN, "Expect ')' after for clauses");
-
-    emitLoop(loopStart);
-    loopStart = incrementStart;
-    patchJump(bodyJump);
-  }
-
-  expectToken(TOKEN_COLON, "Expect ':' for for body");
-  parseBlock(UTRUE);
-  emitLoop(loopStart);
-
-  if (exitJump != -1) {
-    patchJump(exitJump);
-    emitByte(OP_POP); /* Condition */
-  }
-
-  endScope();
-}
-
 static void parseIfStatement() {
   i32 thenJump, i;
   i32 endJumps[MAX_ELIF_CHAIN_COUNT], endJumpsCount = 0;
@@ -1340,7 +1286,7 @@ static void parseDeclaration() {
 
 static void parseStatement() {
   if (consumeToken(TOKEN_FOR)) {
-    parseForStatement();
+    parseForInStatement();
   } else if (consumeToken(TOKEN_IF)) {
     parseIfStatement();
   } else if (consumeToken(TOKEN_RETURN)) {
