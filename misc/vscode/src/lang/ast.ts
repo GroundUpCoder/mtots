@@ -1,3 +1,4 @@
+import { MError } from "./error";
 import { MLocation } from "./location";
 import { MSymbol } from "./symbol";
 
@@ -67,10 +68,16 @@ export class TypeExpression extends Ast {
 export class Module extends Ast {
   statements: Statement[];
   symbols: MSymbol[];
-  constructor(location: MLocation, statements: Statement[], symbols: MSymbol[]) {
+  semanticErrors: MError[];
+  constructor(
+      location: MLocation,
+      statements: Statement[],
+      symbols: MSymbol[],
+      semanticErrors: MError[]) {
     super(location);
     this.statements = statements;
     this.symbols = symbols;
+    this.semanticErrors = semanticErrors;
   }
 }
 

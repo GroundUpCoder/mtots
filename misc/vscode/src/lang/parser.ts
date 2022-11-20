@@ -61,6 +61,15 @@ export class MParser {
   scope: MScope;
   peek: MToken;
 
+  /**
+   * Semantic errors are useful to alert about, but they should not
+   * cause the parse to fail.
+   * On the other hand, we throw on the first parse error since
+   * such an error means we cannot be sure if anything we parse going forward
+   * is at all meaningful.
+   */
+  semanticErrors: MError[];
+
   gotoDefinitionTrigger: MPosition | null = null;
 
   constructor(scanner: MScanner) {
@@ -70,6 +79,11 @@ export class MParser {
     this.scanner = scanner;
     this.scope = new MScope();
     this.peek = scanner.scanToken();
+    this.semanticErrors = [];
+  }
+
+  private newSemanticErrorAt(location: MLocation, message: string) {
+    this.semanticErrors.push(this.newErrorAt(location, message));
   }
 
   private newError(message: string) {
@@ -200,7 +214,7 @@ export class MParser {
   }
 
   private recordSymbolDefinition(identifier: ast.Identifier) {
-    const previous = this.scope.get(identifier.name);
+    const previous = this.scope.map.get(identifier.name);
     if (previous) {
       throw this.newErrorAt(
         identifier.location,
@@ -210,6 +224,7 @@ export class MParser {
     this.addToSymbols(symbol);
     this.scope.set(symbol);
     symbol.definition = new MSymbolDefinition(identifier.location);
+    this.checkGotoDefinitionTrigger(symbol, identifier);
   }
 
   private recordSymbolUsage(identifier: ast.Identifier) {
@@ -426,6 +441,7 @@ export class MParser {
   private parseForStatement(): Ast {
     const startLocation = this.expect('for').location;
     const identifier = this.parseIdentifier();
+    this.recordSymbolDefinition(identifier);
     this.expect('in');
     const container = this.parseExpression();
     const body = this.parseBlock();
@@ -469,7 +485,9 @@ export class MParser {
     const alias = this.consume('as') ? this.parseIdentifier() : null;
     const location = startLocation.merge(
       alias === null ? module.location : alias.location);
-    return new ast.Import(location, module, alias);
+    const importModule = new ast.Import(location, module, alias);
+    this.recordSymbolDefinition(importModule.alias);
+    return importModule;
   }
 
   private parseExpressionStatement(): Ast {
@@ -577,12 +595,16 @@ export class MParser {
     const defaultValue = this.consume('=') ? this.parseExpression() : null;
     const location = identifier.location.merge(
       defaultValue ? defaultValue.location : type.location);
+    this.recordSymbolDefinition(identifier);
     return new ast.Parameter(location, identifier, type, defaultValue);
   }
 
   private parseFunctionDeclaration(): ast.Function {
     const startLocation = this.expect('def').location;
     const identifier = this.parseIdentifier();
+    this.recordSymbolDefinition(identifier);
+    const outerScope = this.scope;
+    this.scope = new MScope(outerScope);
     const parameters = [];
     this.expect('(');
     while (!this.at(')')) {
@@ -597,6 +619,7 @@ export class MParser {
       this.parseTypeExpression();
     const body = this.parseBlock();
     const location = startLocation.merge(body.location);
+    this.scope = outerScope;
     return new ast.Function(location, identifier, parameters, returnType, body);
   }
 
@@ -646,6 +669,7 @@ export class MParser {
       statements.push(this.parseDeclaration());
     }
     const location = startLocation.merge(this.peek.location);
-    return new ast.Module(location, statements, this.symbols);
+    return new ast.Module(
+      location, statements, this.symbols, this.semanticErrors);
   }
 }
