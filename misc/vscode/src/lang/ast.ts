@@ -44,7 +44,9 @@ export class QualifiedIdentifier extends Ast {
 
 export abstract class Statement extends Ast {}
 
-export abstract class Expression extends Ast {}
+export abstract class Expression extends Ast {
+  abstract accept<R>(visitor: ExpressionVisitor<R>): R;
+}
 
 /**
  * All type expressions boil down to operator[Arg1, Arg2, ...]
@@ -269,6 +271,9 @@ export class GetVariable extends Expression {
     super(location);
     this.identifier = identifier;
   }
+  accept<R>(visitor: ExpressionVisitor<R>): R {
+    return visitor.visitGetVariable(this);
+  }
 }
 
 export class SetVariable extends Expression {
@@ -278,6 +283,9 @@ export class SetVariable extends Expression {
     super(location);
     this.identifier = identifier;
     this.value = value;
+  }
+  accept<R>(visitor: ExpressionVisitor<R>): R {
+    return visitor.visitSetVariable(this);
   }
 }
 
@@ -289,16 +297,35 @@ export abstract class Literal<T> extends Expression {
   }
 }
 
-export class NilLiteral extends Literal<null> {}
-export class BoolLiteral extends Literal<boolean> {}
-export class NumberLiteral extends Literal<number> {}
-export class StringLiteral extends Literal<string> {}
+export class NilLiteral extends Literal<null> {
+  accept<R>(visitor: ExpressionVisitor<R>): R {
+    return visitor.visitNilLiteral(this);
+  }
+}
+export class BoolLiteral extends Literal<boolean> {
+  accept<R>(visitor: ExpressionVisitor<R>): R {
+    return visitor.visitBoolLiteral(this);
+  }
+}
+export class NumberLiteral extends Literal<number> {
+  accept<R>(visitor: ExpressionVisitor<R>): R {
+    return visitor.visitNumberLiteral(this);
+  }
+}
+export class StringLiteral extends Literal<string> {
+  accept<R>(visitor: ExpressionVisitor<R>): R {
+    return visitor.visitStringLiteral(this);
+  }
+}
 
 export class ListDisplay extends Expression {
   readonly items: Expression[];
   constructor(location: MLocation, items: Expression[]) {
     super(location);
     this.items = items;
+  }
+  accept<R>(visitor: ExpressionVisitor<R>): R {
+    return visitor.visitListDisplay(this);
   }
 }
 
@@ -307,6 +334,9 @@ export class DictDisplay extends Expression {
   constructor(location: MLocation, pairs: [Expression, Expression][]) {
     super(location);
     this.pairs = pairs;
+  }
+  accept<R>(visitor: ExpressionVisitor<R>): R {
+    return visitor.visitDictDisplay(this);
   }
 }
 
@@ -317,6 +347,9 @@ export class FunctionCall extends Expression {
     super(location);
     this.func = func;
     this.args = args;
+  }
+  accept<R>(visitor: ExpressionVisitor<R>): R {
+    return visitor.visitFunctionCall(this);
   }
 }
 
@@ -334,6 +367,9 @@ export class MethodCall extends Expression {
     this.identifier = identifier;
     this.args = args;
   }
+  accept<R>(visitor: ExpressionVisitor<R>): R {
+    return visitor.visitMethodCall(this);
+  }
 }
 
 export class GetField extends Expression {
@@ -343,6 +379,9 @@ export class GetField extends Expression {
     super(location);
     this.owner = owner;
     this.identifier = identifier;
+  }
+  accept<R>(visitor: ExpressionVisitor<R>): R {
+    return visitor.visitGetField(this);
   }
 }
 
@@ -360,6 +399,9 @@ export class SetField extends Expression {
     this.identifier = identifier;
     this.value = value;
   }
+  accept<R>(visitor: ExpressionVisitor<R>): R {
+    return visitor.visitSetField(this);
+  }
 }
 
 export class Logical extends Expression {
@@ -373,4 +415,23 @@ export class Logical extends Expression {
     this.op = op;
     this.args = args;
   }
+  accept<R>(visitor: ExpressionVisitor<R>): R {
+    return visitor.visitLogical(this);
+  }
+}
+
+export abstract class ExpressionVisitor<R> {
+  abstract visitGetVariable(e: GetVariable): R;
+  abstract visitSetVariable(e: SetVariable): R;
+  abstract visitNilLiteral(e: NilLiteral): R;
+  abstract visitBoolLiteral(e: BoolLiteral): R;
+  abstract visitNumberLiteral(e: NumberLiteral): R;
+  abstract visitStringLiteral(e: StringLiteral): R;
+  abstract visitListDisplay(e: ListDisplay): R;
+  abstract visitDictDisplay(e: DictDisplay): R;
+  abstract visitFunctionCall(e: FunctionCall): R;
+  abstract visitMethodCall(e: MethodCall): R;
+  abstract visitGetField(e: GetField): R;
+  abstract visitSetField(e: SetField): R;
+  abstract visitLogical(e: Logical): R;
 }

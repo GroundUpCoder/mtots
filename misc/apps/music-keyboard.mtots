@@ -1,11 +1,11 @@
 import sdl
 
-final AMPLITUDE = 63
-final SAMPLE_RATE = 44100
-final SCREEN_WIDTH = 640
-final SCREEN_HEIGHT = 480
-final FPS = 60
-final TICKS_PER_FRAME = (1 / FPS) * 1000 # 1 tick <-> millis
+final AMPLITUDE int = 63
+final SAMPLE_RATE int = 44100
+final SCREEN_WIDTH int = 640
+final SCREEN_HEIGHT int = 480
+final FPS int = 60
+final TICKS_PER_FRAME int = (1 / FPS) * 1000 # 1 tick <-> millis
 
 final STAFF_DISTANCE = 25 # 25 pixels between adjacent pairs of staff lines
 final STAFF_THICKNESS = 2 # thickness of each staff line

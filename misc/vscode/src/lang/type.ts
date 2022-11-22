@@ -9,35 +9,74 @@ export abstract class MType {
     this.id = MType.nextID++;
   }
 
-  abstract isSubclassOf(type: MType): boolean;
+  /** i.e. is `this` a subtype of `type` */
+  abstract isAssignableTo(other: MType): boolean;
+
+  /**
+   * i.e. given two types, what is the most specific base type
+   * shared between two types?
+   */
+  abstract closestCommonType(other: MType): MType;
+
+  abstract toString(): string;
 }
 
+/** aka "Top Type" */
+class AnyType extends MType {
+  toString() {
+    return 'any';
+  }
+  isAssignableTo(other: MType): boolean {
+    return this === other;
+  }
+  closestCommonType(other: MType): MType {
+    return this;
+  }
+}
+
+export const Any = new AnyType();
+
+/** aka 'bottom' or 'never' type */
+class NoReturnType extends MType {
+  toString() {
+    return 'noreturn';
+  }
+  isAssignableTo(other: MType): boolean {
+    return true;
+  }
+  closestCommonType(other: MType): MType {
+    return other;
+  }
+}
+
+export const NoReturn = new NoReturnType();
+
 export class BuiltinPrimitive extends MType {
-  readonly parent: BuiltinPrimitive | null;
+  readonly parent: MType;
   readonly name: string;
 
-  static Any = new BuiltinPrimitive('any', null);
-  static Nil = new BuiltinPrimitive('nil', BuiltinPrimitive.Any);
-  static Bool = new BuiltinPrimitive('bool', BuiltinPrimitive.Any);
-  static Float = new BuiltinPrimitive('float', BuiltinPrimitive.Any);
+  static Nil = new BuiltinPrimitive('nil', Any);
+  static Bool = new BuiltinPrimitive('bool', Any);
+  static Float = new BuiltinPrimitive('float', Any);
   static Int = new BuiltinPrimitive('int', BuiltinPrimitive.Float);
-  static String = new BuiltinPrimitive('string', BuiltinPrimitive.Any);
-  static UntypedList = new BuiltinPrimitive('list', BuiltinPrimitive.Any);
-  static UntypedFunction = new BuiltinPrimitive('function', BuiltinPrimitive.Any);
-  static UntypedOptional = new BuiltinPrimitive('optional', BuiltinPrimitive.Any);
+  static String = new BuiltinPrimitive('string', Any);
+  static UntypedList = new BuiltinPrimitive('list', Any);
+  static UntypedDict = new BuiltinPrimitive('dict', Any);
+  static UntypedFunction = new BuiltinPrimitive('function', Any);
+  static UntypedOptional = new BuiltinPrimitive('optional', Any);
 
-  private constructor(name: string, parent: BuiltinPrimitive | null) {
+  private constructor(name: string, parent: MType) {
     super();
     this.parent = parent;
     this.name = name;
   }
 
-  getParent(): MType | null {
-    return this.parent;
+  isAssignableTo(other: MType): boolean {
+    return this === other || this.parent.isAssignableTo(other);
   }
 
-  isSubclassOf(type: MType): boolean {
-    return this === type || !!this.parent && this.parent.isSubclassOf(type);
+  closestCommonType(other: MType): MType {
+    return this === other ? this : this.parent.closestCommonType(other);
   }
 
   toString() {
@@ -45,13 +84,13 @@ export class BuiltinPrimitive extends MType {
   }
 }
 
-export const Any = BuiltinPrimitive.Any;
 export const Nil = BuiltinPrimitive.Nil;
 export const Bool = BuiltinPrimitive.Bool;
 export const Float = BuiltinPrimitive.Float;
 export const Int = BuiltinPrimitive.Int;
 export const String = BuiltinPrimitive.String;
 export const UntypedList = BuiltinPrimitive.UntypedList;
+export const UntypedDict = BuiltinPrimitive.UntypedDict;
 export const UntypedFunction = BuiltinPrimitive.UntypedFunction;
 export const UntypedOptional = BuiltinPrimitive.UntypedOptional;
 
@@ -59,27 +98,66 @@ export class List extends MType {
   private static readonly map: Map<MType, List> = new Map();
 
   static of(itemType: MType) {
-    const foundList = this.map.get(itemType);
-    if (foundList) {
-      return foundList;
+    const cached = this.map.get(itemType);
+    if (cached) {
+      return cached;
     }
     const newList = new List(itemType);
     this.map.set(itemType, newList);
     return newList;
   }
 
-  itemType: MType;
+  readonly itemType: MType;
   private constructor(itemType: MType) {
     super();
     this.itemType = itemType;
   }
 
-  isSubclassOf(type: MType): boolean {
-    return this === type || UntypedList.isSubclassOf(type);
+  isAssignableTo(other: MType): boolean {
+    return this === other || UntypedList.isAssignableTo(other);
+  }
+
+  closestCommonType(other: MType): MType {
+    return this === other ? this : UntypedList.closestCommonType(other);
   }
 
   toString() {
-    return `list[${this.itemType}]`
+    return `list[${this.itemType}]`;
+  }
+}
+
+export class Dict extends MType {
+  private static readonly map: Map<string, Dict> = new Map();
+
+  static of(keyType: MType, valueType: MType): Dict {
+    const key = keyType.id + ':' + valueType.id;
+    const cached = this.map.get(key);
+    if (cached) {
+      return cached;
+    }
+    const newDict = new Dict(keyType, valueType);
+    this.map.set(key, newDict);
+    return newDict;
+  }
+
+  readonly keyType: MType;
+  readonly valueType: MType
+  private constructor(keyType: MType, valueType: MType) {
+    super();
+    this.keyType = keyType;
+    this.valueType = valueType;
+  }
+
+  isAssignableTo(other: MType): boolean {
+    return this === other || UntypedDict.isAssignableTo(other);
+  }
+
+  closestCommonType(other: MType): MType {
+    return this === other ? this : UntypedDict.closestCommonType(other);
+  }
+
+  toString() {
+    return `dict[${this.keyType},${this.valueType}]`;
   }
 }
 
@@ -102,8 +180,12 @@ export class Optional extends MType {
     this.itemType = itemType;
   }
 
-  isSubclassOf(type: MType): boolean {
-    return this === type || UntypedOptional.isSubclassOf(type);
+  isAssignableTo(other: MType): boolean {
+    return this === other || UntypedOptional.isAssignableTo(other);
+  }
+
+  closestCommonType(other: MType): MType {
+    return this === other ? this : UntypedOptional.closestCommonType(other);
   }
 
   toString() {
@@ -132,8 +214,13 @@ export class Function extends MType {
     this.parameters = parameters;
     this.returnType = returnType;
   }
-  isSubclassOf(type: MType): boolean {
-    return this === type || UntypedFunction.isSubclassOf(type);
+
+  isAssignableTo(other: MType): boolean {
+    return this === other || UntypedFunction.isAssignableTo(other);
+  }
+
+  closestCommonType(other: MType): MType {
+    return this === other ? this : UntypedFunction.closestCommonType(other);
   }
 
   toString() {
@@ -161,10 +248,17 @@ export class UserDefined extends MType {
     super();
     this.symbol = symbol;
   }
-  isSubclassOf(type: MType): boolean {
-    // TODO: base classes
-    return this === type || Any.isSubclassOf(type);
+
+  isAssignableTo(other: MType): boolean {
+    // TODO: consider base classes
+    return this === other || Any.isAssignableTo(other);
   }
+
+  closestCommonType(other: MType): MType {
+    // TODO: consider base classes
+    return this === other ? this : Any;
+  }
+
   toString() {
     // TODO: qualify the name
     return this.symbol.name;

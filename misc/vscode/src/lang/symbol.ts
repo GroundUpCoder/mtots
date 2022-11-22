@@ -24,8 +24,10 @@ export class MSymbolUsage {
 
 export class MSymbolDefinition extends MSymbolUsage {
   documentation: ast.StringLiteral | null;
-  constructor(location: MLocation, symbol: MSymbol,) {
+  type: type.MType | null;
+  constructor(location: MLocation, symbol: MSymbol) {
     super(location, symbol);
     this.documentation = null;
+    this.type = null;
   }
 }

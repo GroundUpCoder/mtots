@@ -8,6 +8,8 @@ import { MScanner } from "./scanner";
 import { MScope } from "./scope";
 import { MSymbol, MSymbolDefinition, MSymbolUsage } from "./symbol";
 import { MToken, MTokenType } from "./token";
+import { MType } from './type';
+import { TypeSolver } from './typesolver';
 
 const PrecList: MTokenType[][] = [
   [],
@@ -54,6 +56,7 @@ const BinopMethodMap: Map<MTokenType, string> = new Map([
 ])
 
 export class MParser {
+  private typeSolver: TypeSolver;
   private symbolUsages: MSymbolUsage[];
   private scanner: MScanner;
   private scope: MScope;
@@ -72,6 +75,7 @@ export class MParser {
   provideHoverTrigger: MPosition | null = null;
 
   constructor(scanner: MScanner) {
+    this.typeSolver = new TypeSolver();
     this.symbolUsages = [];
     this.scanner = scanner;
     this.scope = new MScope();
@@ -124,6 +128,10 @@ export class MParser {
     if (!this.consume('NEWLINE')) {
       this.expect(';', message);
     }
+  }
+
+  private solveType(e: ast.TypeExpression | ast.Expression): MType {
+    return this.typeSolver.solve(e, this.scope);
   }
 
   private parseIdentifier(): ast.Identifier {
@@ -179,8 +187,8 @@ export class MParser {
     return te;
   }
 
-  private parseArguments(): Ast[] {
-    const args: Ast[] = [];
+  private parseArguments(): ast.Expression[] {
+    const args: ast.Expression[] = [];
     while (!this.at(')')) {
       args.push(this.parseExpression());
       if (!this.consume(',')) {
@@ -598,7 +606,8 @@ export class MParser {
     const defaultValue = this.consume('=') ? this.parseExpression() : null;
     const location = identifier.location.merge(
       defaultValue ? defaultValue.location : type.location);
-    this.recordSymbolDefinition(identifier);
+    const definition = this.recordSymbolDefinition(identifier);
+    definition.type = this.solveType(type);
     return new ast.Parameter(location, identifier, type, defaultValue);
   }
 
@@ -668,13 +677,22 @@ export class MParser {
     const final = this.consume('final');
     if (!final) this.expect('var');
     const identifier = this.parseIdentifier();
-    this.recordSymbolDefinition(identifier);
     const type = this.at('=') ?
       this.newAnyType(startLocation) :
       this.parseTypeExpression();
+    const solvedVariableType = this.typeSolver.solve(type, this.scope);
     this.expect('=');
     const value = this.parseExpression();
+    const valueType = this.typeSolver.solveExpression(
+      value, this.scope, solvedVariableType);
+    if (!valueType.isAssignableTo(solvedVariableType)) {
+      this.newSemanticErrorAt(
+        value.location,
+        `Cannot assign ${valueType} to ${solvedVariableType}`);
+    }
     const location = startLocation.merge(value.location);
+    const definition = this.recordSymbolDefinition(identifier);
+    definition.type = this.solveType(type);
     return new ast.Variable(location, final, identifier, type, value);
   }
 
