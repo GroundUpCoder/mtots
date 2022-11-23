@@ -191,4 +191,8 @@ class ExpressionTypeSolver extends ast.ExpressionVisitor<MType> {
   visitLogical(e: ast.Logical): MType {
     return type.Any; // TODO
   }
+
+  visitRaise(e: ast.Raise): MType {
+    return type.NoReturn;
+  }
 }

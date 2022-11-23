@@ -97,7 +97,7 @@ static const char *getAuxRoot(void) {
   if (!auxRootLoaded) {
     const char *env;
     auxRootLoaded = UTRUE;
-    env = getenv(MTOTS_LIB_ROOT_VAR);
+    env = getenv(MTOTS_AUX_ROOT_VAR);
     if (env != NULL) {
       strcpy(auxRootBuffer, env);
       return auxRoot = auxRootBuffer;
@@ -111,7 +111,7 @@ static const char *getRoot(void) {
   if (!rootLoaded) {
     const char *env;
     rootLoaded = UTRUE;
-    env = getenv(MTOTS_LIB_ROOT_VAR);
+    env = getenv(MTOTS_ROOT_VAR);
     if (env != NULL) {
       strcpy(rootBuffer, env);
       return root = rootBuffer;
