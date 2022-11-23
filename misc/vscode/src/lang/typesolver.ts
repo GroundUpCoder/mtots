@@ -4,6 +4,8 @@ import { MType } from "./type";
 import * as type from "./type";
 import { MScope } from "./scope";
 
+const INT_LOW = -Math.pow(2, 31);
+const INT_HIGH = Math.pow(2, 31) - 1;
 
 export class TypeSolver {
   cache: Map<ast.TypeExpression | ast.Expression, MType> = new Map();
@@ -106,7 +108,7 @@ class ExpressionTypeSolver extends ast.ExpressionVisitor<MType> {
     if (!symbol) {
       return type.Any;
     }
-    return symbol.definition.type || type.Any;
+    return symbol.definition.type;
   }
 
   visitSetVariable(e: ast.SetVariable): MType {
@@ -114,9 +116,9 @@ class ExpressionTypeSolver extends ast.ExpressionVisitor<MType> {
     if (!symbol) {
       return type.Any;
     }
-    const symbolType = symbol.definition.type || type.Any;
+    const symbolType = symbol.definition.type;
     const rhsType = this.typeSolver.solveExpression(
-      e.value, this.scope, symbol.definition.type || type.Any);
+      e.value, this.scope, symbol.definition.type);
     if (!rhsType.isAssignableTo(symbolType)) {
       this.typeSolver.errors.push(new MError(
         e.location,
@@ -134,6 +136,10 @@ class ExpressionTypeSolver extends ast.ExpressionVisitor<MType> {
   }
 
   visitNumberLiteral(e: ast.NumberLiteral): MType {
+    const value = e.value;
+    if (value >= INT_LOW && value <= INT_HIGH && Math.floor(value) === value) {
+      return type.Int;
+    }
     return type.Float;
   }
 

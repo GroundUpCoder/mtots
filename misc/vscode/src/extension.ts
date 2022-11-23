@@ -3,6 +3,7 @@ import * as commands from './commands';
 import { ExtensionContext } from 'vscode';
 import { definitionProvider } from './definitionprovider';
 import { hoverProvider } from './hoverprovider';
+import { initDiagnostic } from './diagnostics';
 
 export function activate(context: ExtensionContext) {
   context.subscriptions.push(vscode.commands.registerCommand(
@@ -17,4 +18,5 @@ export function activate(context: ExtensionContext) {
   context.subscriptions.push(vscode.languages.registerHoverProvider(
     { language: 'mtots' },
     hoverProvider));
+  initDiagnostic(context);
 }

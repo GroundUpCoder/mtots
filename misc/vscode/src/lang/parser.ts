@@ -712,6 +712,7 @@ export class MParser {
       statements.push(this.parseDeclaration());
     }
     const location = startLocation.merge(this.peek.location);
+    this.semanticErrors.push(...this.typeSolver.errors);
     return new ast.Module(
       location, statements, this.symbolUsages, this.semanticErrors);
   }
