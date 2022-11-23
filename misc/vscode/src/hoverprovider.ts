@@ -1,16 +1,20 @@
 import * as vscode from 'vscode';
 import * as converter from './converter';
 import { MProvideHoverException } from './lang/error';
-import { MParser } from './lang/parser';
+import { MLocation } from './lang/location';
+import { MParser, ParseContext } from './lang/parser';
 import { MScanner } from './lang/scanner';
+import { MSymbol } from './lang/symbol';
+import { DefaultSourceFinder } from './sourcefinder';
 
 export const hoverProvider: vscode.HoverProvider = {
-  provideHover(document, position, token) {
+  async provideHover(document, position, token) {
+    const moduleSymbol = new MSymbol('__main__', MLocation.of(document.uri));
     const scanner = new MScanner(document.uri, document.getText());
     try {
-      const parser = new MParser(scanner);
+      const parser = new MParser(scanner, moduleSymbol, new ParseContext(DefaultSourceFinder));
       parser.provideHoverTrigger = converter.convertPosition(position);
-      parser.parseModule();
+      await parser.parseModule();
     } catch (e) {
       if (e instanceof MProvideHoverException) {
         const markedStrings: vscode.MarkdownString[] = [];

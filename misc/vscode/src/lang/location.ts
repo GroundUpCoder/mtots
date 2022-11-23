@@ -1,10 +1,16 @@
 import { Uri } from "vscode";
+import { MPosition } from "./position";
 import { MRange } from "./range";
 
 
 export class MLocation {
   filePath: string | Uri;
   range: MRange;
+
+  static of(filePath: string | Uri): MLocation {
+    const position = new MPosition(0, 0);
+    return new MLocation(filePath, new MRange(position, position));
+  }
 
   constructor(filePath: string | Uri, range: MRange) {
     this.filePath = filePath;

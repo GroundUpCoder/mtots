@@ -420,6 +420,18 @@ export class Logical extends Expression {
   }
 }
 
+export class Raise extends Expression {
+  readonly exception: Expression;
+  constructor(location: MLocation, exception: Expression) {
+    super(location);
+    this.exception = exception;
+  }
+
+  accept<R>(visitor: ExpressionVisitor<R>): R {
+    return visitor.visitRaise(this);
+  }
+}
+
 export abstract class ExpressionVisitor<R> {
   abstract visitGetVariable(e: GetVariable): R;
   abstract visitSetVariable(e: SetVariable): R;
@@ -434,4 +446,5 @@ export abstract class ExpressionVisitor<R> {
   abstract visitGetField(e: GetField): R;
   abstract visitSetField(e: SetField): R;
   abstract visitLogical(e: Logical): R;
+  abstract visitRaise(e: Raise): R;
 }

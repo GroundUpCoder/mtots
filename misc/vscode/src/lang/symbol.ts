@@ -25,9 +25,11 @@ export class MSymbolUsage {
 export class MSymbolDefinition extends MSymbolUsage {
   documentation: ast.StringLiteral | null;
   type: type.MType;
+  members: Map<string, MSymbol>;
   constructor(location: MLocation, symbol: MSymbol) {
     super(location, symbol);
     this.documentation = null;
     this.type = type.Any;
+    this.members = new Map();
   }
 }

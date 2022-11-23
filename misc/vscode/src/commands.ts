@@ -1,7 +1,10 @@
 import * as vscode from 'vscode';
 import { MError } from './lang/error';
-import { MParser } from './lang/parser';
+import { MLocation } from './lang/location';
+import { MParser, ParseContext } from './lang/parser';
 import { MScanner } from './lang/scanner';
+import { MSymbol } from './lang/symbol';
+import { DefaultSourceFinder } from './sourcefinder';
 
 async function writeToNewEditor(
     f: (emit: (m: string) => void) => void,
@@ -76,10 +79,11 @@ export async function parse() {
     return;
   }
   const text = getSelectionOrAllText(editor);
-  await writeToNewEditor(emit => {
+  await writeToNewEditor(async emit => {
+    const moduleSymbol = new MSymbol('__main__', MLocation.of(editor.document.uri));
     const scanner = new MScanner('<input>', text);
-    const parser = new MParser(scanner);
-    const moduleAst = parser.parseModule();
+    const parser = new MParser(scanner, moduleSymbol, new ParseContext(DefaultSourceFinder));
+    const moduleAst = await parser.parseModule();
     emit(JSON.stringify(moduleAst));
   }, 'json');
 }

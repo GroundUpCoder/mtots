@@ -9,6 +9,7 @@ import { MScope } from "./scope";
 import { MSymbol, MSymbolDefinition, MSymbolUsage } from "./symbol";
 import { MToken, MTokenType } from "./token";
 import { MType } from './type';
+import * as types from './type';
 import { TypeSolver } from './typesolver';
 
 const PrecList: MTokenType[][] = [
@@ -53,7 +54,17 @@ const BinopMethodMap: Map<MTokenType, string> = new Map([
   ['/', '__div__'],
   ['//', '__floordiv__'],
   ['%', '__mod__'],
-])
+]);
+
+export type SourceFinder = (path: string) => Promise<[string | Uri, string] | null>;
+
+export class ParseContext {
+  readonly sourceFinder: SourceFinder;
+  readonly moduleCache: Map<string, MSymbol> = new Map();
+  constructor(sourceFinder: SourceFinder) {
+    this.sourceFinder = sourceFinder;
+  }
+}
 
 export class MParser {
   private typeSolver: TypeSolver;
@@ -61,6 +72,8 @@ export class MParser {
   private scanner: MScanner;
   private scope: MScope;
   private peek: MToken;
+
+  private context: ParseContext;
 
   /**
    * Semantic errors are useful to alert about, but they should not
@@ -74,13 +87,17 @@ export class MParser {
   gotoDefinitionTrigger: MPosition | null = null;
   provideHoverTrigger: MPosition | null = null;
 
-  constructor(scanner: MScanner) {
+  moduleSymbol: MSymbol;
+
+  constructor(scanner: MScanner, moduleSymbol: MSymbol, context: ParseContext) {
     this.typeSolver = new TypeSolver();
     this.symbolUsages = [];
     this.scanner = scanner;
     this.scope = new MScope();
     this.peek = scanner.scanToken();
     this.semanticErrors = [];
+    this.moduleSymbol = moduleSymbol;
+    this.context = context;
   }
 
   private newSemanticErrorAt(location: MLocation, message: string) {
@@ -223,7 +240,8 @@ export class MParser {
     }
   }
 
-  private recordSymbolDefinition(identifier: ast.Identifier): MSymbolDefinition {
+  private recordSymbolDefinition(
+      identifier: ast.Identifier, addToScope: boolean): MSymbolDefinition {
     const previous = this.scope.map.get(identifier.name);
     if (previous) {
       this.newSemanticErrorAt(
@@ -231,7 +249,9 @@ export class MParser {
         `'${previous.name}' is already defined in this scope`);
     }
     const symbol = new MSymbol(identifier.name, identifier.location);
-    this.scope.set(symbol);
+    if (addToScope) {
+      this.scope.set(symbol);
+    }
     this.symbolUsages.push(symbol.definition);
     this.checkTriggers(symbol, identifier);
     return symbol.definition;
@@ -246,6 +266,20 @@ export class MParser {
     symbol.usages.push(usage);
     this.symbolUsages.push(usage);
     this.checkTriggers(symbol, identifier);
+  }
+
+  private recordMemberUsage(owner: ast.Expression, identifier: ast.Identifier) {
+    const ownerType = this.solveType(owner);
+    if (ownerType instanceof types.Module) {
+      const ownerSymbol = ownerType.symbol;
+      const memberSymbol = ownerSymbol.definition.members.get(identifier.name);
+      if (!memberSymbol) {
+        return;
+      }
+      const usage = new MSymbolUsage(identifier.location, memberSymbol);
+      memberSymbol.usages.push(usage);
+      this.checkTriggers(memberSymbol, identifier);
+    }
   }
 
   private parsePrefix(): ast.Expression {
@@ -357,6 +391,7 @@ export class MParser {
       case '.': {
         this.advance();
         const identifier = this.parseIdentifier();
+        this.recordMemberUsage(lhs, identifier);
         if (this.at('(')) {
           this.advance();
           const args = this.parseArguments();
@@ -452,7 +487,7 @@ export class MParser {
   private parseForStatement(): Ast {
     const startLocation = this.expect('for').location;
     const identifier = this.parseIdentifier();
-    this.recordSymbolDefinition(identifier);
+    this.recordSymbolDefinition(identifier, true);
     this.expect('in');
     const container = this.parseExpression();
     const body = this.parseBlock();
@@ -489,7 +524,7 @@ export class MParser {
     return new ast.While(location, condition, body);
   }
 
-  private parseImportStatement(): Ast {
+  private async parseImportStatement(parentSymbol: MSymbol): Promise<Ast> {
     const startLocation = this.peek.location;
     this.expect('import');
     const module = this.parseQualifiedIdentifier();
@@ -497,7 +532,33 @@ export class MParser {
     const location = startLocation.merge(
       alias === null ? module.location : alias.location);
     const importModule = new ast.Import(location, module, alias);
-    this.recordSymbolDefinition(importModule.alias);
+    const definition = this.recordSymbolDefinition(importModule.alias, true);
+    definition.type = types.Module.of(definition.symbol, module);
+    parentSymbol.definition.members.set(definition.symbol.name, definition.symbol);
+    const cached = this.context.moduleCache.get(module.toString());
+    if (cached) {
+      definition.members = cached.definition.members;
+    } else {
+      this.context.moduleCache.set(module.toString(), definition.symbol);
+      const finderResult = await this.context.sourceFinder(module.toString());
+      if (finderResult === null) {
+        this.newSemanticErrorAt(module.location, `Module ${module} not found`);
+      } else {
+        const [importUri, importContents] = finderResult;
+        try {
+          const scanner = new MScanner(importUri, importContents);
+          const parser = new MParser(scanner, definition.symbol, this.context);
+          parser.parseModule();
+        } catch (e) {
+          if (e instanceof MError) {
+            this.newSemanticErrorAt(
+              module.location, `Failed to import module ${module}: ${e}`);
+          } else {
+            throw e;
+          }
+        }
+      }
+    }
     return importModule;
   }
 
@@ -518,7 +579,7 @@ export class MParser {
     const statements: ast.Statement[] = [];
     while (this.consume('NEWLINE') || this.consume(';'));
     while (!this.at('DEDENT')) {
-      statements.push(this.parseDeclaration());
+      statements.push(this.parseDeclaration(null));
       while (this.consume('NEWLINE') || this.consume(';'));
     }
     const location = startLocation.merge(this.expect('DEDENT').location);
@@ -533,7 +594,6 @@ export class MParser {
       case 'if': return this.parseIfStatement();
       case 'return': return this.parseReturnStatement();
       case 'while': return this.parseWhileStatement();
-      case 'import': return this.parseImportStatement();
       case 'NEWLINE':
       case ';':
       case 'pass':
@@ -546,22 +606,28 @@ export class MParser {
     }
   }
 
-  private parseFieldDeclaration(): ast.Field {
+  private parseFieldDeclaration(parentSymbol: MSymbol): ast.Field {
     const startLocation = this.peek.location;
     const final = this.consume('final');
     if (!final) {
       this.expect('var');
     }
     const identifier = this.parseIdentifier();
+    const definition = this.recordSymbolDefinition(identifier, false);
+    parentSymbol.definition.members.set(definition.symbol.name, definition.symbol);
     const type = this.parseTypeExpression();
     const location = startLocation.merge(type.location);
     this.expectStatementDelimiter();
     return new ast.Field(location, final, identifier, type);
   }
 
-  private parseClassDeclaration(): ast.Class {
+  private parseClassDeclaration(parentSymbol: MSymbol | null): ast.Class {
     const startLocation = this.expect('class').location;
     const identifier = this.parseIdentifier();
+    const definition = this.recordSymbolDefinition(identifier, true);
+    if (parentSymbol) {
+      parentSymbol.definition.members.set(definition.symbol.name, definition.symbol);
+    }
     const bases = [];
     if (this.consume('(')) {
       bases.push(...this.parseArguments());
@@ -577,17 +643,18 @@ export class MParser {
       documentation = new ast.StringLiteral(
         token.location, <string>token.value);
     }
+    definition.documentation = documentation;
     while (this.consume('NEWLINE') || this.consume(';'));
     while (this.consume('pass'));
     while (this.consume('NEWLINE') || this.consume(';'));
     const fields = [];
     while (this.at('var') || this.at('final')) {
-      fields.push(this.parseFieldDeclaration());
+      fields.push(this.parseFieldDeclaration(definition.symbol));
       while (this.consume('NEWLINE') || this.consume(';'));
     }
     const methods = [];
     while (this.at('def')) {
-      methods.push(this.parseFunctionDeclaration());
+      methods.push(this.parseMethodDeclaration(definition.symbol));
       while (this.consume('NEWLINE') || this.consume(';'));
     }
     const endLocation = this.expect('DEDENT').location;
@@ -606,15 +673,27 @@ export class MParser {
     const defaultValue = this.consume('=') ? this.parseExpression() : null;
     const location = identifier.location.merge(
       defaultValue ? defaultValue.location : type.location);
-    const definition = this.recordSymbolDefinition(identifier);
+    const definition = this.recordSymbolDefinition(identifier, true);
     definition.type = this.solveType(type);
     return new ast.Parameter(location, identifier, type, defaultValue);
   }
 
-  private parseFunctionDeclaration(): ast.Function {
+  private parseFunctionDeclaration(parentSymbol: MSymbol | null): ast.Function {
+    return this.parseFunctionOrMethodDeclaration(parentSymbol, false);
+  }
+
+  private parseMethodDeclaration(parentSymbol: MSymbol): ast.Function {
+    return this.parseFunctionOrMethodDeclaration(parentSymbol, true);
+  }
+
+  private parseFunctionOrMethodDeclaration(
+      parentSymbol: MSymbol | null, isMethod:boolean): ast.Function {
     const startLocation = this.expect('def').location;
     const identifier = this.parseIdentifier();
-    const functionSymbol = this.recordSymbolDefinition(identifier);
+    const functionSymbol = this.recordSymbolDefinition(identifier, !isMethod);
+    if (parentSymbol) {
+      parentSymbol.definition.members.set(functionSymbol.symbol.name, functionSymbol.symbol);
+    }
     const outerScope = this.scope;
     this.scope = new MScope(outerScope);
     const parameters = [];
@@ -672,7 +751,7 @@ export class MParser {
     return new ast.NilLiteral(location, null);
   }
 
-  private parseVariableDeclaration(): ast.Variable {
+  private parseVariableDeclaration(parentSymbol: MSymbol | null): ast.Variable {
     const startLocation = this.peek.location;
     const final = this.consume('final');
     if (!final) this.expect('var');
@@ -691,25 +770,35 @@ export class MParser {
         `Cannot assign ${valueType} to ${solvedVariableType}`);
     }
     const location = startLocation.merge(value.location);
-    const definition = this.recordSymbolDefinition(identifier);
+    const definition = this.recordSymbolDefinition(identifier, true);
     definition.type = this.solveType(type);
+    if (parentSymbol) {
+      parentSymbol.definition.members.set(definition.symbol.name, definition.symbol);
+    }
     return new ast.Variable(location, final, identifier, type, value);
   }
 
-  private parseDeclaration(): ast.Statement {
+  private parseDeclaration(parentSymbol: MSymbol | null): ast.Statement {
     switch (this.peek.type) {
-      case 'class': return this.parseClassDeclaration();
-      case 'def': return this.parseFunctionDeclaration();
-      case 'final': case 'var': return this.parseVariableDeclaration();
+      case 'class': return this.parseClassDeclaration(parentSymbol);
+      case 'def': return this.parseFunctionDeclaration(parentSymbol);
+      case 'final': case 'var': return this.parseVariableDeclaration(parentSymbol);
       default: return this.parseStatement();
     }
   }
 
-  parseModule(): ast.Module {
+  private async parseModuleLevelDeclaration(parentSymbol: MSymbol): Promise<ast.Statement> {
+    switch (this.peek.type) {
+      case 'import': return await this.parseImportStatement(this.moduleSymbol);
+      default: return this.parseDeclaration(this.moduleSymbol);
+    }
+  }
+
+  async parseModule(): Promise<ast.Module> {
     const startLocation = this.peek.location;
     const statements: ast.Statement[] = [];
     while (!this.at('EOF')) {
-      statements.push(this.parseDeclaration());
+      statements.push(await this.parseModuleLevelDeclaration(this.moduleSymbol));
     }
     const location = startLocation.merge(this.peek.location);
     this.semanticErrors.push(...this.typeSolver.errors);

@@ -1,3 +1,4 @@
+import { QualifiedIdentifier } from "./ast";
 import { MSymbol } from "./symbol";
 
 export abstract class MType {
@@ -60,6 +61,7 @@ export class BuiltinPrimitive extends MType {
   static Float = new BuiltinPrimitive('float', Any);
   static Int = new BuiltinPrimitive('int', BuiltinPrimitive.Float);
   static String = new BuiltinPrimitive('string', Any);
+  static UntypedModule = new BuiltinPrimitive('module', Any);
   static UntypedList = new BuiltinPrimitive('list', Any);
   static UntypedDict = new BuiltinPrimitive('dict', Any);
   static UntypedFunction = new BuiltinPrimitive('function', Any);
@@ -76,7 +78,7 @@ export class BuiltinPrimitive extends MType {
   }
 
   closestCommonType(other: MType): MType {
-    return this === other ? this : this.parent.closestCommonType(other);
+    return other.isAssignableTo(this) ? this : this.parent.closestCommonType(other);
   }
 
   toString() {
@@ -89,6 +91,7 @@ export const Bool = BuiltinPrimitive.Bool;
 export const Float = BuiltinPrimitive.Float;
 export const Int = BuiltinPrimitive.Int;
 export const String = BuiltinPrimitive.String;
+export const UntypedModule = BuiltinPrimitive.UntypedModule;
 export const UntypedList = BuiltinPrimitive.UntypedList;
 export const UntypedDict = BuiltinPrimitive.UntypedDict;
 export const UntypedFunction = BuiltinPrimitive.UntypedFunction;
@@ -262,5 +265,38 @@ export class UserDefined extends MType {
   toString() {
     // TODO: qualify the name
     return this.symbol.name;
+  }
+}
+
+export class Module extends MType {
+  private static readonly map: Map<MSymbol, UserDefined> = new Map();
+  static of (symbol: MSymbol, path: QualifiedIdentifier): UserDefined {
+    const cached = this.map.get(symbol);
+    if (cached) {
+      return cached;
+    }
+    const module = new Module(symbol, path);
+    this.map.set(symbol, module);
+    return module;
+  }
+
+  readonly symbol: MSymbol;
+  readonly path: QualifiedIdentifier;
+  constructor(symbol: MSymbol, path: QualifiedIdentifier) {
+    super();
+    this.symbol = symbol;
+    this.path = path;
+  }
+
+  isAssignableTo(other: MType): boolean {
+    return this === other;
+  }
+
+  closestCommonType(other: MType): MType {
+    return this === other ? this : UntypedModule.closestCommonType(other);
+  }
+
+  toString(): string {
+    return `module[${this.symbol.name}]`
   }
 }
