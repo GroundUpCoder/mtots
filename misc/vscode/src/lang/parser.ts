@@ -60,9 +60,48 @@ export type SourceFinder = (path: string) => Promise<[string | Uri, string] | nu
 
 export class ParseContext {
   readonly sourceFinder: SourceFinder;
-  readonly moduleCache: Map<string, MSymbol> = new Map();
+  private readonly moduleCache: Map<string, ast.Module> = new Map();
+  readonly builtinScope: MScope = new MScope();
   constructor(sourceFinder: SourceFinder) {
     this.sourceFinder = sourceFinder;
+    this.loadBuiltin();
+  }
+
+  async loadBuiltin() {
+    const preludeModule = await this.loadModule('__builtin__');
+    if (!preludeModule) {
+      return; // TODO: indicate error
+    }
+    for (const symbol of preludeModule.scope.map.values()) {
+      this.builtinScope.set(symbol);
+    }
+  }
+
+  async loadModule(
+      moduleName: string,
+      uriAndContents: [Uri, string] | null = null): Promise<ast.Module | null> {
+    const cached = this.moduleCache.get(moduleName);
+    if (cached) {
+      return cached;
+    }
+    let filePath: string | Uri = '';
+    let contents: string = '';
+    if (uriAndContents) {
+      [filePath, contents] = uriAndContents;
+    } else {
+      const finderResult = await this.sourceFinder(moduleName);
+      if (!finderResult) {
+        return null;
+      }
+      const [foundFilePath, foundContents] = finderResult;
+      filePath = foundFilePath;
+      contents = foundContents;
+    }
+    const scanner = new MScanner(filePath, contents);
+    const parser = new MParser(scanner, this);
+    const module = await parser.parseModule();
+    this.moduleCache.set(moduleName, module);
+    return module;
   }
 }
 
@@ -81,20 +120,19 @@ export class MParser {
   private typeSolver: TypeSolver;
   private scanner: MScanner;
   private scope: MScope;
+  private readonly moduleScope: MScope;
   private peek: MToken;
 
   private context: ParseContext;
 
-  moduleSymbol: MSymbol;
-
-  constructor(scanner: MScanner, moduleSymbol: MSymbol, context: ParseContext) {
+  constructor(scanner: MScanner, context: ParseContext) {
     this.symbolUsages = [];
     this.semanticErrors = [];
     this.typeSolver = new TypeSolver(this.semanticErrors, this.symbolUsages);
     this.scanner = scanner;
-    this.scope = new MScope();
+    this.scope = new MScope(context.builtinScope);
+    this.moduleScope = this.scope;
     this.peek = scanner.scanToken();
-    this.moduleSymbol = moduleSymbol;
     this.context = context;
   }
 
@@ -514,7 +552,7 @@ export class MParser {
     return new ast.While(location, condition, body);
   }
 
-  private async parseImportStatement(parentSymbol: MSymbol): Promise<Ast> {
+  private async parseImportStatement(): Promise<Ast> {
     const startLocation = this.peek.location;
     this.expect('import');
     const moduleID = this.parseQualifiedIdentifier();
@@ -524,26 +562,16 @@ export class MParser {
     const importModule = new ast.Import(location, moduleID, alias);
     const importSymbol = this.recordSymbolDefinition(importModule.alias, true);
     importSymbol.type = types.Module.of(importSymbol, moduleID);
-    parentSymbol.members.set(importSymbol.name, importSymbol);
-    const cached = this.context.moduleCache.get(moduleID.toString());
-    if (cached) {
-      importSymbol.members = cached.members;
-    } else {
-      this.context.moduleCache.set(moduleID.toString(), importSymbol);
-      const finderResult = await this.context.sourceFinder(moduleID.toString());
-      if (finderResult === null) {
-        this.newSemanticErrorAt(moduleID.location, `Module ${moduleID} not found`);
-      } else {
-        const [importUri, importContents] = finderResult;
-        const scanner = new MScanner(importUri, importContents);
-        const parser = new MParser(scanner, importSymbol, this.context);
-        const module = await parser.parseModule();
-        if (module.errors.length > 0) {
-          const e = module.errors[0];
-          this.newSemanticErrorAt(
-            location, `module ${moduleID} has errors: ${e.message}`);
-        }
+    const module = await this.context.loadModule(moduleID.toString());
+    if (module) {
+      importSymbol.members = module.scope.map;
+      if (module.errors.length > 0) {
+        const e = module.errors[0];
+        this.newSemanticErrorAt(
+          location, `module ${moduleID} has errors: ${e.message}`);
       }
+    } else {
+      this.newSemanticErrorAt(moduleID.location, `Module ${moduleID} not found`);
     }
     return importModule;
   }
@@ -565,7 +593,7 @@ export class MParser {
     const statements: ast.Statement[] = [];
     while (this.consume('NEWLINE') || this.consume(';'));
     while (!this.at('DEDENT')) {
-      statements.push(this.parseDeclaration(null));
+      statements.push(this.parseDeclaration());
       while (this.consume('NEWLINE') || this.consume(';'));
     }
     const location = startLocation.merge(this.expect('DEDENT').location);
@@ -788,19 +816,19 @@ export class MParser {
     return new ast.Variable(location, final, identifier, type, value);
   }
 
-  private parseDeclaration(parentSymbol: MSymbol | null): ast.Statement {
+  private parseDeclaration(): ast.Statement {
     switch (this.peek.type) {
-      case 'class': return this.parseClassDeclaration(parentSymbol);
-      case 'def': return this.parseFunctionDeclaration(parentSymbol);
-      case 'final': case 'var': return this.parseVariableDeclaration(parentSymbol);
+      case 'class': return this.parseClassDeclaration(null);
+      case 'def': return this.parseFunctionDeclaration(null);
+      case 'final': case 'var': return this.parseVariableDeclaration(null);
       default: return this.parseStatement();
     }
   }
 
   private async parseModuleLevelDeclaration(): Promise<ast.Statement> {
     switch (this.peek.type) {
-      case 'import': return await this.parseImportStatement(this.moduleSymbol);
-      default: return this.parseDeclaration(this.moduleSymbol);
+      case 'import': return await this.parseImportStatement();
+      default: return this.parseDeclaration();
     }
   }
 
@@ -813,13 +841,13 @@ export class MParser {
       }
       const location = startLocation.merge(this.peek.location);
       return new ast.Module(
-        location, statements, this.symbolUsages, this.semanticErrors);
+        location, statements, this.scope, this.symbolUsages, this.semanticErrors);
     } catch (e) {
       if (e instanceof MError) {
         const location = startLocation.merge(this.peek.location);
         const errors = [e, ...this.semanticErrors];
         return new ast.Module(
-          location, statements, this.symbolUsages, errors);
+          location, statements, this.scope, this.symbolUsages, errors);
       } else {
         throw e;
       }

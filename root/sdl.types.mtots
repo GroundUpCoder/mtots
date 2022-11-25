@@ -1,4 +1,80 @@
 
+final WINDOW_FULLSCREEN = 0
+final WINDOW_OPENGL = 0
+final WINDOW_SHOWN = 0
+final WINDOW_HIDDEN = 0
+final WINDOW_BORDERLESS = 0
+final WINDOW_RESIZABLE = 0
+final WINDOW_MINIMIZED = 0
+final WINDOW_MAXIMIZED = 0
+final WINDOW_MOUSE_GRABBED = 0
+final WINDOW_INPUT_FOCUS = 0
+final WINDOW_MOUSE_FOCUS = 0
+final WINDOW_FULLSCREEN_DESKTOP = 0
+final WINDOW_FOREIGN = 0
+final WINDOW_ALLOW_HIGHDPI = 0
+final WINDOW_MOUSE_CAPTURE = 0
+final WINDOW_ALWAYS_ON_TOP = 0
+final WINDOW_SKIP_TASKBAR = 0
+final WINDOW_UTILITY = 0
+final WINDOW_TOOLTIP = 0
+final WINDOW_POPUP_MENU = 0
+final WINDOW_KEYBOARD_GRABBED = 0
+final WINDOW_VULKAN = 0
+final WINDOW_METAL = 0
+final WINDOW_INPUT_GRABBED = 0
+final WINDOWPOS_CENTERED = 0
+final WINDOWPOS_UNDEFINED = 0
+final INIT_TIMER = 0
+final INIT_AUDIO = 0
+final INIT_VIDEO = 0
+final INIT_JOYSTICK = 0
+final INIT_HAPTIC = 0
+final INIT_GAMECONTROLLER = 0
+final INIT_EVENTS = 0
+final INIT_EVERYTHING = 0
+final AUDIO_TRACK_COUNT = 0
+final AUDIO_S8 = 0
+final AUDIO_U8 = 0
+final AUDIO_S16LSB = 0
+final AUDIO_S16MSB = 0
+final AUDIO_S16SYS = 0
+final AUDIO_S16 = 0
+final AUDIO_U16LSB = 0
+final AUDIO_U16MSB = 0
+final AUDIO_U16SYS = 0
+final AUDIO_U16 = 0
+final AUDIO_S32LSB = 0
+final AUDIO_S32MSB = 0
+final AUDIO_S32SYS = 0
+final AUDIO_S32 = 0
+final AUDIO_F32LSB = 0
+final AUDIO_F32MSB = 0
+final AUDIO_F32SYS = 0
+final AUDIO_F32 = 0
+final WAVE_FORM_SINE = 0
+final WAVE_FORM_SAWTOOTH = 0
+final WAVE_FORM_SQUARE = 0
+final WAVE_FORM_TRIANGLE = 0
+final FINGERMOTION = 0
+final FINGERDOWN = 0
+final FINGERUP = 0
+final KEYDOWN = 0
+final KEYUP = 0
+final MOUSEMOTION = 0
+final MOUSEBUTTONDOWN = 0
+final MOUSEBUTTONUP = 0
+final MOUSEWHEEL = 0
+final QUIT = 0
 
-def someFunc():
-  "Documentation for someFunc"
+final scancode dict[string, int] = {}
+final key dict[string, int] = {}
+
+
+class Event:
+  pass
+
+
+class Rect:
+  def __init__(x, y, width, heigth):
+    pass

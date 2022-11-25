@@ -273,6 +273,9 @@ export class Optional extends MType {
   }
 
   toString() {
+    if (this.itemType instanceof Function) {
+      return `(${this.itemType})?`
+    }
     return this.itemType + '?';
   }
 }
@@ -318,6 +321,10 @@ export class Iterate extends MType {
     return Any;
   }
 
+  getForInItemType(): MType | null {
+    return this.itemType;
+  }
+
   toString(): string {
     return `iterate[${this.itemType}]`;
   }
@@ -356,10 +363,7 @@ export class Function extends MType {
   }
 
   toString() {
-    if (this.parameters.length) {
-      return `function[${this.parameters.join(',')},${this.returnType}]`;
-    }
-    return `function[${this.returnType}]`;
+    return `(${this.parameters.join(',')})${this.returnType}`;
   }
 }
 

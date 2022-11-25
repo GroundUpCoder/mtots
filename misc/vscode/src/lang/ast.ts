@@ -1,6 +1,7 @@
 import { MError } from "./error";
 import { MLocation } from "./location";
 import { MPosition } from "./position";
+import { MScope } from "./scope";
 import { MSymbol, MSymbolUsage } from "./symbol";
 
 type LogicalOperator = (
@@ -74,15 +75,18 @@ export class TypeExpression extends Ast {
 
 export class Module extends Ast {
   readonly statements: Statement[];
+  readonly scope: MScope;
   private readonly symbolUsages: MSymbolUsage[];
   readonly errors: MError[];
   constructor(
       location: MLocation,
       statements: Statement[],
+      scope: MScope,
       symbolUsages: MSymbolUsage[],
       errors: MError[]) {
     super(location);
     this.statements = statements;
+    this.scope = scope;
     this.symbolUsages = symbolUsages;
     this.errors = errors;
   }

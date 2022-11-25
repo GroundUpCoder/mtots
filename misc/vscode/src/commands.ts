@@ -80,10 +80,8 @@ export async function parse() {
   }
   const text = getSelectionOrAllText(editor);
   await writeToNewEditor(async emit => {
-    const moduleSymbol = new MSymbol('__main__', MLocation.of(editor.document.uri));
-    const scanner = new MScanner('<input>', text);
-    const parser = new MParser(scanner, moduleSymbol, new ParseContext(DefaultSourceFinder));
-    const moduleAst = await parser.parseModule();
-    emit(JSON.stringify(moduleAst));
+    const ctx = new ParseContext(DefaultSourceFinder);
+    const module = await ctx.loadModule('__main__', [editor.document.uri, text]);
+    emit(JSON.stringify(module));
   }, 'json');
 }

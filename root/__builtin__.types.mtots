@@ -1,0 +1,9 @@
+
+
+
+def len(collection) int:
+  "Returns the number of elements in a collection"
+
+
+def range(start int, end int=0, step int=1) iterate[int]:
+  "Iterates over the numbers from start (inclusive) to end (exclusive)"
