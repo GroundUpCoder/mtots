@@ -97,11 +97,11 @@ export class TypeSolver {
           this.solveTypeExpression(te.args[0], scope),
           this.solveTypeExpression(te.args[1], scope));
       case 'optional':
-        if (te.args.length === 0) {
-          return type.UntypedOptional;
-        }
         this.checkTypeArgc(te, 1);
         return type.Optional.of(this.solveTypeExpression(te.args[0], scope));
+      case 'iterate':
+        this.checkTypeArgc(te, 1);
+        return type.Iterate.of(this.solveTypeExpression(te.args[0], scope));
       case 'function':
         if (te.args.length === 0) {
           return type.UntypedFunction;

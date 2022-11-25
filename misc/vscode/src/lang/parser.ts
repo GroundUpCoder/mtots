@@ -468,9 +468,18 @@ export class MParser {
   private parseForStatement(): Ast {
     const startLocation = this.expect('for').location;
     const identifier = this.parseIdentifier();
-    this.recordSymbolDefinition(identifier, true);
+    const symbol = this.recordSymbolDefinition(identifier, true);
     this.expect('in');
     const container = this.parseExpression();
+    const containerType = this.solveType(container);
+    const itemType = containerType.getForInItemType();
+    if (itemType) {
+      symbol.type = itemType;
+    } else {
+      this.newSemanticErrorAt(
+        container.location,
+        `${containerType} is not iterable`);
+    }
     const body = this.parseBlock();
     const location = startLocation.merge(body.location);
     return new ast.For(location, identifier, container, body);
@@ -508,22 +517,22 @@ export class MParser {
   private async parseImportStatement(parentSymbol: MSymbol): Promise<Ast> {
     const startLocation = this.peek.location;
     this.expect('import');
-    const module = this.parseQualifiedIdentifier();
+    const moduleID = this.parseQualifiedIdentifier();
     const alias = this.consume('as') ? this.parseIdentifier() : null;
     const location = startLocation.merge(
-      alias === null ? module.location : alias.location);
-    const importModule = new ast.Import(location, module, alias);
+      alias === null ? moduleID.location : alias.location);
+    const importModule = new ast.Import(location, moduleID, alias);
     const importSymbol = this.recordSymbolDefinition(importModule.alias, true);
-    importSymbol.type = types.Module.of(importSymbol, module);
+    importSymbol.type = types.Module.of(importSymbol, moduleID);
     parentSymbol.members.set(importSymbol.name, importSymbol);
-    const cached = this.context.moduleCache.get(module.toString());
+    const cached = this.context.moduleCache.get(moduleID.toString());
     if (cached) {
       importSymbol.members = cached.members;
     } else {
-      this.context.moduleCache.set(module.toString(), importSymbol);
-      const finderResult = await this.context.sourceFinder(module.toString());
+      this.context.moduleCache.set(moduleID.toString(), importSymbol);
+      const finderResult = await this.context.sourceFinder(moduleID.toString());
       if (finderResult === null) {
-        this.newSemanticErrorAt(module.location, `Module ${module} not found`);
+        this.newSemanticErrorAt(moduleID.location, `Module ${moduleID} not found`);
       } else {
         const [importUri, importContents] = finderResult;
         const scanner = new MScanner(importUri, importContents);
@@ -532,7 +541,7 @@ export class MParser {
         if (module.errors.length > 0) {
           const e = module.errors[0];
           this.newSemanticErrorAt(
-            module.location, `Failed to import module ${module}: ${e}`);
+            location, `module ${moduleID} has errors: ${e.message}`);
         }
       }
     }

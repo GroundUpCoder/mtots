@@ -27,6 +27,14 @@ export abstract class MType {
     return null;
   }
 
+  /**
+   * If this type is iterated over with a for loop,
+   * what would the loop variable's type be?
+   */
+  getForInItemType(): MType | null {
+    return null;
+  }
+
   abstract toString(): string;
 }
 
@@ -72,7 +80,6 @@ export class BuiltinPrimitive extends MType {
   static UntypedList = new BuiltinPrimitive('list', Any);
   static UntypedDict = new BuiltinPrimitive('dict', Any);
   static UntypedFunction = new BuiltinPrimitive('function', Any);
-  static UntypedOptional = new BuiltinPrimitive('optional', Any);
 
   private constructor(name: string, parent: MType) {
     super();
@@ -104,6 +111,16 @@ export class BuiltinPrimitive extends MType {
     return map.get(memberName) || null;
   }
 
+  getForInItemType(): MType | null {
+    switch (this) {
+      case UntypedDict:
+      case UntypedList:
+      case UntypedFunction:
+        return Any;
+    }
+    return null;
+  }
+
   toString() {
     return this.name;
   }
@@ -117,7 +134,6 @@ export const UntypedModule = BuiltinPrimitive.UntypedModule;
 export const UntypedList = BuiltinPrimitive.UntypedList;
 export const UntypedDict = BuiltinPrimitive.UntypedDict;
 export const UntypedFunction = BuiltinPrimitive.UntypedFunction;
-export const UntypedOptional = BuiltinPrimitive.UntypedOptional;
 
 export class List extends MType {
   private static readonly map: Map<MType, List> = new Map();
@@ -147,11 +163,12 @@ export class List extends MType {
   }
 
   getMethodType(memberName: string): MType | null {
-    switch (memberName) {
-      case '__mul__':
-        return Function.of([Number], 0, this);
-    }
-    return null;
+    const methodTypeEntry = ListMethodMap.get(memberName);
+    return methodTypeEntry ? methodTypeEntry(this) : null;
+  }
+
+  getForInItemType(): MType | null {
+    return this.itemType;
   }
 
   toString() {
@@ -193,15 +210,33 @@ export class Dict extends MType {
     return this.valueType;
   }
 
+  getMethodType(memberName: string): MType | null {
+    const methodTypeEntry = DictMethodMap.get(memberName);
+    return methodTypeEntry ? methodTypeEntry(this) : null;
+  }
+
+  getForInItemType(): MType | null {
+    return this.keyType;
+  }
+
   toString() {
     return `dict[${this.keyType},${this.valueType}]`;
   }
 }
 
+/**
+ * Union type between the given item type and nil
+ */
 export class Optional extends MType {
   private static readonly map: Map<MType, Optional> = new Map();
 
-  static of(itemType: MType) {
+  static of(itemType: MType): MType {
+    if (itemType instanceof Optional) {
+      return itemType;
+    }
+    if (itemType instanceof Iterate) {
+      return Iterate.of(Optional.of(itemType.itemType));
+    }
     const cached = this.map.get(itemType);
     if (cached) {
       return cached;
@@ -217,17 +252,74 @@ export class Optional extends MType {
     this.itemType = itemType;
   }
 
+  /** The optional is truly covariant, unlike List or Dict */
   isAssignableTo(other: MType): boolean {
-    return this === other || UntypedOptional.isAssignableTo(other);
+    return this === other || (
+      other instanceof Optional && this.itemType.isAssignableTo(other.itemType)) ||
+      Any.isAssignableTo(other);
   }
 
   closestCommonType(other: MType): MType {
-    return this === other || this.itemType === other || other === Nil ?
-      this : UntypedOptional.closestCommonType(other);
+    if (this === other) {
+      return this;
+    }
+    if (other === Nil) {
+      return this;
+    }
+    if (other instanceof Optional) {
+      return Optional.of(this.itemType.closestCommonType(other.itemType));
+    }
+    return Any;
   }
 
   toString() {
     return this.itemType + '?';
+  }
+}
+
+/**
+ * Union type between the given item type and StopIteration
+ */
+export class Iterate extends MType {
+  private static readonly map: Map<MType, Iterate> = new Map();
+
+  static of(itemType: MType) {
+    if (itemType instanceof Iterate) {
+      return itemType;
+    }
+    const cached = this.map.get(itemType);
+    if (cached) {
+      return cached;
+    }
+    const optional = new Iterate(itemType);
+    this.map.set(itemType, optional);
+    return optional;
+  }
+
+  readonly itemType: MType;
+  private constructor(itemType: MType) {
+    super();
+    this.itemType = itemType;
+  }
+
+  isAssignableTo(other: MType): boolean {
+    return this === other || (
+      other instanceof Iterate && this.itemType.isAssignableTo(other.itemType)) ||
+      Any.isAssignableTo(other);
+  }
+
+  closestCommonType(other: MType): MType {
+    if (this === other) {
+      return this;
+    }
+    if (other instanceof Iterate) {
+      return Iterate.of(this.itemType.closestCommonType(other.itemType));
+    }
+    return Any;
+  }
+
+  toString(): string {
+    return `iterate[${this.itemType}]`;
   }
 }
 
@@ -390,12 +482,29 @@ export class Module extends MType {
   }
 }
 
-const BuiltinMethodMap: Map<BuiltinPrimitive, Map<string, MType>> = new Map([
+const BuiltinMethodMap: Map<BuiltinPrimitive, Map<string, Function>> = new Map([
   [Number, new Map([
     ['__add__', Function.of([Number], 0, Number)],
     ['__sub__', Function.of([Number], 0, Number)],
     ['__mul__', Function.of([Number], 0, Number)],
     ['__div__', Function.of([Number], 0, Number)],
     ['__floordiv__', Function.of([Number], 0, Number)],
+    ['__neg__', Function.of([], 0, Number)],
   ])],
+  [String, new Map([
+    ['__add__', Function.of([String], 0, String)],
+    ['__mul__', Function.of([Number], 0, String)],
+    ['__getitem__', Function.of([Number], 0, String)],
+  ])],
+]);
+
+const ListMethodMap: Map<string, (self: List) => Function> = new Map([
+  ['__mul__', self => Function.of([Number], 0, self)],
+  ['__getitem__', self => Function.of([Number], 0, self.itemType)],
+  ['__setitem__', self => Function.of([Number, self.itemType], 0, Nil)],
+]);
+
+const DictMethodMap: Map<string, (self: Dict) => Function> = new Map([
+  ['__getitem__', self => Function.of([self.keyType], 0, self.valueType)],
+  ['__setitem__', self => Function.of([self.keyType, self.valueType], 0, Nil)],
 ]);
