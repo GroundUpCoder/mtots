@@ -518,7 +518,7 @@ export class MParser {
     return this.parsePrec(1);
   }
 
-  private parseForStatement(): Ast {
+  private parseForStatement(): ast.For {
     const startLocation = this.expect('for').location;
     const identifier = this.parseIdentifier();
     const symbol = this.recordSymbolDefinition(identifier, true);
@@ -538,7 +538,7 @@ export class MParser {
     return new ast.For(location, identifier, container, body);
   }
 
-  private parseIfStatement(): Ast {
+  private parseIfStatement(): ast.If {
     const startLocation = this.expect('if').location;
     const pairs: [ast.Expression, ast.Block][] = [];
     const condition = this.parseExpression();
@@ -555,7 +555,7 @@ export class MParser {
     return new ast.If(location, pairs, fallback);
   }
 
-  private parseReturnStatement(): Ast {
+  private parseReturnStatement(): ast.Return {
     const startLocation = this.expect('return').location;
     const expression = this.parseExpression();
     this.solveType(expression);
@@ -564,7 +564,7 @@ export class MParser {
     return new ast.Return(location, expression);
   }
 
-  private parseWhileStatement(): Ast {
+  private parseWhileStatement(): ast.While {
     const startLocation = this.expect('while').location;
     const condition = this.parseExpression();
     this.solveType(condition);
@@ -573,7 +573,7 @@ export class MParser {
     return new ast.While(location, condition, body);
   }
 
-  private async parseImportStatement(): Promise<Ast> {
+  private async parseImportStatement(): Promise<ast.Statement> {
     const startLocation = this.peek.location;
     this.expect('import');
     const moduleID = this.parseQualifiedIdentifier();
@@ -597,7 +597,7 @@ export class MParser {
     return importModule;
   }
 
-  private parseExpressionStatement(): Ast {
+  private parseExpressionStatement(): ast.ExpressionStatement {
     const startLocation = this.peek.location;
     const expression = this.parseExpression();
     this.solveType(expression);

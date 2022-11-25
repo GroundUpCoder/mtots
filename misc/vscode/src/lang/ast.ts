@@ -44,7 +44,9 @@ export class QualifiedIdentifier extends Ast {
   }
 }
 
-export abstract class Statement extends Ast {}
+export abstract class Statement extends Ast {
+  abstract accept<R>(visitor: StatementVisitor<R>): R;
+}
 
 export abstract class Expression extends Ast {
   abstract accept<R>(visitor: ExpressionVisitor<R>): R;
@@ -105,6 +107,10 @@ export class Nop extends Statement {
   constructor(location: MLocation) {
     super(location);
   }
+
+  accept<R>(visitor: StatementVisitor<R>): R {
+    return visitor.visitNop(this);
+  }
 }
 
 export class Parameter extends Ast {
@@ -142,6 +148,10 @@ export class Function extends Statement {
     this.returnType = returnType;
     this.documentation = documentation;
     this.body = body;
+  }
+
+  accept<R>(visitor: StatementVisitor<R>): R {
+    return visitor.visitFunction(this);
   }
 }
 
@@ -181,6 +191,10 @@ export class Class extends Statement {
     this.fields = fields;
     this.methods = methods;
   }
+
+  accept<R>(visitor: StatementVisitor<R>): R {
+    return visitor.visitClass(this);
+  }
 }
 
 export class Import extends Statement {
@@ -193,6 +207,10 @@ export class Import extends Statement {
     super(location);
     this.module = module;
     this.alias = alias || module.identifier;
+  }
+
+  accept<R>(visitor: StatementVisitor<R>): R {
+    return visitor.visitImport(this);
   }
 }
 
@@ -214,6 +232,10 @@ export class Variable extends Statement {
     this.typeExpression = typeExpression;
     this.valueExpression = valueExpression;
   }
+
+  accept<R>(visitor: StatementVisitor<R>): R {
+    return visitor.visitVariable(this);
+  }
 }
 
 export class While extends Statement {
@@ -223,6 +245,10 @@ export class While extends Statement {
     super(location);
     this.condition = condition;
     this.body = body;
+  }
+
+  accept<R>(visitor: StatementVisitor<R>): R {
+    return visitor.visitWhile(this);
   }
 }
 
@@ -240,6 +266,10 @@ export class For extends Statement {
     this.container = container;
     this.body = body;
   }
+
+  accept<R>(visitor: StatementVisitor<R>): R {
+    return visitor.visitFor(this);
+  }
 }
 
 export class If extends Statement {
@@ -253,6 +283,10 @@ export class If extends Statement {
     this.pairs = pairs;
     this.fallback = fallback;
   }
+
+  accept<R>(visitor: StatementVisitor<R>): R {
+    return visitor.visitIf(this);
+  }
 }
 
 export class Block extends Statement {
@@ -260,6 +294,10 @@ export class Block extends Statement {
   constructor(location: MLocation, statements: Statement[]) {
     super(location);
     this.statements = statements;
+  }
+
+  accept<R>(visitor: StatementVisitor<R>): R {
+    return visitor.visitBlock(this);
   }
 }
 
@@ -269,6 +307,10 @@ export class Return extends Statement {
     super(location);
     this.expression = expression;
   }
+
+  accept<R>(visitor: StatementVisitor<R>): R {
+    return visitor.visitReturn(this);
+  }
 }
 
 export class ExpressionStatement extends Statement {
@@ -276,6 +318,10 @@ export class ExpressionStatement extends Statement {
   constructor(location: MLocation, expression: Expression) {
     super(location);
     this.expression = expression;
+  }
+
+  accept<R>(visitor: StatementVisitor<R>): R {
+    return visitor.visitExpressionStatement(this);
   }
 }
 
@@ -475,4 +521,18 @@ export abstract class ExpressionVisitor<R> {
   abstract visitSetField(e: SetField): R;
   abstract visitLogical(e: Logical): R;
   abstract visitRaise(e: Raise): R;
+}
+
+export abstract class StatementVisitor<R> {
+  abstract visitNop(s: Nop): R;
+  abstract visitFunction(s: Function): R;
+  abstract visitClass(s: Class): R;
+  abstract visitImport(s: Import): R;
+  abstract visitVariable(s: Variable): R;
+  abstract visitWhile(s: While): R;
+  abstract visitFor(s: For): R;
+  abstract visitIf(s: If): R;
+  abstract visitBlock(s: Block): R;
+  abstract visitReturn(s: Return): R;
+  abstract visitExpressionStatement(s: ExpressionStatement): R;
 }
