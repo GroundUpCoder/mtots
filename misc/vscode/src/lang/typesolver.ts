@@ -4,6 +4,7 @@ import { MType } from "./type";
 import * as type from "./type";
 import { MScope } from "./scope";
 import { MSymbolUsage } from "./symbol";
+import { MLocation } from "./location";
 
 const INT_LOW = -Math.pow(2, 31);
 const INT_HIGH = Math.pow(2, 31) - 1;
@@ -112,7 +113,7 @@ export class TypeSolver {
           parameters.push(this.solveTypeExpression(te.args[i], scope));
         }
         const returnType = this.solveTypeExpression(te.args[te.args.length - 1], scope);
-        return type.Function.of(parameters, returnType);
+        return type.Function.of(parameters, 0, returnType);
     }
     this.errors.push(new MError(
       te.identifier.location, `unrecognized type name ${te.identifier}`));
@@ -154,6 +155,11 @@ class ExpressionTypeSolver extends ast.ExpressionVisitor<MType> {
     const symbol = this.scope.get(e.identifier.name);
     if (!symbol) {
       return type.Any;
+    }
+    if (symbol.final) {
+      this.errors.push(new MError(
+        e.location,
+        `Cannot assign to a final variable`));
     }
     const symbolType = symbol.type;
     const rhsType = this.typeSolver.solveExpression(
@@ -211,24 +217,168 @@ class ExpressionTypeSolver extends ast.ExpressionVisitor<MType> {
     return type.Dict.of(keyType, valueType);
   }
 
+  private checkArgTypes(
+      functionLocation: MLocation,
+      args: ast.Expression[],
+      parameterTypes: MType[],
+      optionalCount: number) {
+    if (args.length < parameterTypes.length - optionalCount ||
+        args.length > parameterTypes.length) {
+      this.errors.push(new MError(
+        functionLocation,
+        optionalCount === 0 ?
+          `${parameterTypes.length} args expected but got ${args.length}` :
+          `${parameterTypes.length - optionalCount} to ${parameterTypes.length} args ` +
+          `expected but got ${args.length}`));
+      return;
+    }
+    for (let i = 0; i < args.length; i++) {
+      const parameterType = parameterTypes[i];
+      const argType = this.typeSolver.solveExpression(args[i], this.scope, parameterType);
+      if (!argType.isAssignableTo(parameterType)) {
+        this.errors.push(new MError(
+          args[i].location,
+          `Argument ${argType} is not assignable to ${parameterType}`));
+      }
+    }
+  }
+
   visitFunctionCall(e: ast.FunctionCall): MType {
-    return type.Any; // TODO
+    const funcType = this.typeSolver.solveExpression(e.func, this.scope);
+    if (funcType === type.Any) {
+      for (const arg of e.args) {
+        this.typeSolver.solveExpression(arg, this.scope);
+      }
+      return type.Any;
+    }
+    if (funcType instanceof type.Class) {
+      const instanceType = type.Instance.of(funcType.symbol);
+      const initMethodType = instanceType.getMethodType('__init__');
+      const [parameterTypes, optCount] =
+        initMethodType !== null && initMethodType instanceof type.Function ?
+          [initMethodType.parameters, initMethodType.optionalCount] :
+          [[], 0];
+      this.checkArgTypes(
+        e.func.location,
+        e.args,
+        parameterTypes,
+        optCount);
+      return instanceType;
+    }
+    if (funcType instanceof type.Function) {
+      this.checkArgTypes(e.func.location, e.args, funcType.parameters, funcType.optionalCount);
+      return funcType.returnType;
+    }
+    this.errors.push(new MError(e.func.location, `${funcType} is not callable`));
+    for (const arg of e.args) {
+      this.typeSolver.solveExpression(arg, this.scope);
+    }
+    return type.Any;
   }
 
   visitMethodCall(e: ast.MethodCall): MType {
-    return type.Any; // TODO
+    const ownerType = this.typeSolver.solveExpression(e.owner, this.scope);
+    if (ownerType === type.Any) {
+      for (const arg of e.args) {
+        this.typeSolver.solveExpression(arg, this.scope);
+      }
+      return type.Any;
+    }
+    const memberType = ownerType.getMethodType(e.identifier.name);
+    if (!memberType) {
+      this.errors.push(new MError(
+        e.identifier.location,
+        `Member ${e.identifier.name} not found in ${ownerType}`));
+      for (const arg of e.args) {
+        this.typeSolver.solveExpression(arg, this.scope);
+      }
+      return type.Any;
+    }
+    if (memberType === type.Any) {
+      for (const arg of e.args) {
+        this.typeSolver.solveExpression(arg, this.scope);
+      }
+      return type.Any;
+    }
+    if (memberType instanceof type.Class) {
+      const instanceType = type.Instance.of(memberType.symbol);
+      const initMethodType = instanceType.getMethodType('__init__');
+      const [parameterTypes, optCount] =
+        initMethodType !== null && initMethodType instanceof type.Function ?
+          [initMethodType.parameters, initMethodType.optionalCount] :
+          [[], 0];
+      this.checkArgTypes(
+        e.identifier.location,
+        e.args,
+        parameterTypes,
+        optCount);
+      return type.Instance.of(memberType.symbol);
+    }
+    if (memberType instanceof type.Function) {
+      this.checkArgTypes(
+        e.identifier.location, e.args, memberType.parameters, memberType.optionalCount);
+      return memberType.returnType;
+    }
+    this.errors.push(new MError(e.identifier.location, `${memberType} is not callable`));
+    for (const arg of e.args) {
+      this.typeSolver.solveExpression(arg, this.scope);
+    }
+    return type.Any;
   }
 
   visitGetField(e: ast.GetField): MType {
-    return type.Any; // TODO
+    const ownerType = this.typeSolver.solveExpression(e.owner, this.scope);
+    if (ownerType === type.Any) {
+      return type.Any;
+    }
+    const memberType = ownerType.getFieldType(e.identifier.name);
+    if (!memberType) {
+      this.errors.push(new MError(
+        e.identifier.location,
+        `Member ${e.identifier.name} not found in ${ownerType}`));
+      return type.Any;
+    }
+    return memberType;
   }
 
   visitSetField(e: ast.SetField): MType {
-    return type.Any; // TODO
+    const ownerType = this.typeSolver.solveExpression(e.owner, this.scope);
+    if (ownerType === type.Any) {
+      return type.Any;
+    }
+    const memberType = ownerType.getFieldType(e.identifier.name);
+    if (!memberType) {
+      this.errors.push(new MError(
+        e.identifier.location,
+        `Member ${e.identifier.name} not found in ${ownerType}`));
+      return type.Any;
+    }
+    const valueType = this.typeSolver.solveExpression(e.value, this.scope);
+    if (!valueType.isAssignableTo(memberType)) {
+      this.errors.push(new MError(
+        e.value.location,
+        `${valueType} is not assignable to ${memberType}`));
+    }
+    return memberType;
   }
 
   visitLogical(e: ast.Logical): MType {
-    return type.Any; // TODO
+    switch (e.op) {
+      case 'not':
+        if (e.args.length !== 0) {
+          throw new Error(`assertion error ${e.op}`);
+        }
+        this.typeSolver.solveExpression(e.args[0], this.scope);
+        return type.Bool;
+      case 'and':
+      case 'or':
+        if (e.args.length !== 2) {
+          throw new Error(`assertion error ${e.op}, ${e.args.length}`);
+        }
+        const lhsType = this.typeSolver.solveExpression(e.args[0], this.scope);
+        const rhsType = this.typeSolver.solveExpression(e.args[1], this.scope);
+        return lhsType.closestCommonType(rhsType);
+    }
   }
 
   visitRaise(e: ast.Raise): MType {

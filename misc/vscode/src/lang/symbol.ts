@@ -9,6 +9,9 @@ export class MSymbol {
   /** location of the MSymbol's definition */
   readonly location: MLocation;
 
+  /** whether or not this symbol should be considered immutable */
+  readonly final: boolean;
+
   /** If available, documentation related to the MSymbol */
   documentation: ast.StringLiteral | null;
 
@@ -27,8 +30,10 @@ export class MSymbol {
   constructor(
       name: string,
       definitionLocation: MLocation,
+      final: boolean = true,
       members: Map<string, MSymbol> | null = null) {
     this.name = name;
+    this.final = final;
     this.location = definitionLocation;
     this.documentation = null;
     this.type = type.Any;

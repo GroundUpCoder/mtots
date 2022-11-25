@@ -184,7 +184,6 @@ export class MParser {
     const args: ast.TypeExpression[] = [];
     let endLocation = identifier.location;
     if (this.consume('[')) {
-      const args = [];
       while (!this.at(']')) {
         args.push(this.parseTypeExpression());
         if (!this.consume(',')) {
@@ -225,14 +224,14 @@ export class MParser {
   }
 
   private recordSymbolDefinition(
-      identifier: ast.Identifier, addToScope: boolean): MSymbol {
+      identifier: ast.Identifier, addToScope: boolean, final: boolean = true): MSymbol {
     const previous = this.scope.map.get(identifier.name);
     if (previous) {
       this.newSemanticErrorAt(
         identifier.location,
         `'${previous.name}' is already defined in this scope`);
     }
-    const symbol = new MSymbol(identifier.name, identifier.location);
+    const symbol = new MSymbol(identifier.name, identifier.location, final);
     if (addToScope) {
       this.scope.set(symbol);
     }
@@ -591,7 +590,7 @@ export class MParser {
       this.expect('var');
     }
     const identifier = this.parseIdentifier();
-    const symbol = this.recordSymbolDefinition(identifier, false);
+    const symbol = this.recordSymbolDefinition(identifier, false, final);
     parentSymbol.members.set(symbol.name, symbol);
     const type = this.parseTypeExpression();
     const location = startLocation.merge(type.location);
@@ -652,7 +651,7 @@ export class MParser {
     const defaultValue = this.consume('=') ? this.parseExpression() : null;
     const location = identifier.location.merge(
       defaultValue ? defaultValue.location : type.location);
-    const definition = this.recordSymbolDefinition(identifier, true);
+    const definition = this.recordSymbolDefinition(identifier, true, false);
     definition.type = this.solveType(type);
     return new ast.Parameter(location, identifier, type, defaultValue);
   }
@@ -663,6 +662,22 @@ export class MParser {
 
   private parseMethodDeclaration(parentSymbol: MSymbol): ast.Function {
     return this.parseFunctionOrMethodDeclaration(parentSymbol, true);
+  }
+
+  private checkParameters(parameters: ast.Parameter[]) {
+    let i = 0;
+    for (; i < parameters.length; i++) {
+      if (parameters[i].defaultValue !== null) {
+        break;
+      }
+    }
+    for (; i < parameters.length; i++) {
+      if (parameters[i].defaultValue === null) {
+        this.newSemanticErrorAt(
+          parameters[i].location,
+          `non-optional parameter may not follow an optional parameter`);
+      }
+    }
   }
 
   private parseFunctionOrMethodDeclaration(
@@ -687,8 +702,10 @@ export class MParser {
     const returnType = this.at(':') ?
       this.newAnyType(startLocation) :
       this.parseTypeExpression();
+    this.checkParameters(parameters);
     const functionType = types.Function.of(
       parameters.map(p => this.solveType(p.type)),
+      parameters.filter(p => p.defaultValue !== null).length,
       this.solveType(returnType));
     functionSymbol.type = functionType;
     const body = this.parseBlock();
@@ -754,7 +771,7 @@ export class MParser {
         `Cannot assign ${valueType} to ${solvedVariableType}`);
     }
     const location = startLocation.merge(value.location);
-    const varSymbol = this.recordSymbolDefinition(identifier, true);
+    const varSymbol = this.recordSymbolDefinition(identifier, true, final);
     varSymbol.type = explicitType ? solvedVariableType : valueType;
     if (parentSymbol) {
       parentSymbol.members.set(varSymbol.name, varSymbol);

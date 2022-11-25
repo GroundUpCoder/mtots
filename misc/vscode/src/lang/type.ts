@@ -19,6 +19,14 @@ export abstract class MType {
    */
   abstract closestCommonType(other: MType): MType;
 
+  getFieldType(memberName: string): MType | null {
+    return null;
+  }
+
+  getMethodType(memberName: string): MType | null {
+    return null;
+  }
+
   abstract toString(): string;
 }
 
@@ -79,6 +87,14 @@ export class BuiltinPrimitive extends MType {
 
   closestCommonType(other: MType): MType {
     return other.isAssignableTo(this) ? this : this.parent.closestCommonType(other);
+  }
+
+  getFieldType(memberName: string): MType | null {
+    switch (this) {
+      case UntypedDict:
+        return Any;
+    }
+    return null;
   }
 
   toString() {
@@ -159,6 +175,10 @@ export class Dict extends MType {
     return this === other ? this : UntypedDict.closestCommonType(other);
   }
 
+  getFieldType(memberName: string): MType | null {
+    return this.valueType;
+  }
+
   toString() {
     return `dict[${this.keyType},${this.valueType}]`;
   }
@@ -188,7 +208,8 @@ export class Optional extends MType {
   }
 
   closestCommonType(other: MType): MType {
-    return this === other ? this : UntypedOptional.closestCommonType(other);
+    return this === other || this.itemType === other || other === Nil ?
+      this : UntypedOptional.closestCommonType(other);
   }
 
   toString() {
@@ -199,22 +220,24 @@ export class Optional extends MType {
 export class Function extends MType {
   private static readonly map: Map<string, Function> = new Map();
 
-  static of(parameters: MType[], returnType: MType): Function {
-    const key = parameters.map(p => p.id).join(',') + ':' + returnType.id;
+  static of(parameters: MType[], optionalCount: number, returnType: MType): Function {
+    const key = parameters.map(p => p.id).join(',') + ':' + optionalCount + ':' + returnType.id;
     const cached = this.map.get(key);
     if (cached) {
       return cached;
     }
-    const func = new Function(parameters, returnType);
+    const func = new Function(parameters, optionalCount, returnType);
     this.map.set(key, func);
     return func;
   }
 
   readonly parameters: MType[];
+  readonly optionalCount: number;
   readonly returnType: MType;
-  private constructor(parameters: MType[], returnType: MType) {
+  private constructor(parameters: MType[], optionalCount: number, returnType: MType) {
     super();
     this.parameters = parameters;
+    this.optionalCount = optionalCount;
     this.returnType = returnType;
   }
 
@@ -294,6 +317,14 @@ export class Instance extends MType {
     return this === other ? this : Any;
   }
 
+  getFieldType(memberName: string): MType | null {
+    return this.symbol.members.get(memberName)?.type || null;
+  }
+
+  getMethodType(memberName: string): MType | null {
+    return this.symbol.members.get(memberName)?.type || null;
+  }
+
   toString() {
     // TODO: qualify the name
     return this.symbol.name;
@@ -326,6 +357,18 @@ export class Module extends MType {
 
   closestCommonType(other: MType): MType {
     return this === other ? this : UntypedModule.closestCommonType(other);
+  }
+
+  getFieldType(memberName: string): MType | null {
+    return this.getMemberType(memberName);
+  }
+
+  getMethodType(memberName: string): MType | null {
+    return this.getMemberType(memberName);
+  }
+
+  private getMemberType(memberName: string): MType | null {
+    return this.symbol.members.get(memberName)?.type || null;
   }
 
   toString(): string {
