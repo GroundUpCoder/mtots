@@ -1,7 +1,7 @@
 import { Uri } from 'vscode';
 import * as ast from './ast';
 import { Ast } from "./ast";
-import { MError, MGotoDefinitionException, MProvideHoverException } from "./error";
+import { MError } from "./error";
 import { MLocation } from './location';
 import { MPosition } from './position';
 import { MScanner } from "./scanner";
@@ -83,9 +83,6 @@ export class MParser {
    * is at all meaningful.
    */
   private semanticErrors: MError[];
-
-  gotoDefinitionTrigger: MPosition | null = null;
-  provideHoverTrigger: MPosition | null = null;
 
   moduleSymbol: MSymbol;
 
@@ -215,31 +212,6 @@ export class MParser {
     return args;
   }
 
-  private checkTriggers(symbol: MSymbol, identifier: ast.Identifier) {
-    this.checkGotoDefinitionTrigger(symbol, identifier);
-    this.checkProvideHoverTrigger(symbol, identifier);
-  }
-
-  private checkGotoDefinitionTrigger(symbol: MSymbol, identifier: ast.Identifier) {
-    const trigger = this.gotoDefinitionTrigger;
-    if (!trigger) {
-      return;
-    }
-    if (identifier.location.range.contains(trigger)) {
-      throw new MGotoDefinitionException(symbol.location);
-    }
-  }
-
-  private checkProvideHoverTrigger(symbol: MSymbol, identifier: ast.Identifier) {
-    const trigger = this.provideHoverTrigger;
-    if (!trigger) {
-      return;
-    }
-    if (identifier.location.range.contains(trigger)) {
-      throw new MProvideHoverException(symbol);
-    }
-  }
-
   private recordSymbolDefinition(
       identifier: ast.Identifier, addToScope: boolean): MSymbol {
     const previous = this.scope.map.get(identifier.name);
@@ -253,7 +225,6 @@ export class MParser {
       this.scope.set(symbol);
     }
     this.symbolUsages.push(symbol.definition);
-    this.checkTriggers(symbol, identifier);
     return symbol;
   }
 
@@ -265,7 +236,6 @@ export class MParser {
     const usage = new MSymbolUsage(identifier.location, symbol);
     symbol.usages.push(usage);
     this.symbolUsages.push(usage);
-    this.checkTriggers(symbol, identifier);
   }
 
   private recordMemberUsage(owner: ast.Expression, identifier: ast.Identifier) {
@@ -278,7 +248,7 @@ export class MParser {
       }
       const usage = new MSymbolUsage(identifier.location, memberSymbol);
       memberSymbol.usages.push(usage);
-      this.checkTriggers(memberSymbol, identifier);
+      this.symbolUsages.push(usage);
     }
   }
 
@@ -545,17 +515,13 @@ export class MParser {
         this.newSemanticErrorAt(module.location, `Module ${module} not found`);
       } else {
         const [importUri, importContents] = finderResult;
-        try {
-          const scanner = new MScanner(importUri, importContents);
-          const parser = new MParser(scanner, importSymbol, this.context);
-          await parser.parseModule();
-        } catch (e) {
-          if (e instanceof MError) {
-            this.newSemanticErrorAt(
-              module.location, `Failed to import module ${module}: ${e}`);
-          } else {
-            throw e;
-          }
+        const scanner = new MScanner(importUri, importContents);
+        const parser = new MParser(scanner, importSymbol, this.context);
+        const module = await parser.parseModule();
+        if (module.errors.length > 0) {
+          const e = module.errors[0];
+          this.newSemanticErrorAt(
+            module.location, `Failed to import module ${module}: ${e}`);
         }
       }
     }
@@ -787,7 +753,7 @@ export class MParser {
     }
   }
 
-  private async parseModuleLevelDeclaration(parentSymbol: MSymbol): Promise<ast.Statement> {
+  private async parseModuleLevelDeclaration(): Promise<ast.Statement> {
     switch (this.peek.type) {
       case 'import': return await this.parseImportStatement(this.moduleSymbol);
       default: return this.parseDeclaration(this.moduleSymbol);
@@ -797,12 +763,23 @@ export class MParser {
   async parseModule(): Promise<ast.Module> {
     const startLocation = this.peek.location;
     const statements: ast.Statement[] = [];
-    while (!this.at('EOF')) {
-      statements.push(await this.parseModuleLevelDeclaration(this.moduleSymbol));
+    try {
+      while (!this.at('EOF')) {
+        statements.push(await this.parseModuleLevelDeclaration());
+      }
+      const location = startLocation.merge(this.peek.location);
+      this.semanticErrors.push(...this.typeSolver.errors);
+      return new ast.Module(
+        location, statements, this.symbolUsages, this.semanticErrors);
+    } catch (e) {
+      if (e instanceof MError) {
+        const location = startLocation.merge(this.peek.location);
+        const errors = [e, ...this.semanticErrors];
+        return new ast.Module(
+          location, statements, this.symbolUsages, errors);
+      } else {
+        throw e;
+      }
     }
-    const location = startLocation.merge(this.peek.location);
-    this.semanticErrors.push(...this.typeSolver.errors);
-    return new ast.Module(
-      location, statements, this.symbolUsages, this.semanticErrors);
   }
 }

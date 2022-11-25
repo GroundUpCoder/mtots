@@ -23,4 +23,8 @@ export class MRange {
   contains(position: MPosition): boolean {
     return this.start.lt(position) && position.lt(this.end);
   }
+
+  toString() {
+    return `MRange(${this.start}, ${this.end})`;
+  }
 }

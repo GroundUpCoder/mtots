@@ -1,5 +1,6 @@
 import { MError } from "./error";
 import { MLocation } from "./location";
+import { MPosition } from "./position";
 import { MSymbol, MSymbolUsage } from "./symbol";
 
 type LogicalOperator = (
@@ -73,17 +74,26 @@ export class TypeExpression extends Ast {
 
 export class Module extends Ast {
   readonly statements: Statement[];
-  readonly symbolUsages: MSymbolUsage[];
-  readonly semanticErrors: MError[];
+  private readonly symbolUsages: MSymbolUsage[];
+  readonly errors: MError[];
   constructor(
       location: MLocation,
       statements: Statement[],
       symbolUsages: MSymbolUsage[],
-      semanticErrors: MError[]) {
+      errors: MError[]) {
     super(location);
     this.statements = statements;
     this.symbolUsages = symbolUsages;
-    this.semanticErrors = semanticErrors;
+    this.errors = errors;
+  }
+
+  findUsage(position: MPosition): MSymbolUsage | null {
+    for (const usage of this.symbolUsages) {
+      if (usage.location.range.contains(position)) {
+        return usage;
+      }
+    }
+    return null;
   }
 }
 

@@ -34,7 +34,7 @@ async function updateDiagnostics(document: vscode.TextDocument, dc: vscode.Diagn
   const parser = new MParser(scanner, moduleSymbol, new ParseContext(DefaultSourceFinder));
   try {
     const module = await parser.parseModule();
-    dc.set(document.uri, module.semanticErrors.map(e => { return {
+    dc.set(document.uri, module.errors.map(e => { return {
       message: e.message,
       range: converter.convertMRange(e.location.range),
       severity: vscode.DiagnosticSeverity.Warning,

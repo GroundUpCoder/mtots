@@ -21,4 +21,8 @@ export class MPosition {
         this.column < other.column :
         this.line < other.line;
   }
+
+  toString() {
+    return `MPosition(${this.line}, ${this.column})`;
+  }
 }
