@@ -1,6 +1,6 @@
 import sdl
 
-final AMPLITUDE int = 63
+final AMPLITUDE = 63
 final SAMPLE_RATE int = 44100
 final SCREEN_WIDTH int = 640
 final SCREEN_HEIGHT int = 480
@@ -17,8 +17,8 @@ sdl.init(sdl.INIT_AUDIO | sdl.INIT_VIDEO)
 ################################################################
 # we can't initialize this right away on web
 var adev = nil
-final keyToTrackMap = {}
-final trackToKeyMap = [nil] * sdl.AUDIO_TRACK_COUNT
+final keyToTrackMap dict[int, int] = {}
+final trackToKeyMap list[int?] = [nil as int?] * sdl.AUDIO_TRACK_COUNT
 final keyToNoteID = {
 
   # Number Row (sharp and flats for the QWERTY row)
@@ -121,7 +121,7 @@ final waveforms = [
 ]
 var waveformIndex = 0
 
-def computeNoteIndex(noteID):
+def computeNoteIndex(noteID string) int:
   # The note index is useful in determining the position
   # of where the note should be drawn on the staff
   var letter = noteID[0]
@@ -135,7 +135,7 @@ def computeNoteIndex(noteID):
 for noteID in noteIDToFreq:
   print('%s -> %s' % [noteID, computeNoteIndex(noteID)])
 
-def getOpenTrack():
+def getOpenTrack() int?:
   for t in range(sdl.AUDIO_TRACK_COUNT):
     if trackToKeyMap[t] == nil:
       return t

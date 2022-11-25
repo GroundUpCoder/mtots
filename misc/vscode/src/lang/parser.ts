@@ -17,7 +17,7 @@ const PrecList: MTokenType[][] = [
   ['or'],
   ['and'],
   [],        // precedence for unary operator 'not'
-  ['==', '!=', '<', '>', '<=', '>=', 'in', 'not', 'is'],
+  ['==', '!=', '<', '>', '<=', '>=', 'in', 'not', 'is', 'as'],
   ['<<', '>>'],
   ['&'],
   ['^'],
@@ -448,6 +448,12 @@ export class MParser {
         const closeParenLocation = this.expect(')').location;
         const location = startLocation.merge(closeParenLocation);
         return new ast.FunctionCall(location, lhs, args);
+      }
+      case 'as': {
+        this.advance();
+        const assertType = this.parseTypeExpression();
+        const location = startLocation.merge(assertType.location);
+        return new ast.TypeAssertion(location, lhs, assertType);
       }
     }
 

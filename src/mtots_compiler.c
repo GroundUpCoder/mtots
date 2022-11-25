@@ -20,7 +20,7 @@ typedef enum Precedence {
   PREC_OR,          /* or */
   PREC_AND,         /* and */
   PREC_NOT,         /* not */
-  PREC_COMPARISON,  /* == != < > <= >= in not-in is is-not */
+  PREC_COMPARISON,  /* == != < > <= >= in not-in is is-not as */
   PREC_SHIFT,       /* << >> */
   PREC_BITWISE_AND, /* & */
   PREC_BITWISE_XOR, /* ^ */
@@ -453,6 +453,11 @@ static void parseAnd() {
   patchJump(endJump);
 }
 
+static void parseAs() {
+  /* 'as' expressions have zero runtime effect */
+  parseTypeExpression();
+}
+
 static void parseBinary() {
   TokenType operatorType = parser.previous.type;
   ParseRule *rule = getRule(operatorType);
@@ -856,6 +861,7 @@ void initParseRules() {
   rules[TOKEN_SUPER] = newRule(parseSuper, NULL, PREC_NONE);
   rules[TOKEN_THIS] = newRule(parseThis, NULL, PREC_NONE);
   rules[TOKEN_TRUE] = newRule(parseLiteral, NULL, PREC_NONE);
+  rules[TOKEN_AS] = newRule(NULL, parseAs, PREC_COMPARISON);
   rules[TOKEN_IN] = newRule(NULL, parseBinary, PREC_COMPARISON);
   rules[TOKEN_IS] = newRule(NULL, parseBinary, PREC_COMPARISON);
   rules[TOKEN_NOT] = newRule(parseUnary, parseBinary, PREC_COMPARISON);

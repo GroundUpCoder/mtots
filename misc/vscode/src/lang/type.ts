@@ -88,6 +88,12 @@ export class BuiltinPrimitive extends MType {
   }
 
   isAssignableTo(other: MType): boolean {
+    if (this === Nil && other instanceof Optional) {
+      return true;
+    }
+    if (other instanceof Optional && this === other.itemType) {
+      return true;
+    }
     return this === other || this.parent.isAssignableTo(other);
   }
 

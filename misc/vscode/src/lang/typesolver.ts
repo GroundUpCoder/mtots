@@ -186,6 +186,22 @@ class ExpressionTypeSolver extends ast.ExpressionVisitor<MType> {
     return type.String;
   }
 
+  visitTypeAssertion(e: ast.TypeAssertion): MType {
+    const assertType = this.typeSolver.solve(e.typeExpression, this.scope);
+    const innerType = this.typeSolver.solveExpression(e.expression, this.scope, assertType);
+    if (innerType.isAssignableTo(assertType)) {
+      // The type assertion here might not be necessary, but in some cases, the hint from
+      // this type assertion may have been necessary to get the proper result.
+      // TODO: consider emitting a warning here for some cases when we can prove
+      // that this type assertion is unnecessary.
+    } else if (assertType.isAssignableTo(innerType)) {
+      // This is more or less the main case we expect
+    } else {
+      this.errors.push(new MError(e.location, `This assertion can never succeed`));
+    }
+    return assertType;
+  }
+
   visitListDisplay(e: ast.ListDisplay): MType {
     let itemType: MType = type.NoReturn;
     if (this.typeHint instanceof type.List) {

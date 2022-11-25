@@ -78,3 +78,10 @@ class Event:
 class Rect:
   def __init__(x, y, width, heigth):
     pass
+
+
+def getTicks() float:
+  r"""
+  The `getTicks` function does not actually use SDL_GetTicks().
+  Instead it is `SDL_GetPerformanceCounter()/SDL_GetPerformanceFrequency() * 1000`
+  """

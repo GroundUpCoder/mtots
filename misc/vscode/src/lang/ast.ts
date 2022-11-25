@@ -332,6 +332,19 @@ export class StringLiteral extends Literal<string> {
   }
 }
 
+export class TypeAssertion extends Expression {
+  readonly expression: Expression;
+  readonly typeExpression: TypeExpression;
+  constructor(location: MLocation, expression: Expression, typeExpression: TypeExpression) {
+    super(location);
+    this.expression = expression;
+    this.typeExpression = typeExpression;
+  }
+  accept<R>(visitor: ExpressionVisitor<R>): R {
+    return visitor.visitTypeAssertion(this);
+  }
+}
+
 export class ListDisplay extends Expression {
   readonly items: Expression[];
   constructor(location: MLocation, items: Expression[]) {
@@ -453,6 +466,7 @@ export abstract class ExpressionVisitor<R> {
   abstract visitBoolLiteral(e: BoolLiteral): R;
   abstract visitNumberLiteral(e: NumberLiteral): R;
   abstract visitStringLiteral(e: StringLiteral): R;
+  abstract visitTypeAssertion(e: TypeAssertion): R;
   abstract visitListDisplay(e: ListDisplay): R;
   abstract visitDictDisplay(e: DictDisplay): R;
   abstract visitFunctionCall(e: FunctionCall): R;
