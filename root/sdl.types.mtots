@@ -126,3 +126,9 @@ class KeyboardState:
 
 def getKeyboardState() KeyboardState:
   pass
+
+
+def init(flags int):
+  r"""
+  Initialize the SDL library
+  """

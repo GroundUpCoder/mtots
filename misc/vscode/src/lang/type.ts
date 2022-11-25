@@ -24,7 +24,7 @@ export abstract class MType {
   }
 
   getMethodType(memberName: string): MType | null {
-    return null;
+    return Any.getMethodType(memberName);
   }
 
   /**
@@ -45,6 +45,9 @@ class AnyType extends MType {
   }
   isAssignableTo(other: MType): boolean {
     return this === other;
+  }
+  getMethodType(memberName: string): MType | null {
+    return AnyMethodMap.get(memberName) || null;
   }
   closestCommonType(other: MType): MType {
     return this;
@@ -114,7 +117,7 @@ export class BuiltinPrimitive extends MType {
     if (!map) {
       return null;
     }
-    return map.get(memberName) || null;
+    return map.get(memberName) || Any.getMethodType(memberName);
   }
 
   getForInItemType(): MType | null {
@@ -170,7 +173,7 @@ export class List extends MType {
 
   getMethodType(memberName: string): MType | null {
     const methodTypeEntry = ListMethodMap.get(memberName);
-    return methodTypeEntry ? methodTypeEntry(this) : null;
+    return methodTypeEntry ? methodTypeEntry(this) : Any.getMethodType(memberName);
   }
 
   getForInItemType(): MType | null {
@@ -218,7 +221,7 @@ export class Dict extends MType {
 
   getMethodType(memberName: string): MType | null {
     const methodTypeEntry = DictMethodMap.get(memberName);
-    return methodTypeEntry ? methodTypeEntry(this) : null;
+    return methodTypeEntry ? methodTypeEntry(this) : Any.getMethodType(memberName);
   }
 
   getForInItemType(): MType | null {
@@ -438,7 +441,7 @@ export class Instance extends MType {
   }
 
   getMethodType(memberName: string): MType | null {
-    return this.symbol.members.get(memberName)?.valueType || null;
+    return this.symbol.members.get(memberName)?.valueType || Any.getMethodType(memberName);
   }
 
   toString() {
@@ -492,6 +495,15 @@ export class Module extends MType {
   }
 }
 
+const AnyMethodMap: Map<string, Function> = new Map([
+  ['__eq__', Function.of([Any], 0, Bool)],
+  ['__ne__', Function.of([Any], 0, Bool)],
+  ['__lt__', Function.of([Any], 0, Bool)],
+  ['__le__', Function.of([Any], 0, Bool)],
+  ['__gt__', Function.of([Any], 0, Bool)],
+  ['__ge__', Function.of([Any], 0, Bool)],
+]);
+
 const BuiltinMethodMap: Map<BuiltinPrimitive, Map<string, Function>> = new Map([
   [Number, new Map([
     ['__add__', Function.of([Number], 0, Number)],
@@ -501,11 +513,15 @@ const BuiltinMethodMap: Map<BuiltinPrimitive, Map<string, Function>> = new Map([
     ['__div__', Function.of([Number], 0, Number)],
     ['__floordiv__', Function.of([Number], 0, Number)],
     ['__neg__', Function.of([], 0, Number)],
+    ['__and__', Function.of([Number], 0, Number)],
+    ['__xor__', Function.of([Number], 0, Number)],
+    ['__or__', Function.of([Number], 0, Number)],
   ])],
   [String, new Map([
     ['__add__', Function.of([String], 0, String)],
     ['__mul__', Function.of([Number], 0, String)],
     ['__getitem__', Function.of([Number], 0, String)],
+    ['__mod__', Function.of([UntypedList], 0, String)],
   ])],
 ]);
 
@@ -513,9 +529,13 @@ const ListMethodMap: Map<string, (self: List) => Function> = new Map([
   ['__mul__', self => Function.of([Number], 0, self)],
   ['__getitem__', self => Function.of([Number], 0, self.itemType)],
   ['__setitem__', self => Function.of([Number, self.itemType], 0, Nil)],
+  ['__contains__', self => Function.of([self.itemType], 0, Bool)],
+  ['__notcontains__', self => Function.of([self.itemType], 0, Bool)],
 ]);
 
 const DictMethodMap: Map<string, (self: Dict) => Function> = new Map([
   ['__getitem__', self => Function.of([self.keyType], 0, self.valueType)],
   ['__setitem__', self => Function.of([self.keyType, self.valueType], 0, Nil)],
+  ['__contains__', self => Function.of([self.keyType], 0, Bool)],
+  ['__notcontains__', self => Function.of([self.keyType], 0, Bool)],
 ]);
