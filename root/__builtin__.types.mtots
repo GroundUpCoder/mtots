@@ -7,3 +7,17 @@ def len(collection) int:
 
 def range(start int, end int=0, step int=1) iterate[int]:
   "Iterates over the numbers from start (inclusive) to end (exclusive)"
+
+
+def int(value) int:
+  r"""
+  Tries to convert the given value to an integer.
+  """
+
+
+def str(value) str:
+  "Converts the given value to a string"
+
+
+def repr(value) str:
+  "Converts the given value to a string representation"

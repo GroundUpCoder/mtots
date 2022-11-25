@@ -357,6 +357,7 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
       }
       return type.Any;
     }
+    this.checkMemberUsage(ownerType, e.identifier);
     const memberType = ownerType.getMethodType(e.identifier.name);
     if (!memberType) {
       this.errors.push(new MError(
@@ -399,11 +400,27 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
     return type.Any;
   }
 
+  private checkMemberUsage(ownerType: MType, memberIdentifier: ast.Identifier) {
+    if (ownerType instanceof type.Instance) {
+      const memberSymbol = ownerType.symbol.members.get(memberIdentifier.name);
+      if (memberSymbol) {
+        this.solver.recordSymbolUsage(memberIdentifier, memberSymbol);
+      }
+    }
+    if (ownerType instanceof type.Module) {
+      const memberSymbol = ownerType.symbol.members.get(memberIdentifier.name);
+      if (memberSymbol) {
+        this.solver.recordSymbolUsage(memberIdentifier, memberSymbol);
+      }
+    }
+  }
+
   visitGetField(e: ast.GetField): type.MType {
     const ownerType = this.solveExpression(e.owner);
     if (ownerType === type.Any) {
       return type.Any;
     }
+    this.checkMemberUsage(ownerType, e.identifier);
     const memberType = ownerType.getFieldType(e.identifier.name);
     if (!memberType) {
       this.errors.push(new MError(
@@ -419,6 +436,7 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
     if (ownerType === type.Any) {
       return type.Any;
     }
+    this.checkMemberUsage(ownerType, e.identifier);
     const memberType = ownerType.getFieldType(e.identifier.name);
     if (!memberType) {
       this.errors.push(new MError(
@@ -538,13 +556,14 @@ class StatementVisitor extends ast.StatementVisitor<void> {
 
   visitFunction(s: ast.Function) {
     const functionSymbol = this.solver.recordSymbolDefinition(s.identifier, true);
+    functionSymbol.documentation = s.documentation;
     this.visitFunctionOrMethod(s, functionSymbol);
   }
 
   visitClass(s: ast.Class) {
     const classSymbol = this.solver.recordSymbolDefinition(s.identifier, true);
-    classSymbol.typeType = type.Class.of(classSymbol);
-    classSymbol.valueType = type.Instance.of(classSymbol);
+    classSymbol.typeType = type.Instance.of(classSymbol);
+    classSymbol.valueType = type.Class.of(classSymbol);
     const classScope = new MScope(this.solver.scope);
     const classSolver = this.withScope(classScope);
     const baseValueTypes: MType[] = s.bases.map(be => classSolver.solveExpression(be));

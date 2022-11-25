@@ -76,7 +76,6 @@ class Event:
 
 
 class Rect:
-
   var x int
   var y int
   var w int
@@ -119,6 +118,11 @@ def getTicks() float:
   The `getTicks` function does not actually use SDL_GetTicks().
   Instead it is `SDL_GetPerformanceCounter()/SDL_GetPerformanceFrequency() * 1000`
   """
+
+
+class KeyboardState:
+  pass
+
 
 def getKeyboardState() KeyboardState:
   pass

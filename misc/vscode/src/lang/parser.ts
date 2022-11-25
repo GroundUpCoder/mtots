@@ -1,16 +1,13 @@
 import { Uri } from 'vscode';
 import * as ast from './ast';
-import { Ast } from "./ast";
 import { MError } from "./error";
 import { MLocation } from './location';
-import { MPosition } from './position';
 import { MScanner } from "./scanner";
 import { MScope } from "./scope";
 import { MSymbol, MSymbolUsage } from "./symbol";
 import { MToken, MTokenType } from "./token";
-import { MType } from './type';
 import * as types from './type';
-import { TypeSolver } from './typesolver';
+import { Solver } from './solver';
 
 const PrecList: MTokenType[][] = [
   [],
@@ -116,8 +113,7 @@ export class MParser {
    */
   private semanticErrors: MError[];
 
-  private typeSolver: TypeSolver;
-  private scanner: MScanner;
+  private readonly scanner: MScanner;
   private scope: MScope;
   private readonly moduleScope: MScope;
   private peek: MToken;
@@ -127,7 +123,6 @@ export class MParser {
   constructor(scanner: MScanner, context: ParseContext) {
     this.symbolUsages = [];
     this.semanticErrors = [];
-    this.typeSolver = new TypeSolver(this.semanticErrors, this.symbolUsages);
     this.scanner = scanner;
     this.scope = new MScope(context.builtinScope);
     this.moduleScope = this.scope;
@@ -180,10 +175,6 @@ export class MParser {
     if (!this.consume('NEWLINE')) {
       this.expect(';', message);
     }
-  }
-
-  private solveType(e: ast.TypeExpression | ast.Expression): MType {
-    return this.typeSolver.solve(e, this.scope);
   }
 
   private parseIdentifier(): ast.Identifier {
@@ -276,32 +267,6 @@ export class MParser {
     return symbol;
   }
 
-  private recordSymbolUsage(identifier: ast.Identifier) {
-    const symbol = this.scope.get(identifier.name);
-    if (symbol === null) {
-      return;
-    }
-    const usage = new MSymbolUsage(identifier.location, symbol);
-    symbol.usages.push(usage);
-    this.symbolUsages.push(usage);
-  }
-
-  private recordMemberUsage(owner: ast.Expression, identifier: ast.Identifier) {
-    const ownerType = this.solveType(owner);
-    if (ownerType instanceof types.Module || ownerType instanceof types.Instance) {
-      const ownerSymbol = ownerType.symbol;
-      const memberSymbol = ownerSymbol.members.get(identifier.name);
-      if (!memberSymbol) {
-        return;
-      }
-      const usage = new MSymbolUsage(identifier.location, memberSymbol);
-      memberSymbol.usages.push(usage);
-      this.symbolUsages.push(usage);
-    } else if (ownerType === types.Any) {
-      // if the owner is Any, there's not much to be done here
-    }
-  }
-
   private parsePrefix(): ast.Expression {
     const startLocation = this.peek.location;
     switch (this.peek.type) {
@@ -367,7 +332,6 @@ export class MParser {
       }
       case 'IDENTIFIER': {
         const identifier = this.parseIdentifier();
-        this.recordSymbolUsage(identifier);
         if (this.consume('=')) {
           const value = this.parseExpression();
           return new ast.SetVariable(startLocation, identifier, value);
@@ -411,7 +375,6 @@ export class MParser {
       case '.': {
         this.advance();
         const identifier = this.parseIdentifier();
-        this.recordMemberUsage(lhs, identifier);
         if (this.at('(')) {
           this.advance();
           const args = this.parseArguments();
@@ -521,18 +484,8 @@ export class MParser {
   private parseForStatement(): ast.For {
     const startLocation = this.expect('for').location;
     const identifier = this.parseIdentifier();
-    const symbol = this.recordSymbolDefinition(identifier, true);
     this.expect('in');
     const container = this.parseExpression();
-    const containerType = this.solveType(container);
-    const itemType = containerType.getForInItemType();
-    if (itemType) {
-      symbol.valueType = itemType;
-    } else {
-      this.newSemanticErrorAt(
-        container.location,
-        `${containerType} is not iterable`);
-    }
     const body = this.parseBlock();
     const location = startLocation.merge(body.location);
     return new ast.For(location, identifier, container, body);
@@ -542,11 +495,9 @@ export class MParser {
     const startLocation = this.expect('if').location;
     const pairs: [ast.Expression, ast.Block][] = [];
     const condition = this.parseExpression();
-    this.solveType(condition);
     pairs.push([condition, this.parseBlock()]);
     while (this.consume('elif')) {
       const condition = this.parseExpression();
-      this.solveType(condition);
       pairs.push([condition, this.parseBlock()]);
     }
     const fallback = this.consume('else') ? this.parseBlock() : null;
@@ -558,7 +509,6 @@ export class MParser {
   private parseReturnStatement(): ast.Return {
     const startLocation = this.expect('return').location;
     const expression = this.parseExpression();
-    this.solveType(expression);
     const location = startLocation.merge(expression.location);
     this.expectStatementDelimiter();
     return new ast.Return(location, expression);
@@ -567,7 +517,6 @@ export class MParser {
   private parseWhileStatement(): ast.While {
     const startLocation = this.expect('while').location;
     const condition = this.parseExpression();
-    this.solveType(condition);
     const body = this.parseBlock();
     const location = startLocation.merge(body.location);
     return new ast.While(location, condition, body);
@@ -600,7 +549,6 @@ export class MParser {
   private parseExpressionStatement(): ast.ExpressionStatement {
     const startLocation = this.peek.location;
     const expression = this.parseExpression();
-    this.solveType(expression);
     const location = startLocation.merge(expression.location);
     this.expectStatementDelimiter();
     return new ast.ExpressionStatement(location, expression);
@@ -642,31 +590,22 @@ export class MParser {
     }
   }
 
-  private parseFieldDeclaration(parentSymbol: MSymbol): ast.Field {
+  private parseFieldDeclaration(): ast.Field {
     const startLocation = this.peek.location;
     const final = this.consume('final');
     if (!final) {
       this.expect('var');
     }
     const identifier = this.parseIdentifier();
-    const symbol = this.recordSymbolDefinition(identifier, false, final);
-    parentSymbol.members.set(symbol.name, symbol);
     const typeExpression = this.parseTypeExpression();
-    const fieldType = this.solveType(typeExpression);
-    symbol.valueType = fieldType;
     const location = startLocation.merge(typeExpression.location);
     this.expectStatementDelimiter();
     return new ast.Field(location, final, identifier, typeExpression);
   }
 
-  private parseClassDeclaration(parentSymbol: MSymbol | null): ast.Class {
+  private parseClassDeclaration(): ast.Class {
     const startLocation = this.expect('class').location;
     const identifier = this.parseIdentifier();
-    const classSymbol = this.recordSymbolDefinition(identifier, true);
-    if (parentSymbol) {
-      parentSymbol.members.set(classSymbol.name, classSymbol);
-    }
-    classSymbol.valueType = types.Class.of(classSymbol);
     const bases = [];
     if (this.consume('(')) {
       bases.push(...this.parseArguments());
@@ -682,18 +621,17 @@ export class MParser {
       documentation = new ast.StringLiteral(
         token.location, <string>token.value);
     }
-    classSymbol.documentation = documentation;
     while (this.consume('NEWLINE') || this.consume(';'));
     while (this.consume('pass'));
     while (this.consume('NEWLINE') || this.consume(';'));
     const fields = [];
     while (this.at('var') || this.at('final')) {
-      fields.push(this.parseFieldDeclaration(classSymbol));
+      fields.push(this.parseFieldDeclaration());
       while (this.consume('NEWLINE') || this.consume(';'));
     }
     const methods = [];
     while (this.at('def')) {
-      methods.push(this.parseMethodDeclaration(classSymbol));
+      methods.push(this.parseFunctionDeclaration());
       while (this.consume('NEWLINE') || this.consume(';'));
     }
     const endLocation = this.expect('DEDENT').location;
@@ -712,43 +650,12 @@ export class MParser {
     const defaultValue = this.consume('=') ? this.parseExpression() : null;
     const location = identifier.location.merge(
       defaultValue ? defaultValue.location : type.location);
-    const definition = this.recordSymbolDefinition(identifier, true, false);
-    definition.valueType = this.solveType(type);
     return new ast.Parameter(location, identifier, type, defaultValue);
   }
 
-  private parseFunctionDeclaration(parentSymbol: MSymbol | null): ast.Function {
-    return this.parseFunctionOrMethodDeclaration(parentSymbol, false);
-  }
-
-  private parseMethodDeclaration(parentSymbol: MSymbol): ast.Function {
-    return this.parseFunctionOrMethodDeclaration(parentSymbol, true);
-  }
-
-  private checkParameters(parameters: ast.Parameter[]) {
-    let i = 0;
-    for (; i < parameters.length; i++) {
-      if (parameters[i].defaultValue !== null) {
-        break;
-      }
-    }
-    for (; i < parameters.length; i++) {
-      if (parameters[i].defaultValue === null) {
-        this.newSemanticErrorAt(
-          parameters[i].location,
-          `non-optional parameter may not follow an optional parameter`);
-      }
-    }
-  }
-
-  private parseFunctionOrMethodDeclaration(
-      parentSymbol: MSymbol | null, isMethod:boolean): ast.Function {
+  private parseFunctionDeclaration(): ast.Function {
     const startLocation = this.expect('def').location;
     const identifier = this.parseIdentifier();
-    const functionSymbol = this.recordSymbolDefinition(identifier, !isMethod);
-    if (parentSymbol) {
-      parentSymbol.members.set(functionSymbol.name, functionSymbol);
-    }
     const outerScope = this.scope;
     this.scope = new MScope(outerScope);
     const parameters = [];
@@ -763,18 +670,7 @@ export class MParser {
     const returnType = this.at(':') ?
       this.newAnyType(startLocation) :
       this.parseTypeExpression();
-    this.checkParameters(parameters);
-    const functionType = types.Function.of(
-      parameters.map(p => this.solveType(p.typeExpression)),
-      parameters.filter(p => p.defaultValue !== null).length,
-      this.solveType(returnType));
-    functionSymbol.valueType = functionType;
     const body = this.parseBlock();
-    if (body.statements.length &&
-        body.statements[0] instanceof ast.ExpressionStatement &&
-        body.statements[0].expression instanceof ast.StringLiteral) {
-      functionSymbol.documentation = body.statements[0].expression;
-    }
     let documentation: ast.StringLiteral | null = null;
     const bodyStatements = body.statements;
     if (bodyStatements.length > 0) {
@@ -812,39 +708,24 @@ export class MParser {
     return new ast.NilLiteral(location, null);
   }
 
-  private parseVariableDeclaration(parentSymbol: MSymbol | null): ast.Variable {
+  private parseVariableDeclaration(): ast.Variable {
     const startLocation = this.peek.location;
     const final = this.consume('final');
     if (!final) this.expect('var');
     const identifier = this.parseIdentifier();
-    const explicitType = !this.at('=');
-    const type = explicitType ?
-      this.parseTypeExpression() :
-      this.newAnyType(startLocation);
-    const solvedVariableType = this.solveType(type);
+    const typeExpression = this.at('=') ?
+      null :
+      this.parseTypeExpression();
     this.expect('=');
     const value = this.parseExpression();
-    const valueType = this.typeSolver.solveExpression(
-      value, this.scope, solvedVariableType);
-    if (!valueType.isAssignableTo(solvedVariableType)) {
-      this.newSemanticErrorAt(
-        value.location,
-        `Cannot assign ${valueType} to ${solvedVariableType}`);
-    }
     const location = startLocation.merge(value.location);
-    const varSymbol = this.recordSymbolDefinition(identifier, true, final);
-    varSymbol.valueType = explicitType ? solvedVariableType : valueType;
-    if (parentSymbol) {
-      parentSymbol.members.set(varSymbol.name, varSymbol);
-    }
-    return new ast.Variable(location, final, identifier, type, value);
+    return new ast.Variable(location, final, identifier, typeExpression, value);
   }
 
   private parseDeclaration(): ast.Statement {
     switch (this.peek.type) {
-      case 'class': return this.parseClassDeclaration(null);
-      case 'def': return this.parseFunctionDeclaration(null);
-      case 'final': case 'var': return this.parseVariableDeclaration(null);
+      case 'def': return this.parseFunctionDeclaration();
+      case 'final': case 'var': return this.parseVariableDeclaration();
       default: return this.parseStatement();
     }
   }
@@ -852,6 +733,7 @@ export class MParser {
   private async parseModuleLevelDeclaration(): Promise<ast.Statement> {
     switch (this.peek.type) {
       case 'import': return await this.parseImportStatement();
+      case 'class': return this.parseClassDeclaration();
       default: return this.parseDeclaration();
     }
   }
@@ -864,6 +746,10 @@ export class MParser {
         statements.push(await this.parseModuleLevelDeclaration());
       }
       const location = startLocation.merge(this.peek.location);
+      const solver = new Solver(this.scope, this.semanticErrors, this.symbolUsages);
+      for (const statement of statements) {
+        solver.solveStatement(statement);
+      }
       return new ast.Module(
         location, statements, this.scope, this.symbolUsages, this.semanticErrors);
     } catch (e) {
