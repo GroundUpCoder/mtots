@@ -3,13 +3,39 @@ import { MLocation } from "./location";
 import * as type from "./type";
 
 export class MSymbol {
+  /** The name of the MSymbol as it appears in its definition */
   readonly name: string;
-  readonly definition: MSymbolDefinition;
+
+  /** location of the MSymbol's definition */
+  readonly location: MLocation;
+
+  /** If available, documentation related to the MSymbol */
+  documentation: ast.StringLiteral | null;
+
+  /** The type of the MSymbol. Defaults to Any */
+  type: type.MType;
+
+  /** The members of this MSymbol, if provided */
+  members: Map<string, MSymbol>;
+
+  /** The usage that also corresponds to the definition of this MSymbol */
+  readonly definition: MSymbolUsage;
+
+  /** A list of all usages of this MSymbol */
   readonly usages: MSymbolUsage[];
-  constructor(name: string, definitionLocation: MLocation) {
+
+  constructor(
+      name: string,
+      definitionLocation: MLocation,
+      members: Map<string, MSymbol> | null = null) {
     this.name = name;
-    this.definition = new MSymbolDefinition(definitionLocation, this);
+    this.location = definitionLocation;
+    this.documentation = null;
+    this.type = type.Any;
+    this.members = members || new Map();
     this.usages = [];
+    this.definition = new MSymbolUsage(definitionLocation, this);
+    this.usages.push(this.definition);
   }
 }
 
@@ -19,17 +45,5 @@ export class MSymbolUsage {
   constructor(location: MLocation, symbol: MSymbol) {
     this.location = location;
     this.symbol = symbol;
-  }
-}
-
-export class MSymbolDefinition extends MSymbolUsage {
-  documentation: ast.StringLiteral | null;
-  type: type.MType;
-  members: Map<string, MSymbol>;
-  constructor(location: MLocation, symbol: MSymbol) {
-    super(location, symbol);
-    this.documentation = null;
-    this.type = type.Any;
-    this.members = new Map();
   }
 }

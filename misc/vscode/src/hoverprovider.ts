@@ -18,9 +18,9 @@ export const hoverProvider: vscode.HoverProvider = {
     } catch (e) {
       if (e instanceof MProvideHoverException) {
         const markedStrings: vscode.MarkdownString[] = [];
-        const type = e.symbol.definition.type
+        const type = e.symbol.type
         markedStrings.push(new vscode.MarkdownString(type.toString()));
-        const documentation = e.symbol.definition.documentation;
+        const documentation = e.symbol.documentation;
         if (documentation) {
           markedStrings.push(new vscode.MarkdownString(documentation.value));
         }

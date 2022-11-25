@@ -108,7 +108,7 @@ class ExpressionTypeSolver extends ast.ExpressionVisitor<MType> {
     if (!symbol) {
       return type.Any;
     }
-    return symbol.definition.type;
+    return symbol.type;
   }
 
   visitSetVariable(e: ast.SetVariable): MType {
@@ -116,9 +116,9 @@ class ExpressionTypeSolver extends ast.ExpressionVisitor<MType> {
     if (!symbol) {
       return type.Any;
     }
-    const symbolType = symbol.definition.type;
+    const symbolType = symbol.type;
     const rhsType = this.typeSolver.solveExpression(
-      e.value, this.scope, symbol.definition.type);
+      e.value, this.scope, symbol.type);
     if (!rhsType.isAssignableTo(symbolType)) {
       this.typeSolver.errors.push(new MError(
         e.location,

@@ -6,7 +6,7 @@ import { MLocation } from './location';
 import { MPosition } from './position';
 import { MScanner } from "./scanner";
 import { MScope } from "./scope";
-import { MSymbol, MSymbolDefinition, MSymbolUsage } from "./symbol";
+import { MSymbol, MSymbolUsage } from "./symbol";
 import { MToken, MTokenType } from "./token";
 import { MType } from './type';
 import * as types from './type';
@@ -226,7 +226,7 @@ export class MParser {
       return;
     }
     if (identifier.location.range.contains(trigger)) {
-      throw new MGotoDefinitionException(symbol.definition.location);
+      throw new MGotoDefinitionException(symbol.location);
     }
   }
 
@@ -241,7 +241,7 @@ export class MParser {
   }
 
   private recordSymbolDefinition(
-      identifier: ast.Identifier, addToScope: boolean): MSymbolDefinition {
+      identifier: ast.Identifier, addToScope: boolean): MSymbol {
     const previous = this.scope.map.get(identifier.name);
     if (previous) {
       this.newSemanticErrorAt(
@@ -254,7 +254,7 @@ export class MParser {
     }
     this.symbolUsages.push(symbol.definition);
     this.checkTriggers(symbol, identifier);
-    return symbol.definition;
+    return symbol;
   }
 
   private recordSymbolUsage(identifier: ast.Identifier) {
@@ -272,7 +272,7 @@ export class MParser {
     const ownerType = this.solveType(owner);
     if (ownerType instanceof types.Module) {
       const ownerSymbol = ownerType.symbol;
-      const memberSymbol = ownerSymbol.definition.members.get(identifier.name);
+      const memberSymbol = ownerSymbol.members.get(identifier.name);
       if (!memberSymbol) {
         return;
       }
@@ -532,14 +532,14 @@ export class MParser {
     const location = startLocation.merge(
       alias === null ? module.location : alias.location);
     const importModule = new ast.Import(location, module, alias);
-    const definition = this.recordSymbolDefinition(importModule.alias, true);
-    definition.type = types.Module.of(definition.symbol, module);
-    parentSymbol.definition.members.set(definition.symbol.name, definition.symbol);
+    const importSymbol = this.recordSymbolDefinition(importModule.alias, true);
+    importSymbol.type = types.Module.of(importSymbol, module);
+    parentSymbol.members.set(importSymbol.name, importSymbol);
     const cached = this.context.moduleCache.get(module.toString());
     if (cached) {
-      definition.members = cached.definition.members;
+      importSymbol.members = cached.members;
     } else {
-      this.context.moduleCache.set(module.toString(), definition.symbol);
+      this.context.moduleCache.set(module.toString(), importSymbol);
       const finderResult = await this.context.sourceFinder(module.toString());
       if (finderResult === null) {
         this.newSemanticErrorAt(module.location, `Module ${module} not found`);
@@ -547,8 +547,8 @@ export class MParser {
         const [importUri, importContents] = finderResult;
         try {
           const scanner = new MScanner(importUri, importContents);
-          const parser = new MParser(scanner, definition.symbol, this.context);
-          parser.parseModule();
+          const parser = new MParser(scanner, importSymbol, this.context);
+          await parser.parseModule();
         } catch (e) {
           if (e instanceof MError) {
             this.newSemanticErrorAt(
@@ -613,8 +613,8 @@ export class MParser {
       this.expect('var');
     }
     const identifier = this.parseIdentifier();
-    const definition = this.recordSymbolDefinition(identifier, false);
-    parentSymbol.definition.members.set(definition.symbol.name, definition.symbol);
+    const symbol = this.recordSymbolDefinition(identifier, false);
+    parentSymbol.members.set(symbol.name, symbol);
     const type = this.parseTypeExpression();
     const location = startLocation.merge(type.location);
     this.expectStatementDelimiter();
@@ -624,9 +624,9 @@ export class MParser {
   private parseClassDeclaration(parentSymbol: MSymbol | null): ast.Class {
     const startLocation = this.expect('class').location;
     const identifier = this.parseIdentifier();
-    const definition = this.recordSymbolDefinition(identifier, true);
+    const classSymbol = this.recordSymbolDefinition(identifier, true);
     if (parentSymbol) {
-      parentSymbol.definition.members.set(definition.symbol.name, definition.symbol);
+      parentSymbol.members.set(classSymbol.name, classSymbol);
     }
     const bases = [];
     if (this.consume('(')) {
@@ -643,18 +643,18 @@ export class MParser {
       documentation = new ast.StringLiteral(
         token.location, <string>token.value);
     }
-    definition.documentation = documentation;
+    classSymbol.documentation = documentation;
     while (this.consume('NEWLINE') || this.consume(';'));
     while (this.consume('pass'));
     while (this.consume('NEWLINE') || this.consume(';'));
     const fields = [];
     while (this.at('var') || this.at('final')) {
-      fields.push(this.parseFieldDeclaration(definition.symbol));
+      fields.push(this.parseFieldDeclaration(classSymbol));
       while (this.consume('NEWLINE') || this.consume(';'));
     }
     const methods = [];
     while (this.at('def')) {
-      methods.push(this.parseMethodDeclaration(definition.symbol));
+      methods.push(this.parseMethodDeclaration(classSymbol));
       while (this.consume('NEWLINE') || this.consume(';'));
     }
     const endLocation = this.expect('DEDENT').location;
@@ -692,7 +692,7 @@ export class MParser {
     const identifier = this.parseIdentifier();
     const functionSymbol = this.recordSymbolDefinition(identifier, !isMethod);
     if (parentSymbol) {
-      parentSymbol.definition.members.set(functionSymbol.symbol.name, functionSymbol.symbol);
+      parentSymbol.members.set(functionSymbol.name, functionSymbol);
     }
     const outerScope = this.scope;
     this.scope = new MScope(outerScope);
@@ -770,10 +770,10 @@ export class MParser {
         `Cannot assign ${valueType} to ${solvedVariableType}`);
     }
     const location = startLocation.merge(value.location);
-    const definition = this.recordSymbolDefinition(identifier, true);
-    definition.type = this.solveType(type);
+    const varSymbol = this.recordSymbolDefinition(identifier, true);
+    varSymbol.type = this.solveType(type);
     if (parentSymbol) {
-      parentSymbol.definition.members.set(definition.symbol.name, definition.symbol);
+      parentSymbol.members.set(varSymbol.name, varSymbol);
     }
     return new ast.Variable(location, final, identifier, type, value);
   }
