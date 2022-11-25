@@ -66,8 +66,7 @@ export class BuiltinPrimitive extends MType {
 
   static Nil = new BuiltinPrimitive('nil', Any);
   static Bool = new BuiltinPrimitive('bool', Any);
-  static Float = new BuiltinPrimitive('float', Any);
-  static Int = new BuiltinPrimitive('int', BuiltinPrimitive.Float);
+  static Number = new BuiltinPrimitive('number', Any);
   static String = new BuiltinPrimitive('string', Any);
   static UntypedModule = new BuiltinPrimitive('module', Any);
   static UntypedList = new BuiltinPrimitive('list', Any);
@@ -97,6 +96,14 @@ export class BuiltinPrimitive extends MType {
     return null;
   }
 
+  getMethodType(memberName: string): MType | null {
+    const map = BuiltinMethodMap.get(this);
+    if (!map) {
+      return null;
+    }
+    return map.get(memberName) || null;
+  }
+
   toString() {
     return this.name;
   }
@@ -104,8 +111,7 @@ export class BuiltinPrimitive extends MType {
 
 export const Nil = BuiltinPrimitive.Nil;
 export const Bool = BuiltinPrimitive.Bool;
-export const Float = BuiltinPrimitive.Float;
-export const Int = BuiltinPrimitive.Int;
+export const Number = BuiltinPrimitive.Number;
 export const String = BuiltinPrimitive.String;
 export const UntypedModule = BuiltinPrimitive.UntypedModule;
 export const UntypedList = BuiltinPrimitive.UntypedList;
@@ -138,6 +144,14 @@ export class List extends MType {
 
   closestCommonType(other: MType): MType {
     return this === other ? this : UntypedList.closestCommonType(other);
+  }
+
+  getMethodType(memberName: string): MType | null {
+    switch (memberName) {
+      case '__mul__':
+        return Function.of([Number], 0, this);
+    }
+    return null;
   }
 
   toString() {
@@ -375,3 +389,13 @@ export class Module extends MType {
     return `module[${this.symbol.name}]`
   }
 }
+
+const BuiltinMethodMap: Map<BuiltinPrimitive, Map<string, MType>> = new Map([
+  [Number, new Map([
+    ['__add__', Function.of([Number], 0, Number)],
+    ['__sub__', Function.of([Number], 0, Number)],
+    ['__mul__', Function.of([Number], 0, Number)],
+    ['__div__', Function.of([Number], 0, Number)],
+    ['__floordiv__', Function.of([Number], 0, Number)],
+  ])],
+]);

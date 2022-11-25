@@ -6,9 +6,6 @@ import { MScope } from "./scope";
 import { MSymbolUsage } from "./symbol";
 import { MLocation } from "./location";
 
-const INT_LOW = -Math.pow(2, 31);
-const INT_HIGH = Math.pow(2, 31) - 1;
-
 export class TypeSolver {
   private readonly cache: Map<ast.TypeExpression | ast.Expression, MType> = new Map();
   private readonly errors: MError[];
@@ -81,8 +78,9 @@ export class TypeSolver {
       case 'noreturn': this.checkTypeArgc(te, 0); return type.NoReturn;
       case 'nil': this.checkTypeArgc(te, 0); return type.Nil;
       case 'bool': this.checkTypeArgc(te, 0); return type.Bool;
-      case 'float': this.checkTypeArgc(te, 0); return type.Float;
-      case 'int': this.checkTypeArgc(te, 0); return type.Int;
+      case 'float': // TODO: specialized float and int types
+      case 'int':
+      case 'number': this.checkTypeArgc(te, 0); return type.Number;
       case 'string': this.checkTypeArgc(te, 0); return type.String;
       case 'list':
         if (te.args.length === 0) {
@@ -181,11 +179,7 @@ class ExpressionTypeSolver extends ast.ExpressionVisitor<MType> {
   }
 
   visitNumberLiteral(e: ast.NumberLiteral): MType {
-    const value = e.value;
-    if (value >= INT_LOW && value <= INT_HIGH && Math.floor(value) === value) {
-      return type.Int;
-    }
-    return type.Float;
+    return type.Number;
   }
 
   visitStringLiteral(e: ast.StringLiteral): MType {
