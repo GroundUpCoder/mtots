@@ -218,13 +218,13 @@ export class Import extends Statement {
 export class Variable extends Statement {
   readonly final: boolean;
   readonly identifier: Identifier;
-  readonly typeExpression: TypeExpression;
+  readonly typeExpression: TypeExpression | null;
   readonly valueExpression: Expression;
   constructor(
       location: MLocation,
       final: boolean,
       identifier: Identifier,
-      typeExpression: TypeExpression,
+      typeExpression: TypeExpression | null,
       valueExpression: Expression) {
     super(location);
     this.final = final;
