@@ -91,9 +91,13 @@ class TypeVisitor {
           `Type qualifier '${parentName}' not found`));
         return type.Any;
       }
-      const parentUsage = new MSymbolUsage(parentIdentifier.location, parentSymbol);
-      parentSymbol.usages.push(parentUsage);
-      this.symbolUsages.push(parentUsage);
+      this.solver.recordSymbolUsage(parentIdentifier, parentSymbol);
+      if (!(parentSymbol.valueType instanceof type.Module)) {
+        this.errors.push(new MError(
+          parentIdentifier.location,
+          `'${parentName}' is not a module`));
+        return type.Any;
+      }
       const memberSymbol = parentSymbol.members.get(memberName);
       if (!memberSymbol) {
         this.errors.push(new MError(
@@ -406,8 +410,7 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
       if (memberSymbol) {
         this.solver.recordSymbolUsage(memberIdentifier, memberSymbol);
       }
-    }
-    if (ownerType instanceof type.Module) {
+    } else if (ownerType instanceof type.Module) {
       const memberSymbol = ownerType.symbol.members.get(memberIdentifier.name);
       if (memberSymbol) {
         this.solver.recordSymbolUsage(memberIdentifier, memberSymbol);
