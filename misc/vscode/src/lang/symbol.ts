@@ -15,8 +15,14 @@ export class MSymbol {
   /** If available, documentation related to the MSymbol */
   documentation: ast.StringLiteral | null;
 
-  /** The type of the MSymbol. Defaults to Any */
-  type: type.MType;
+  /** The type of this symbol when it appears in a value expression. Defaults to Any */
+  valueType: type.MType;
+
+  /** The type of this symbol when it appears in a type expression.
+   * Defaults to null (these are cases where it does not make sense for the given
+   * symbol to appear in a type expression, e.g. varable name)
+   */
+  typeType: type.MType | null;
 
   /** The members of this MSymbol, if provided */
   members: Map<string, MSymbol>;
@@ -36,7 +42,8 @@ export class MSymbol {
     this.final = final;
     this.location = definitionLocation;
     this.documentation = null;
-    this.type = type.Any;
+    this.valueType = type.Any;
+    this.typeType = null;
     this.members = members || new Map();
     this.usages = [];
     this.definition = new MSymbolUsage(definitionLocation, this);

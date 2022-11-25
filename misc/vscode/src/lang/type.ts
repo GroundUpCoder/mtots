@@ -434,11 +434,11 @@ export class Instance extends MType {
   }
 
   getFieldType(memberName: string): MType | null {
-    return this.symbol.members.get(memberName)?.type || null;
+    return this.symbol.members.get(memberName)?.valueType || null;
   }
 
   getMethodType(memberName: string): MType | null {
-    return this.symbol.members.get(memberName)?.type || null;
+    return this.symbol.members.get(memberName)?.valueType || null;
   }
 
   toString() {
@@ -484,7 +484,7 @@ export class Module extends MType {
   }
 
   private getMemberType(memberName: string): MType | null {
-    return this.symbol.members.get(memberName)?.type || null;
+    return this.symbol.members.get(memberName)?.valueType || null;
   }
 
   toString(): string {

@@ -527,7 +527,7 @@ export class MParser {
     const containerType = this.solveType(container);
     const itemType = containerType.getForInItemType();
     if (itemType) {
-      symbol.type = itemType;
+      symbol.valueType = itemType;
     } else {
       this.newSemanticErrorAt(
         container.location,
@@ -583,7 +583,7 @@ export class MParser {
     const importModule = new ast.Import(location, moduleID, alias);
     const importSymbol = this.recordSymbolDefinition(importModule.alias, true);
     const module = await this.context.loadModule(moduleID.toString());
-    importSymbol.type = types.Module.of(importSymbol, moduleID);
+    importSymbol.valueType = types.Module.of(importSymbol, moduleID);
     if (module) {
       importSymbol.members = module.scope.map;
       if (module.errors.length > 0) {
@@ -653,7 +653,7 @@ export class MParser {
     parentSymbol.members.set(symbol.name, symbol);
     const typeExpression = this.parseTypeExpression();
     const fieldType = this.solveType(typeExpression);
-    symbol.type = fieldType;
+    symbol.valueType = fieldType;
     const location = startLocation.merge(typeExpression.location);
     this.expectStatementDelimiter();
     return new ast.Field(location, final, identifier, typeExpression);
@@ -666,7 +666,7 @@ export class MParser {
     if (parentSymbol) {
       parentSymbol.members.set(classSymbol.name, classSymbol);
     }
-    classSymbol.type = types.Class.of(classSymbol);
+    classSymbol.valueType = types.Class.of(classSymbol);
     const bases = [];
     if (this.consume('(')) {
       bases.push(...this.parseArguments());
@@ -713,7 +713,7 @@ export class MParser {
     const location = identifier.location.merge(
       defaultValue ? defaultValue.location : type.location);
     const definition = this.recordSymbolDefinition(identifier, true, false);
-    definition.type = this.solveType(type);
+    definition.valueType = this.solveType(type);
     return new ast.Parameter(location, identifier, type, defaultValue);
   }
 
@@ -768,7 +768,7 @@ export class MParser {
       parameters.map(p => this.solveType(p.typeExpression)),
       parameters.filter(p => p.defaultValue !== null).length,
       this.solveType(returnType));
-    functionSymbol.type = functionType;
+    functionSymbol.valueType = functionType;
     const body = this.parseBlock();
     if (body.statements.length &&
         body.statements[0] instanceof ast.ExpressionStatement &&
@@ -833,7 +833,7 @@ export class MParser {
     }
     const location = startLocation.merge(value.location);
     const varSymbol = this.recordSymbolDefinition(identifier, true, final);
-    varSymbol.type = explicitType ? solvedVariableType : valueType;
+    varSymbol.valueType = explicitType ? solvedVariableType : valueType;
     if (parentSymbol) {
       parentSymbol.members.set(varSymbol.name, varSymbol);
     }

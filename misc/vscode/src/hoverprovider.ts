@@ -26,7 +26,7 @@ export const hoverProvider: vscode.HoverProvider = {
     const usage = module.findUsage(converter.convertPosition(position));
     if (usage) {
       const markedStrings: vscode.MarkdownString[] = [];
-      const type = usage.symbol.type
+      const type = usage.symbol.valueType
       const typeMarkdownString = new vscode.MarkdownString();
       typeMarkdownString.appendCodeblock(type.toString());
       markedStrings.push(typeMarkdownString);

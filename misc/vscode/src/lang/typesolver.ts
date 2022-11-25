@@ -68,10 +68,10 @@ export class TypeSolver {
       const memberUsage = new MSymbolUsage(memberIdentifier.location, memberSymbol);
       memberSymbol.usages.push(memberUsage);
       this.symbolUsages.push(memberUsage);
-      if (memberSymbol.type instanceof type.Class) {
-        return type.Instance.of(memberSymbol.type.symbol);
+      if (memberSymbol.valueType instanceof type.Class) {
+        return type.Instance.of(memberSymbol.valueType.symbol);
       }
-      return memberSymbol.type;
+      return memberSymbol.valueType;
     }
     const name = te.identifier.toString();
     switch (name) {
@@ -123,10 +123,10 @@ export class TypeSolver {
         const typeUsage = new MSymbolUsage(typeIdentifier.location, typeSymbol);
         typeSymbol.usages.push(typeUsage);
         this.symbolUsages.push(typeUsage);
-        if (typeSymbol.type instanceof type.Class) {
+        if (typeSymbol.valueType instanceof type.Class) {
           return type.Instance.of(typeSymbol);
         }
-        return typeSymbol.type;
+        return typeSymbol.valueType;
       } else {
         this.errors.push(new MError(
           typeIdentifier.location, `Type ${typeName} not found`));
@@ -165,7 +165,7 @@ class ExpressionTypeSolver extends ast.ExpressionVisitor<MType> {
     if (!symbol) {
       return type.Any;
     }
-    return symbol.type;
+    return symbol.valueType;
   }
 
   visitSetVariable(e: ast.SetVariable): MType {
@@ -178,9 +178,9 @@ class ExpressionTypeSolver extends ast.ExpressionVisitor<MType> {
         e.location,
         `Cannot assign to a final variable`));
     }
-    const symbolType = symbol.type;
+    const symbolType = symbol.valueType;
     const rhsType = this.typeSolver.solveExpression(
-      e.value, this.scope, symbol.type);
+      e.value, this.scope, symbol.valueType);
     if (!rhsType.isAssignableTo(symbolType)) {
       this.errors.push(new MError(
         e.location,
