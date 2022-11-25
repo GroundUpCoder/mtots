@@ -765,7 +765,7 @@ export class MParser {
       this.parseTypeExpression();
     this.checkParameters(parameters);
     const functionType = types.Function.of(
-      parameters.map(p => this.solveType(p.type)),
+      parameters.map(p => this.solveType(p.typeExpression)),
       parameters.filter(p => p.defaultValue !== null).length,
       this.solveType(returnType));
     functionSymbol.type = functionType;

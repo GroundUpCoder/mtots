@@ -109,16 +109,16 @@ export class Nop extends Statement {
 
 export class Parameter extends Ast {
   readonly identifier: Identifier;
-  readonly type: TypeExpression;
+  readonly typeExpression: TypeExpression;
   readonly defaultValue: Expression | null;
   constructor(
       location: MLocation,
       identifier: Identifier,
-      type: TypeExpression,
+      typeExpression: TypeExpression,
       defaultValue: Expression | null) {
     super(location);
     this.identifier = identifier;
-    this.type = type;
+    this.typeExpression = typeExpression;
     this.defaultValue = defaultValue;
   }
 }
@@ -200,19 +200,19 @@ export class Import extends Statement {
 export class Variable extends Statement {
   readonly final: boolean;
   readonly identifier: Identifier;
-  readonly type: TypeExpression;
-  readonly value: Expression;
+  readonly typeExpression: TypeExpression;
+  readonly valueExpression: Expression;
   constructor(
       location: MLocation,
       final: boolean,
       identifier: Identifier,
-      type: TypeExpression,
-      value: Expression) {
+      typeExpression: TypeExpression,
+      valueExpression: Expression) {
     super(location);
     this.final = final;
     this.identifier = identifier;
-    this.type = type;
-    this.value = value;
+    this.typeExpression = typeExpression;
+    this.valueExpression = valueExpression;
   }
 }
 
