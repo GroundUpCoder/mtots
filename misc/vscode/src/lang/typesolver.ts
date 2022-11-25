@@ -43,6 +43,7 @@ export class TypeSolver {
 
   private solveTypeExpression(te: ast.TypeExpression, scope: MScope): MType {
     if (te.identifier.parent && te.identifier.parent.parent === null) {
+      // Qualified type name
       const parentIdentifier = te.identifier.parent.identifier;
       const parentName = parentIdentifier.name;
       const memberIdentifier = te.identifier.identifier;
@@ -51,7 +52,7 @@ export class TypeSolver {
       if (!parentSymbol) {
         this.errors.push(new MError(
           parentIdentifier.location,
-          `Name '${parentName}' not found in type expression`));
+          `Type qualifier '${parentName}' not found`));
         return type.Any;
       }
       const parentUsage = new MSymbolUsage(parentIdentifier.location, parentSymbol);
@@ -61,7 +62,7 @@ export class TypeSolver {
       if (!memberSymbol) {
         this.errors.push(new MError(
           memberIdentifier.location,
-          `Name '${memberName}' not found in '${parentName}`));
+          `Type '${memberName}' not found in '${parentName}`));
         return type.Any;
       }
       const memberUsage = new MSymbolUsage(memberIdentifier.location, memberSymbol);
@@ -112,6 +113,24 @@ export class TypeSolver {
         }
         const returnType = this.solveTypeExpression(te.args[te.args.length - 1], scope);
         return type.Function.of(parameters, 0, returnType);
+    }
+    if (te.identifier.parent === null && te.args.length === 0) {
+      // Simple type name
+      const typeIdentifier = te.identifier.identifier;
+      const typeName = typeIdentifier.name;
+      const typeSymbol = scope.get(typeName);
+      if (typeSymbol) {
+        const typeUsage = new MSymbolUsage(typeIdentifier.location, typeSymbol);
+        typeSymbol.usages.push(typeUsage);
+        this.symbolUsages.push(typeUsage);
+        if (typeSymbol.type instanceof type.Class) {
+          return type.Instance.of(typeSymbol);
+        }
+        return typeSymbol.type;
+      } else {
+        this.errors.push(new MError(
+          typeIdentifier.location, `Type ${typeName} not found`));
+      }
     }
     this.errors.push(new MError(
       te.identifier.location, `unrecognized type name ${te.identifier}`));
@@ -197,7 +216,9 @@ class ExpressionTypeSolver extends ast.ExpressionVisitor<MType> {
     } else if (assertType.isAssignableTo(innerType)) {
       // This is more or less the main case we expect
     } else {
-      this.errors.push(new MError(e.location, `This assertion can never succeed`));
+      this.errors.push(new MError(
+        e.location,
+        `Assertion from ${innerType} to ${assertType} can never succeed`));
     }
     return assertType;
   }
@@ -375,8 +396,8 @@ class ExpressionTypeSolver extends ast.ExpressionVisitor<MType> {
   visitLogical(e: ast.Logical): MType {
     switch (e.op) {
       case 'not':
-        if (e.args.length !== 0) {
-          throw new Error(`assertion error ${e.op}`);
+        if (e.args.length !== 1) {
+          throw new Error(`assertion error ${e.op}, ${e.args.length}`);
         }
         this.typeSolver.solveExpression(e.args[0], this.scope);
         return type.Bool;

@@ -497,6 +497,7 @@ const BuiltinMethodMap: Map<BuiltinPrimitive, Map<string, Function>> = new Map([
     ['__add__', Function.of([Number], 0, Number)],
     ['__sub__', Function.of([Number], 0, Number)],
     ['__mul__', Function.of([Number], 0, Number)],
+    ['__mod__', Function.of([Number], 0, Number)],
     ['__div__', Function.of([Number], 0, Number)],
     ['__floordiv__', Function.of([Number], 0, Number)],
     ['__neg__', Function.of([], 0, Number)],

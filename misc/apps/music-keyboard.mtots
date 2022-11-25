@@ -16,7 +16,7 @@ sdl.init(sdl.INIT_AUDIO | sdl.INIT_VIDEO)
 # Initialize Audio
 ################################################################
 # we can't initialize this right away on web
-var adev = nil
+var adev any = nil
 final keyToTrackMap dict[int, int] = {}
 final trackToKeyMap list[int?] = [nil as int?] * sdl.AUDIO_TRACK_COUNT
 final keyToNoteID = {
@@ -239,7 +239,7 @@ def eventLoop():
     rect2.x = rect1.x + 4 * STAFF_DISTANCE // 5
     for trackID in range(len(trackToKeyMap)):
       if trackToKeyMap[trackID] != nil:
-        final noteID = keyToNoteID[trackToKeyMap[trackID]]
+        final noteID = keyToNoteID[trackToKeyMap[trackID] as int]
         final noteIndex = computeNoteIndex(noteID)
         final indexOffset = noteIndex - A4_INDEX
         rect1.x = SCREEN_WIDTH // 3 + trackID * STAFF_DISTANCE

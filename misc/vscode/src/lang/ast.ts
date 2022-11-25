@@ -148,16 +148,16 @@ export class Function extends Statement {
 export class Field extends Ast {
   readonly final: boolean;
   readonly identifier: Identifier;
-  readonly type: TypeExpression;
+  readonly typeExpression: TypeExpression;
   constructor(
       location: MLocation,
       final: boolean,
       identifier: Identifier,
-      type: TypeExpression) {
+      typeExpression: TypeExpression) {
     super(location);
     this.final = final;
     this.identifier = identifier;
-    this.type = type;
+    this.typeExpression = typeExpression;
   }
 }
 

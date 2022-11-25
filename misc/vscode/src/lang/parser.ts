@@ -42,7 +42,6 @@ const BinopMethodMap: Map<MTokenType, string> = new Map([
   ['<=', '__le__'],
   ['>', '__gt__'],
   ['>=', '__ge__'],
-  ['in', '__contains__'],
   ['<<', '__lshift__'],
   ['>>', '__rshift__'],
   ['&', '__and__'],
@@ -289,7 +288,7 @@ export class MParser {
 
   private recordMemberUsage(owner: ast.Expression, identifier: ast.Identifier) {
     const ownerType = this.solveType(owner);
-    if (ownerType instanceof types.Module) {
+    if (ownerType instanceof types.Module || ownerType instanceof types.Instance) {
       const ownerSymbol = ownerType.symbol;
       const memberSymbol = ownerSymbol.members.get(identifier.name);
       if (!memberSymbol) {
@@ -298,6 +297,8 @@ export class MParser {
       const usage = new MSymbolUsage(identifier.location, memberSymbol);
       memberSymbol.usages.push(usage);
       this.symbolUsages.push(usage);
+    } else if (ownerType === types.Any) {
+      // if the owner is Any, there's not much to be done here
     }
   }
 
@@ -465,6 +466,14 @@ export class MParser {
         operatorLocation, methodName);
       return new ast.MethodCall(location, lhs, methodIdentifier, [rhs]);
     }
+    if (tokenType === 'in') {
+      let operatorLocation = this.advance().location;
+      const rhs = this.parsePrec(precedence + 1);
+      const location = startLocation.merge(rhs.location);
+      const methodIdentifier = new ast.Identifier(
+        operatorLocation, '__contains__');
+      return new ast.MethodCall(location, rhs, methodIdentifier, [lhs]);
+    }
     if (tokenType === 'not') {
       let operatorLocation = this.advance().location;
       operatorLocation = operatorLocation.merge(this.expect('in').location);
@@ -472,7 +481,7 @@ export class MParser {
       const location = startLocation.merge(rhs.location);
       const methodIdentifier = new ast.Identifier(
         operatorLocation, '__notcontains__');
-      return new ast.MethodCall(location, lhs, methodIdentifier, [rhs]);
+      return new ast.MethodCall(location, rhs, methodIdentifier, [lhs]);
     }
     if (tokenType === 'is') {
       let operatorLocation = this.advance().location;
@@ -532,9 +541,13 @@ export class MParser {
   private parseIfStatement(): Ast {
     const startLocation = this.expect('if').location;
     const pairs: [ast.Expression, ast.Block][] = [];
-    pairs.push([this.parseExpression(), this.parseBlock()]);
+    const condition = this.parseExpression();
+    this.solveType(condition);
+    pairs.push([condition, this.parseBlock()]);
     while (this.consume('elif')) {
-      pairs.push([this.parseExpression(), this.parseBlock()]);
+      const condition = this.parseExpression();
+      this.solveType(condition);
+      pairs.push([condition, this.parseBlock()]);
     }
     const fallback = this.consume('else') ? this.parseBlock() : null;
     const location = startLocation.merge(
@@ -545,6 +558,7 @@ export class MParser {
   private parseReturnStatement(): Ast {
     const startLocation = this.expect('return').location;
     const expression = this.parseExpression();
+    this.solveType(expression);
     const location = startLocation.merge(expression.location);
     this.expectStatementDelimiter();
     return new ast.Return(location, expression);
@@ -553,6 +567,7 @@ export class MParser {
   private parseWhileStatement(): Ast {
     const startLocation = this.expect('while').location;
     const condition = this.parseExpression();
+    this.solveType(condition);
     const body = this.parseBlock();
     const location = startLocation.merge(body.location);
     return new ast.While(location, condition, body);
@@ -567,8 +582,8 @@ export class MParser {
       alias === null ? moduleID.location : alias.location);
     const importModule = new ast.Import(location, moduleID, alias);
     const importSymbol = this.recordSymbolDefinition(importModule.alias, true);
-    importSymbol.type = types.Module.of(importSymbol, moduleID);
     const module = await this.context.loadModule(moduleID.toString());
+    importSymbol.type = types.Module.of(importSymbol, moduleID);
     if (module) {
       importSymbol.members = module.scope.map;
       if (module.errors.length > 0) {
@@ -585,6 +600,7 @@ export class MParser {
   private parseExpressionStatement(): Ast {
     const startLocation = this.peek.location;
     const expression = this.parseExpression();
+    this.solveType(expression);
     const location = startLocation.merge(expression.location);
     this.expectStatementDelimiter();
     return new ast.ExpressionStatement(location, expression);
@@ -635,10 +651,12 @@ export class MParser {
     const identifier = this.parseIdentifier();
     const symbol = this.recordSymbolDefinition(identifier, false, final);
     parentSymbol.members.set(symbol.name, symbol);
-    const type = this.parseTypeExpression();
-    const location = startLocation.merge(type.location);
+    const typeExpression = this.parseTypeExpression();
+    const fieldType = this.solveType(typeExpression);
+    symbol.type = fieldType;
+    const location = startLocation.merge(typeExpression.location);
     this.expectStatementDelimiter();
-    return new ast.Field(location, final, identifier, type);
+    return new ast.Field(location, final, identifier, typeExpression);
   }
 
   private parseClassDeclaration(parentSymbol: MSymbol | null): ast.Class {

@@ -72,12 +72,46 @@ final key dict[string, int] = {}
 
 
 class Event:
-  pass
+  final type int
 
 
 class Rect:
+
+  var x int
+  var y int
+  var w int
+  var h int
+
   def __init__(x, y, width, heigth):
     pass
+
+
+class Window:
+  pass
+
+
+def createWindow(title string, x int, y int, width int, height int, flags int) Window:
+  r"""
+  Create a window
+  """
+
+
+class Renderer:
+  pass
+
+
+def createRenderer(window Window, index int, flags int) Renderer:
+  r"""
+  Create a 2D rendering context for a window.
+
+  Parameters:
+  * window - the window where rendering is displayed
+  * index - the index of the rendering driver to initialize, or -1 to initialize the first one supporting the requested flags
+  * flags - 0, or one or more SDL_RendererFlags OR'd together
+
+  Returns:
+  a valid rendering context or NULL if there was an error; call SDL_GetError() for more information.
+  """
 
 
 def getTicks() float:
@@ -85,3 +119,6 @@ def getTicks() float:
   The `getTicks` function does not actually use SDL_GetTicks().
   Instead it is `SDL_GetPerformanceCounter()/SDL_GetPerformanceFrequency() * 1000`
   """
+
+def getKeyboardState() KeyboardState:
+  pass
