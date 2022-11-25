@@ -3,13 +3,20 @@ import { MError } from "./error";
 import { MType } from "./type";
 import * as type from "./type";
 import { MScope } from "./scope";
+import { MSymbolUsage } from "./symbol";
 
 const INT_LOW = -Math.pow(2, 31);
 const INT_HIGH = Math.pow(2, 31) - 1;
 
 export class TypeSolver {
-  cache: Map<ast.TypeExpression | ast.Expression, MType> = new Map();
-  errors: MError[] = [];
+  private readonly cache: Map<ast.TypeExpression | ast.Expression, MType> = new Map();
+  private readonly errors: MError[];
+  private readonly symbolUsages: MSymbolUsage[];
+
+  constructor(errors: MError[], symbolUsages: MSymbolUsage[]) {
+    this.errors = errors;
+    this.symbolUsages = symbolUsages;
+  }
 
   solve(e: ast.TypeExpression | ast.Expression, scope: MScope): MType {
     const cached = this.cache.get(e);
@@ -37,6 +44,36 @@ export class TypeSolver {
   }
 
   private solveTypeExpression(te: ast.TypeExpression, scope: MScope): MType {
+    if (te.identifier.parent && te.identifier.parent.parent === null) {
+      const parentIdentifier = te.identifier.parent.identifier;
+      const parentName = parentIdentifier.name;
+      const memberIdentifier = te.identifier.identifier;
+      const memberName = memberIdentifier.name;
+      const parentSymbol = scope.get(parentName);
+      if (!parentSymbol) {
+        this.errors.push(new MError(
+          parentIdentifier.location,
+          `Name '${parentName}' not found in type expression`));
+        return type.Any;
+      }
+      const parentUsage = new MSymbolUsage(parentIdentifier.location, parentSymbol);
+      parentSymbol.usages.push(parentUsage);
+      this.symbolUsages.push(parentUsage);
+      const memberSymbol = parentSymbol.members.get(memberName);
+      if (!memberSymbol) {
+        this.errors.push(new MError(
+          memberIdentifier.location,
+          `Name '${memberName}' not found in '${parentName}`));
+        return type.Any;
+      }
+      const memberUsage = new MSymbolUsage(memberIdentifier.location, memberSymbol);
+      memberSymbol.usages.push(memberUsage);
+      this.symbolUsages.push(memberUsage);
+      if (memberSymbol.type instanceof type.Class) {
+        return type.Instance.of(memberSymbol.type.symbol);
+      }
+      return memberSymbol.type;
+    }
     const name = te.identifier.toString();
     switch (name) {
       case 'any': this.checkTypeArgc(te, 0); return type.Any;
@@ -86,7 +123,7 @@ export class TypeSolver {
       e: ast.Expression,
       scope: MScope,
       typeHint: MType = type.NoReturn): MType {
-    const result = e.accept(new ExpressionTypeSolver(this, scope, typeHint));
+    const result = e.accept(new ExpressionTypeSolver(this, scope, typeHint, this.errors));
     this.cache.set(e, result);
     return result;
   }
@@ -96,11 +133,13 @@ class ExpressionTypeSolver extends ast.ExpressionVisitor<MType> {
   private readonly typeSolver: TypeSolver
   private readonly scope: MScope
   private readonly typeHint: MType
-  constructor(typeSolver: TypeSolver, scope: MScope, typeHint: MType) {
+  private readonly errors: MError[]
+  constructor(typeSolver: TypeSolver, scope: MScope, typeHint: MType, errors: MError[]) {
     super();
     this.typeSolver = typeSolver;
     this.scope = scope;
     this.typeHint = typeHint;
+    this.errors = errors;
   }
 
   visitGetVariable(e: ast.GetVariable): MType {
@@ -120,7 +159,7 @@ class ExpressionTypeSolver extends ast.ExpressionVisitor<MType> {
     const rhsType = this.typeSolver.solveExpression(
       e.value, this.scope, symbol.type);
     if (!rhsType.isAssignableTo(symbolType)) {
-      this.typeSolver.errors.push(new MError(
+      this.errors.push(new MError(
         e.location,
         `Cannot assign ${rhsType} to ${symbolType}`));
     }

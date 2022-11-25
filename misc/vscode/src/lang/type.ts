@@ -234,16 +234,48 @@ export class Function extends MType {
   }
 }
 
-export class UserDefined extends MType {
-  private static readonly map: Map<MSymbol, UserDefined> = new Map();
-  static of (symbol: MSymbol): UserDefined {
+export class Class extends MType {
+  private static readonly map: Map<MSymbol, Class> = new Map();
+  static of(symbol: MSymbol): Class {
     const cached = this.map.get(symbol);
     if (cached) {
       return cached;
     }
-    const userDefined = new UserDefined(symbol);
-    this.map.set(symbol, userDefined);
-    return userDefined;
+    const klass = new Class(symbol);
+    this.map.set(symbol, klass);
+    return klass;
+  }
+
+  readonly symbol: MSymbol;
+  private constructor(symbol: MSymbol) {
+    super();
+    this.symbol = symbol;
+  }
+
+  isAssignableTo(other: MType): boolean {
+    return this === other || Any.isAssignableTo(other);
+  }
+
+  closestCommonType(other: MType): MType {
+    return this === other ? this : Any;
+  }
+
+  toString() {
+    // TODO: qualify the name
+    return `class[${this.symbol.name}]`;
+  }
+}
+
+export class Instance extends MType {
+  private static readonly map: Map<MSymbol, Instance> = new Map();
+  static of(symbol: MSymbol): Instance {
+    const cached = this.map.get(symbol);
+    if (cached) {
+      return cached;
+    }
+    const instance = new Instance(symbol);
+    this.map.set(symbol, instance);
+    return instance;
   }
 
   readonly symbol: MSymbol;
@@ -269,8 +301,8 @@ export class UserDefined extends MType {
 }
 
 export class Module extends MType {
-  private static readonly map: Map<MSymbol, UserDefined> = new Map();
-  static of (symbol: MSymbol, path: QualifiedIdentifier): UserDefined {
+  private static readonly map: Map<MSymbol, Module> = new Map();
+  static of(symbol: MSymbol, path: QualifiedIdentifier): Module {
     const cached = this.map.get(symbol);
     if (cached) {
       return cached;

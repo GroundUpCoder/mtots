@@ -67,13 +67,7 @@ export class ParseContext {
 }
 
 export class MParser {
-  private typeSolver: TypeSolver;
   private symbolUsages: MSymbolUsage[];
-  private scanner: MScanner;
-  private scope: MScope;
-  private peek: MToken;
-
-  private context: ParseContext;
 
   /**
    * Semantic errors are useful to alert about, but they should not
@@ -84,15 +78,22 @@ export class MParser {
    */
   private semanticErrors: MError[];
 
+  private typeSolver: TypeSolver;
+  private scanner: MScanner;
+  private scope: MScope;
+  private peek: MToken;
+
+  private context: ParseContext;
+
   moduleSymbol: MSymbol;
 
   constructor(scanner: MScanner, moduleSymbol: MSymbol, context: ParseContext) {
-    this.typeSolver = new TypeSolver();
     this.symbolUsages = [];
+    this.semanticErrors = [];
+    this.typeSolver = new TypeSolver(this.semanticErrors, this.symbolUsages);
     this.scanner = scanner;
     this.scope = new MScope();
     this.peek = scanner.scanToken();
-    this.semanticErrors = [];
     this.moduleSymbol = moduleSymbol;
     this.context = context;
   }
@@ -167,7 +168,18 @@ export class MParser {
     return qualifiedIdentifier;
   }
 
+  private maybeAtTypeExpression(): boolean {
+    return this.at('IDENTIFIER') || this.at('nil');
+  }
+
   private parseTypeExpression(): ast.TypeExpression {
+    if (this.at('nil')) {
+      const location = this.advance().location;
+      return new ast.TypeExpression(
+        location,
+        new ast.QualifiedIdentifier(location, null, new ast.Identifier(location, 'nil')),
+        []);
+    }
     const identifier = this.parseQualifiedIdentifier();
     const args: ast.TypeExpression[] = [];
     let endLocation = identifier.location;
@@ -594,6 +606,7 @@ export class MParser {
     if (parentSymbol) {
       parentSymbol.members.set(classSymbol.name, classSymbol);
     }
+    classSymbol.type = types.Class.of(classSymbol);
     const bases = [];
     if (this.consume('(')) {
       bases.push(...this.parseArguments());
@@ -633,7 +646,7 @@ export class MParser {
 
   private parseParameter(): ast.Parameter {
     const identifier = this.parseIdentifier();
-    const type = this.at('IDENTIFIER') ?
+    const type = this.maybeAtTypeExpression() ?
       this.parseTypeExpression() :
       this.newAnyType(identifier.location);
     const defaultValue = this.consume('=') ? this.parseExpression() : null;
@@ -674,6 +687,10 @@ export class MParser {
     const returnType = this.at(':') ?
       this.newAnyType(startLocation) :
       this.parseTypeExpression();
+    const functionType = types.Function.of(
+      parameters.map(p => this.solveType(p.type)),
+      this.solveType(returnType));
+    functionSymbol.type = functionType;
     const body = this.parseBlock();
     if (body.statements.length &&
         body.statements[0] instanceof ast.ExpressionStatement &&
@@ -722,10 +739,11 @@ export class MParser {
     const final = this.consume('final');
     if (!final) this.expect('var');
     const identifier = this.parseIdentifier();
-    const type = this.at('=') ?
-      this.newAnyType(startLocation) :
-      this.parseTypeExpression();
-    const solvedVariableType = this.typeSolver.solve(type, this.scope);
+    const explicitType = !this.at('=');
+    const type = explicitType ?
+      this.parseTypeExpression() :
+      this.newAnyType(startLocation);
+    const solvedVariableType = this.solveType(type);
     this.expect('=');
     const value = this.parseExpression();
     const valueType = this.typeSolver.solveExpression(
@@ -737,7 +755,7 @@ export class MParser {
     }
     const location = startLocation.merge(value.location);
     const varSymbol = this.recordSymbolDefinition(identifier, true);
-    varSymbol.type = this.solveType(type);
+    varSymbol.type = explicitType ? solvedVariableType : valueType;
     if (parentSymbol) {
       parentSymbol.members.set(varSymbol.name, varSymbol);
     }
@@ -768,7 +786,6 @@ export class MParser {
         statements.push(await this.parseModuleLevelDeclaration());
       }
       const location = startLocation.merge(this.peek.location);
-      this.semanticErrors.push(...this.typeSolver.errors);
       return new ast.Module(
         location, statements, this.symbolUsages, this.semanticErrors);
     } catch (e) {
