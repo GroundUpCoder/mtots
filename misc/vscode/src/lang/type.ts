@@ -514,17 +514,17 @@ export class Module extends MType {
 
 
 function mkmethod(
-  name: string,
-  typ: Function,
-  documentation: string | null = null): MSymbol {
-const symbol = new MSymbol(name, null, true, null);
-symbol.valueType = typ;
-symbol.documentation = documentation;
-return symbol;
+    name: string,
+    typ: Function,
+    documentation: string | null = null): MSymbol {
+  const symbol = new MSymbol(name, null, true, null);
+  symbol.valueType = typ;
+  symbol.documentation = documentation;
+  return symbol;
 }
 
 function mkmap(symbols: MSymbol[]): Map<string, MSymbol> {
-return new Map(symbols.map(s => [s.name, s]));
+  return new Map(symbols.map(s => [s.name, s]));
 }
 
 export const AnyUnknownSymbol = new MSymbol('any', null, true, null);
@@ -532,50 +532,50 @@ AnyUnknownSymbol.valueType = Any;
 AnyUnknownSymbol.typeType = Any;
 
 export const AnyMap = mkmap([
-mkmethod('__eq__', Function.of([Any], 0, Bool)),
-mkmethod('__ne__', Function.of([Any], 0, Bool)),
-mkmethod('__lt__', Function.of([Any], 0, Bool)),
-mkmethod('__le__', Function.of([Any], 0, Bool)),
-mkmethod('__gt__', Function.of([Any], 0, Bool)),
-mkmethod('__ge__', Function.of([Any], 0, Bool)),
+  mkmethod('__eq__', Function.of([Any], 0, Bool)),
+  mkmethod('__ne__', Function.of([Any], 0, Bool)),
+  mkmethod('__lt__', Function.of([Any], 0, Bool)),
+  mkmethod('__le__', Function.of([Any], 0, Bool)),
+  mkmethod('__gt__', Function.of([Any], 0, Bool)),
+  mkmethod('__ge__', Function.of([Any], 0, Bool)),
 ]);
 
 export const BuiltinMap = new Map<BuiltinPrimitive, Map<string, MSymbol>>([
-[Number, mkmap([
-  mkmethod('__add__', Function.of([Number], 0, Number)),
-  mkmethod('__sub__', Function.of([Number], 0, Number)),
-  mkmethod('__mul__', Function.of([Number], 0, Number)),
-  mkmethod('__mod__', Function.of([Number], 0, Number)),
-  mkmethod('__div__', Function.of([Number], 0, Number)),
-  mkmethod('__floordiv__', Function.of([Number], 0, Number)),
-  mkmethod('__neg__', Function.of([], 0, Number)),
-  mkmethod('__and__', Function.of([Number], 0, Number)),
-  mkmethod('__xor__', Function.of([Number], 0, Number)),
-  mkmethod('__or__', Function.of([Number], 0, Number)),
-])],
-[String, mkmap([
-  mkmethod('__add__', Function.of([String], 0, String)),
-  mkmethod('__mul__', Function.of([Number], 0, String)),
-  mkmethod('__getitem__', Function.of([Number], 0, String)),
-  mkmethod('__mod__', Function.of([UntypedList], 0, String)),
-])],
+  [Number, mkmap([
+    mkmethod('__add__', Function.of([Number], 0, Number)),
+    mkmethod('__sub__', Function.of([Number], 0, Number)),
+    mkmethod('__mul__', Function.of([Number], 0, Number)),
+    mkmethod('__mod__', Function.of([Number], 0, Number)),
+    mkmethod('__div__', Function.of([Number], 0, Number)),
+    mkmethod('__floordiv__', Function.of([Number], 0, Number)),
+    mkmethod('__neg__', Function.of([], 0, Number)),
+    mkmethod('__and__', Function.of([Number], 0, Number)),
+    mkmethod('__xor__', Function.of([Number], 0, Number)),
+    mkmethod('__or__', Function.of([Number], 0, Number)),
+  ])],
+  [String, mkmap([
+    mkmethod('__add__', Function.of([String], 0, String)),
+    mkmethod('__mul__', Function.of([Number], 0, String)),
+    mkmethod('__getitem__', Function.of([Number], 0, String)),
+    mkmethod('__mod__', Function.of([UntypedList], 0, String)),
+  ])],
 ]);
 
 export function makeListMethodMap(self: List): Map<string, MSymbol> {
-return mkmap([
-  mkmethod('__mul__', Function.of([Number], 0, self)),
-  mkmethod('__getitem__', Function.of([Number], 0, self.itemType)),
-  mkmethod('__setitem__', Function.of([Number, self.itemType], 0, Nil)),
-  mkmethod('__contains__', Function.of([self.itemType], 0, Bool)),
-  mkmethod('__notcontains__', Function.of([self.itemType], 0, Bool)),
-]);
+  return mkmap([
+    mkmethod('__mul__', Function.of([Number], 0, self)),
+    mkmethod('__getitem__', Function.of([Number], 0, self.itemType)),
+    mkmethod('__setitem__', Function.of([Number, self.itemType], 0, Nil)),
+    mkmethod('__contains__', Function.of([self.itemType], 0, Bool)),
+    mkmethod('__notcontains__', Function.of([self.itemType], 0, Bool)),
+  ]);
 }
 
 export function makeDictMethodMap(self: Dict): Map<string, MSymbol> {
-return mkmap([
-  mkmethod('__getitem__', Function.of([self.keyType], 0, self.valueType)),
-  mkmethod('__setitem__', Function.of([self.keyType, self.valueType], 0, Nil)),
-  mkmethod('__contains__', Function.of([self.keyType], 0, Bool)),
-  mkmethod('__notcontains__', Function.of([self.keyType], 0, Bool)),
-]);
+  return mkmap([
+    mkmethod('__getitem__', Function.of([self.keyType], 0, self.valueType)),
+    mkmethod('__setitem__', Function.of([self.keyType, self.valueType], 0, Nil)),
+    mkmethod('__contains__', Function.of([self.keyType], 0, Bool)),
+    mkmethod('__notcontains__', Function.of([self.keyType], 0, Bool)),
+  ]);
 }
