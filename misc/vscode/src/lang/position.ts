@@ -22,6 +22,16 @@ export class MPosition {
         this.line < other.line;
   }
 
+  le(other: MPosition): boolean {
+    return this.line === other.line ?
+        this.column <= other.column :
+        this.line <= other.line;
+  }
+
+  equals(other: MPosition): boolean {
+    return this.line === other.line && this.column === other.column;
+  }
+
   toString() {
     return `MPosition(${this.line}, ${this.column})`;
   }

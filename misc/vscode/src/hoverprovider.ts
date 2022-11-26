@@ -27,13 +27,15 @@ export const hoverProvider: vscode.HoverProvider = {
     if (usage) {
       const markedStrings: vscode.MarkdownString[] = [];
       const type = usage.symbol.valueType
-      const typeMarkdownString = new vscode.MarkdownString();
-      typeMarkdownString.appendCodeblock(type.toString());
-      markedStrings.push(typeMarkdownString);
+      if (type) {
+        const typeMarkdownString = new vscode.MarkdownString();
+        typeMarkdownString.appendCodeblock(type.toString());
+        markedStrings.push(typeMarkdownString);
+      }
       const documentation = usage.symbol.documentation;
       if (documentation) {
         const docMarkdownString = new vscode.MarkdownString();
-        const docString = formatDocString(documentation.value);
+        const docString = formatDocString(documentation);
         docMarkdownString.appendMarkdown(docString);
         markedStrings.push(docMarkdownString);
       }

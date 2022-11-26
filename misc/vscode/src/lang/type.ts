@@ -19,12 +19,12 @@ export abstract class MType {
    */
   abstract closestCommonType(other: MType): MType;
 
-  getFieldType(memberName: string): MType | null {
+  getFieldSymbol(fieldName: string): MSymbol | null {
     return null;
   }
 
-  getMethodType(memberName: string): MType | null {
-    return Any.getMethodType(memberName);
+  getMethodSymbol(methodName: string): MSymbol | null {
+    return AnyMap.get(methodName) || null;
   }
 
   /**
@@ -46,11 +46,14 @@ class AnyType extends MType {
   isAssignableTo(other: MType): boolean {
     return this === other;
   }
-  getMethodType(memberName: string): MType | null {
-    return AnyMethodMap.get(memberName) || null;
-  }
   closestCommonType(other: MType): MType {
     return this;
+  }
+  getFieldSymbol(fieldName: string): MSymbol | null {
+    return AnyUnknownSymbol;
+  }
+  getMethodSymbol(methodName: string): MSymbol | null {
+    return AnyUnknownSymbol;
   }
 }
 
@@ -66,6 +69,12 @@ class NoReturnType extends MType {
   }
   closestCommonType(other: MType): MType {
     return other;
+  }
+  getFieldSymbol(fieldName: string): MSymbol | null {
+    return null;
+  }
+  getMethodSymbol(methodName: string): MSymbol | null {
+    return null;
   }
 }
 
@@ -104,20 +113,20 @@ export class BuiltinPrimitive extends MType {
     return other.isAssignableTo(this) ? this : this.parent.closestCommonType(other);
   }
 
-  getFieldType(memberName: string): MType | null {
+  getFieldSymbol(fieldName: string): MSymbol | null {
     switch (this) {
       case UntypedDict:
-        return Any;
+        return AnyUnknownSymbol;
     }
     return null;
   }
 
-  getMethodType(memberName: string): MType | null {
-    const map = BuiltinMethodMap.get(this);
+  getMethodSymbol(methodName: string): MSymbol | null {
+    const map = BuiltinMap.get(this);
     if (!map) {
       return null;
     }
-    return map.get(memberName) || Any.getMethodType(memberName);
+    return map.get(methodName) || super.getMethodSymbol(methodName);
   }
 
   getForInItemType(): MType | null {
@@ -158,9 +167,11 @@ export class List extends MType {
   }
 
   readonly itemType: MType;
+  private readonly methodMap: Map<string, MSymbol>;
   private constructor(itemType: MType) {
     super();
     this.itemType = itemType;
+    this.methodMap = makeListMethodMap(this);
   }
 
   isAssignableTo(other: MType): boolean {
@@ -171,9 +182,8 @@ export class List extends MType {
     return this === other ? this : UntypedList.closestCommonType(other);
   }
 
-  getMethodType(memberName: string): MType | null {
-    const methodTypeEntry = ListMethodMap.get(memberName);
-    return methodTypeEntry ? methodTypeEntry(this) : Any.getMethodType(memberName);
+  getMethodSymbol(methodName: string): MSymbol | null {
+    return this.methodMap.get(methodName) || super.getMethodSymbol(methodName);
   }
 
   getForInItemType(): MType | null {
@@ -200,11 +210,21 @@ export class Dict extends MType {
   }
 
   readonly keyType: MType;
-  readonly valueType: MType
+  readonly valueType: MType;
+  private readonly methodMap: Map<string, MSymbol>;
+  private readonly valueSymbol: MSymbol | null;
   private constructor(keyType: MType, valueType: MType) {
     super();
     this.keyType = keyType;
     this.valueType = valueType;
+    this.methodMap = makeDictMethodMap(this);
+    if (keyType === String) {
+      const valueSymbol = new MSymbol('_', null, false, null);
+      valueSymbol.valueType = valueType;
+      this.valueSymbol = valueSymbol;
+    } else {
+      this.valueSymbol = null;
+    }
   }
 
   isAssignableTo(other: MType): boolean {
@@ -215,13 +235,12 @@ export class Dict extends MType {
     return this === other ? this : UntypedDict.closestCommonType(other);
   }
 
-  getFieldType(memberName: string): MType | null {
-    return this.valueType;
+  getFieldSymbol(fieldName: string): MSymbol | null {
+    return this.valueSymbol;
   }
 
-  getMethodType(memberName: string): MType | null {
-    const methodTypeEntry = DictMethodMap.get(memberName);
-    return methodTypeEntry ? methodTypeEntry(this) : Any.getMethodType(memberName);
+  getMethodSymbol(methodName: string): MSymbol | null {
+    return this.methodMap.get(methodName) || super.getMethodSymbol(methodName);
   }
 
   getForInItemType(): MType | null {
@@ -436,12 +455,14 @@ export class Instance extends MType {
     return this === other ? this : Any;
   }
 
-  getFieldType(memberName: string): MType | null {
-    return this.symbol.members.get(memberName)?.valueType || null;
+  getFieldSymbol(fieldName: string): MSymbol | null {
+    // TODO: consider base classes
+    return this.symbol.members.get(fieldName) || null;
   }
 
-  getMethodType(memberName: string): MType | null {
-    return this.symbol.members.get(memberName)?.valueType || Any.getMethodType(memberName);
+  getMethodSymbol(methodName: string): MSymbol | null {
+    // TODO: consider base classes
+    return this.symbol.members.get(methodName) || super.getMethodSymbol(methodName);
   }
 
   toString() {
@@ -478,16 +499,12 @@ export class Module extends MType {
     return this === other ? this : UntypedModule.closestCommonType(other);
   }
 
-  getFieldType(memberName: string): MType | null {
-    return this.getMemberType(memberName);
+  getFieldSymbol(fieldName: string): MSymbol | null {
+    return this.symbol.members.get(fieldName) || null;
   }
 
-  getMethodType(memberName: string): MType | null {
-    return this.getMemberType(memberName);
-  }
-
-  private getMemberType(memberName: string): MType | null {
-    return this.symbol.members.get(memberName)?.valueType || null;
+  getMethodSymbol(methodName: string): MSymbol | null {
+    return this.symbol.members.get(methodName) || null;
   }
 
   toString(): string {
@@ -495,47 +512,70 @@ export class Module extends MType {
   }
 }
 
-const AnyMethodMap: Map<string, Function> = new Map([
-  ['__eq__', Function.of([Any], 0, Bool)],
-  ['__ne__', Function.of([Any], 0, Bool)],
-  ['__lt__', Function.of([Any], 0, Bool)],
-  ['__le__', Function.of([Any], 0, Bool)],
-  ['__gt__', Function.of([Any], 0, Bool)],
-  ['__ge__', Function.of([Any], 0, Bool)],
+
+function mkmethod(
+  name: string,
+  typ: Function,
+  documentation: string | null = null): MSymbol {
+const symbol = new MSymbol(name, null, true, null);
+symbol.valueType = typ;
+symbol.documentation = documentation;
+return symbol;
+}
+
+function mkmap(symbols: MSymbol[]): Map<string, MSymbol> {
+return new Map(symbols.map(s => [s.name, s]));
+}
+
+export const AnyUnknownSymbol = new MSymbol('any', null, true, null);
+AnyUnknownSymbol.valueType = Any;
+AnyUnknownSymbol.typeType = Any;
+
+export const AnyMap = mkmap([
+mkmethod('__eq__', Function.of([Any], 0, Bool)),
+mkmethod('__ne__', Function.of([Any], 0, Bool)),
+mkmethod('__lt__', Function.of([Any], 0, Bool)),
+mkmethod('__le__', Function.of([Any], 0, Bool)),
+mkmethod('__gt__', Function.of([Any], 0, Bool)),
+mkmethod('__ge__', Function.of([Any], 0, Bool)),
 ]);
 
-const BuiltinMethodMap: Map<BuiltinPrimitive, Map<string, Function>> = new Map([
-  [Number, new Map([
-    ['__add__', Function.of([Number], 0, Number)],
-    ['__sub__', Function.of([Number], 0, Number)],
-    ['__mul__', Function.of([Number], 0, Number)],
-    ['__mod__', Function.of([Number], 0, Number)],
-    ['__div__', Function.of([Number], 0, Number)],
-    ['__floordiv__', Function.of([Number], 0, Number)],
-    ['__neg__', Function.of([], 0, Number)],
-    ['__and__', Function.of([Number], 0, Number)],
-    ['__xor__', Function.of([Number], 0, Number)],
-    ['__or__', Function.of([Number], 0, Number)],
-  ])],
-  [String, new Map([
-    ['__add__', Function.of([String], 0, String)],
-    ['__mul__', Function.of([Number], 0, String)],
-    ['__getitem__', Function.of([Number], 0, String)],
-    ['__mod__', Function.of([UntypedList], 0, String)],
-  ])],
+export const BuiltinMap = new Map<BuiltinPrimitive, Map<string, MSymbol>>([
+[Number, mkmap([
+  mkmethod('__add__', Function.of([Number], 0, Number)),
+  mkmethod('__sub__', Function.of([Number], 0, Number)),
+  mkmethod('__mul__', Function.of([Number], 0, Number)),
+  mkmethod('__mod__', Function.of([Number], 0, Number)),
+  mkmethod('__div__', Function.of([Number], 0, Number)),
+  mkmethod('__floordiv__', Function.of([Number], 0, Number)),
+  mkmethod('__neg__', Function.of([], 0, Number)),
+  mkmethod('__and__', Function.of([Number], 0, Number)),
+  mkmethod('__xor__', Function.of([Number], 0, Number)),
+  mkmethod('__or__', Function.of([Number], 0, Number)),
+])],
+[String, mkmap([
+  mkmethod('__add__', Function.of([String], 0, String)),
+  mkmethod('__mul__', Function.of([Number], 0, String)),
+  mkmethod('__getitem__', Function.of([Number], 0, String)),
+  mkmethod('__mod__', Function.of([UntypedList], 0, String)),
+])],
 ]);
 
-const ListMethodMap: Map<string, (self: List) => Function> = new Map([
-  ['__mul__', self => Function.of([Number], 0, self)],
-  ['__getitem__', self => Function.of([Number], 0, self.itemType)],
-  ['__setitem__', self => Function.of([Number, self.itemType], 0, Nil)],
-  ['__contains__', self => Function.of([self.itemType], 0, Bool)],
-  ['__notcontains__', self => Function.of([self.itemType], 0, Bool)],
+export function makeListMethodMap(self: List): Map<string, MSymbol> {
+return mkmap([
+  mkmethod('__mul__', Function.of([Number], 0, self)),
+  mkmethod('__getitem__', Function.of([Number], 0, self.itemType)),
+  mkmethod('__setitem__', Function.of([Number, self.itemType], 0, Nil)),
+  mkmethod('__contains__', Function.of([self.itemType], 0, Bool)),
+  mkmethod('__notcontains__', Function.of([self.itemType], 0, Bool)),
 ]);
+}
 
-const DictMethodMap: Map<string, (self: Dict) => Function> = new Map([
-  ['__getitem__', self => Function.of([self.keyType], 0, self.valueType)],
-  ['__setitem__', self => Function.of([self.keyType, self.valueType], 0, Nil)],
-  ['__contains__', self => Function.of([self.keyType], 0, Bool)],
-  ['__notcontains__', self => Function.of([self.keyType], 0, Bool)],
+export function makeDictMethodMap(self: Dict): Map<string, MSymbol> {
+return mkmap([
+  mkmethod('__getitem__', Function.of([self.keyType], 0, self.valueType)),
+  mkmethod('__setitem__', Function.of([self.keyType, self.valueType], 0, Nil)),
+  mkmethod('__contains__', Function.of([self.keyType], 0, Bool)),
+  mkmethod('__notcontains__', Function.of([self.keyType], 0, Bool)),
 ]);
+}

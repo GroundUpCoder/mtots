@@ -1,6 +1,6 @@
 import * as ast from "./ast";
 import { MLocation } from "./location";
-import * as type from "./type";
+import type * as type from "./type";
 
 export class MSymbol {
   /** The name of the MSymbol as it appears in its definition */
@@ -13,10 +13,10 @@ export class MSymbol {
   readonly final: boolean;
 
   /** If available, documentation related to the MSymbol */
-  documentation: ast.StringLiteral | null;
+  documentation: string | null;
 
-  /** The type of this symbol when it appears in a value expression. Defaults to Any */
-  valueType: type.MType;
+  /** The type of this symbol when it appears in a value expression */
+  valueType: type.MType | null;
 
   /** The type of this symbol when it appears in a type expression.
    * Defaults to null (these are cases where it does not make sense for the given
@@ -39,7 +39,7 @@ export class MSymbol {
     this.final = final;
     this.location = definitionLocation;
     this.documentation = null;
-    this.valueType = type.Any;
+    this.valueType = null;
     this.typeType = null;
     this.members = members || new Map();
     this.definition = definitionLocation ? new MSymbolUsage(definitionLocation, this) : null;

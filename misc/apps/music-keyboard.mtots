@@ -165,7 +165,7 @@ final colors = {
   sdl.scancode.SEMICOLON:  [  41, 252, 175, 255 ],
 }
 
-def eventLoop():
+def eventLoop() nil:
   "some event loop documentation"
   final event = sdl.Event()
   final rect1 = sdl.Rect(0, 0, 0, 0)

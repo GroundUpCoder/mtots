@@ -211,7 +211,7 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
       return type.Any;
     }
     this.solver.recordSymbolUsage(e.identifier, symbol);
-    return symbol.valueType;
+    return symbol.valueType || type.Any;
   }
 
   visitSetVariable(e: ast.SetVariable): type.MType {
@@ -225,8 +225,8 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
         e.location,
         `Cannot assign to a final variable`));
     }
-    const symbolType = symbol.valueType;
-    const rhsType = this.solveExpression(e.value, symbol.valueType);
+    const symbolType = symbol.valueType || type.Any;
+    const rhsType = this.solveExpression(e.value, symbolType);
     if (!rhsType.isAssignableTo(symbolType)) {
       this.errors.push(new MError(
         e.location,
@@ -295,14 +295,14 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
   }
 
   private checkArgTypes(
-      functionLocation: MLocation,
+      callLocation: MLocation,
       args: ast.Expression[],
       parameterTypes: MType[],
       optionalCount: number) {
     if (args.length < parameterTypes.length - optionalCount ||
         args.length > parameterTypes.length) {
       this.errors.push(new MError(
-        functionLocation,
+        callLocation,
         optionalCount === 0 ?
           `${parameterTypes.length} args expected but got ${args.length}` :
           `${parameterTypes.length - optionalCount} to ${parameterTypes.length} args ` +
@@ -320,50 +320,47 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
     }
   }
 
-  visitFunctionCall(e: ast.FunctionCall): type.MType {
-    const funcType = this.solveExpression(e.func);
+  private handleCall(callLocation: MLocation, funcType: MType, args: ast.Expression[]): type.MType {
     if (funcType === type.Any) {
-      for (const arg of e.args) {
+      for (const arg of args) {
         this.solveExpression(arg);
       }
       return type.Any;
     }
     if (funcType instanceof type.Class) {
       const instanceType = type.Instance.of(funcType.symbol);
-      const initMethodType = instanceType.getMethodType('__init__');
+      const initMethodSymbol = instanceType.getMethodSymbol('__init__');
       const [parameterTypes, optCount] =
-        initMethodType !== null && initMethodType instanceof type.Function ?
-          [initMethodType.parameters, initMethodType.optionalCount] :
+        initMethodSymbol !== null && initMethodSymbol.valueType instanceof type.Function ?
+          [initMethodSymbol.valueType.parameters, initMethodSymbol.valueType.optionalCount] :
           [[], 0];
       this.checkArgTypes(
-        e.func.location,
-        e.args,
+        callLocation,
+        args,
         parameterTypes,
         optCount);
       return instanceType;
     }
     if (funcType instanceof type.Function) {
-      this.checkArgTypes(e.func.location, e.args, funcType.parameters, funcType.optionalCount);
+      this.checkArgTypes(callLocation, args, funcType.parameters, funcType.optionalCount);
       return funcType.returnType;
     }
-    this.errors.push(new MError(e.func.location, `${funcType} is not callable`));
-    for (const arg of e.args) {
+    this.errors.push(new MError(callLocation, `${funcType} is not callable`));
+    for (const arg of args) {
       this.solveExpression(arg);
     }
     return type.Any;
+  }
+
+  visitFunctionCall(e: ast.FunctionCall): type.MType {
+    const funcType = this.solveExpression(e.func);
+    return this.handleCall(e.location, funcType, e.args);
   }
 
   visitMethodCall(e: ast.MethodCall): type.MType {
     const ownerType = this.solveExpression(e.owner);
-    if (ownerType === type.Any) {
-      for (const arg of e.args) {
-        this.solveExpression(arg);
-      }
-      return type.Any;
-    }
-    this.checkMemberUsage(ownerType, e.identifier);
-    const memberType = ownerType.getMethodType(e.identifier.name);
-    if (!memberType) {
+    const methodSymbol = ownerType.getMethodSymbol(e.identifier.name);
+    if (!methodSymbol) {
       this.errors.push(new MError(
         e.identifier.location,
         `Member ${e.identifier.name} not found in ${ownerType}`));
@@ -372,88 +369,41 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
       }
       return type.Any;
     }
-    if (memberType === type.Any) {
-      for (const arg of e.args) {
-        this.solveExpression(arg);
-      }
-      return type.Any;
-    }
-    if (memberType instanceof type.Class) {
-      const instanceType = type.Instance.of(memberType.symbol);
-      const initMethodType = instanceType.getMethodType('__init__');
-      const [parameterTypes, optCount] =
-        initMethodType !== null && initMethodType instanceof type.Function ?
-          [initMethodType.parameters, initMethodType.optionalCount] :
-          [[], 0];
-      this.checkArgTypes(
-        e.identifier.location,
-        e.args,
-        parameterTypes,
-        optCount);
-      return type.Instance.of(memberType.symbol);
-    }
-    if (memberType instanceof type.Function) {
-      this.checkArgTypes(
-        e.identifier.location, e.args, memberType.parameters, memberType.optionalCount);
-      return memberType.returnType;
-    }
-    this.errors.push(new MError(e.identifier.location, `${memberType} is not callable`));
-    for (const arg of e.args) {
-      this.solveExpression(arg);
-    }
-    return type.Any;
+    this.solver.recordSymbolUsage(e.identifier, methodSymbol);
+    const methodType = methodSymbol.valueType || type.Any;
+    return this.handleCall(e.location, methodType, e.args);
   }
 
-  private checkMemberUsage(ownerType: MType, memberIdentifier: ast.Identifier) {
-    if (ownerType instanceof type.Instance) {
-      const memberSymbol = ownerType.symbol.members.get(memberIdentifier.name);
-      if (memberSymbol) {
-        this.solver.recordSymbolUsage(memberIdentifier, memberSymbol);
-      }
-    } else if (ownerType instanceof type.Module) {
-      const memberSymbol = ownerType.symbol.members.get(memberIdentifier.name);
-      if (memberSymbol) {
-        this.solver.recordSymbolUsage(memberIdentifier, memberSymbol);
-      }
+  private getFieldSymbolAndRecordUsage(
+      ownerType: MType, identifier: ast.Identifier): MSymbol | null {
+    const fieldSymbol = ownerType.getFieldSymbol(identifier.name);
+    if (!fieldSymbol) {
+      this.errors.push(new MError(
+        identifier.location,
+        `Field ${identifier.name} not found in ${ownerType}`));
+      return null;
     }
+    this.solver.recordSymbolUsage(identifier, fieldSymbol);
+    return fieldSymbol;
   }
 
   visitGetField(e: ast.GetField): type.MType {
     const ownerType = this.solveExpression(e.owner);
-    if (ownerType === type.Any) {
-      return type.Any;
-    }
-    this.checkMemberUsage(ownerType, e.identifier);
-    const memberType = ownerType.getFieldType(e.identifier.name);
-    if (!memberType) {
-      this.errors.push(new MError(
-        e.identifier.location,
-        `Member ${e.identifier.name} not found in ${ownerType}`));
-      return type.Any;
-    }
-    return memberType;
+    const fieldSymbol = this.getFieldSymbolAndRecordUsage(ownerType, e.identifier);
+    return fieldSymbol?.valueType || type.Any;
   }
 
   visitSetField(e: ast.SetField): type.MType {
     const ownerType = this.solveExpression(e.owner);
-    if (ownerType === type.Any) {
-      return type.Any;
-    }
-    this.checkMemberUsage(ownerType, e.identifier);
-    const memberType = ownerType.getFieldType(e.identifier.name);
-    if (!memberType) {
-      this.errors.push(new MError(
-        e.identifier.location,
-        `Member ${e.identifier.name} not found in ${ownerType}`));
-      return type.Any;
-    }
+    const fieldSymbol = this.getFieldSymbolAndRecordUsage(ownerType, e.identifier);
+    const fieldType = fieldSymbol?.valueType || type.Any;
     const valueType = this.solveExpression(e.value);
-    if (!valueType.isAssignableTo(memberType)) {
+    if (!valueType.isAssignableTo(fieldType)) {
       this.errors.push(new MError(
         e.value.location,
-        `${valueType} is not assignable to ${memberType}`));
+        `${valueType} is not assignable to ${fieldType}`));
     }
-    return memberType;
+    return fieldType;
   }
 
   visitLogical(e: ast.Logical): type.MType {
@@ -559,7 +509,7 @@ class StatementVisitor extends ast.StatementVisitor<void> {
 
   visitFunction(s: ast.Function) {
     const functionSymbol = this.solver.recordSymbolDefinition(s.identifier, true);
-    functionSymbol.documentation = s.documentation;
+    functionSymbol.documentation = s.documentation?.value || null;
     this.visitFunctionOrMethod(s, functionSymbol);
   }
 
@@ -577,7 +527,7 @@ class StatementVisitor extends ast.StatementVisitor<void> {
         }
       }
     }
-    classSymbol.documentation = s.documentation;
+    classSymbol.documentation = s.documentation?.value || null;
     for (const field of s.fields) {
       const fieldSymbol = classSolver.recordSymbolDefinition(
         field.identifier, false, field.final);
