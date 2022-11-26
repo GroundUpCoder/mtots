@@ -16,7 +16,10 @@ export const definitionProvider: vscode.DefinitionProvider = {
     }
     const usage = module.findUsage(converter.convertPosition(position));
     if (usage) {
-      return converter.convertMLocation(usage.symbol.definition.location);
+      const definition = usage.symbol.definition;
+      if (definition) {
+        return converter.convertMLocation(definition.location);
+      }
     }
     return null;
   },

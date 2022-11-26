@@ -263,7 +263,9 @@ export class MParser {
     if (addToScope) {
       this.scope.set(symbol);
     }
-    this.symbolUsages.push(symbol.definition);
+    if (symbol.definition) {
+      this.symbolUsages.push(symbol.definition);
+    }
     return symbol;
   }
 

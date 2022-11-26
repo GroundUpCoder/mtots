@@ -7,7 +7,7 @@ export class MSymbol {
   readonly name: string;
 
   /** location of the MSymbol's definition */
-  readonly location: MLocation;
+  readonly location: MLocation | null;
 
   /** whether or not this symbol should be considered immutable */
   readonly final: boolean;
@@ -28,14 +28,11 @@ export class MSymbol {
   members: Map<string, MSymbol>;
 
   /** The usage that also corresponds to the definition of this MSymbol */
-  readonly definition: MSymbolUsage;
-
-  /** A list of all usages of this MSymbol */
-  readonly usages: MSymbolUsage[];
+  readonly definition: MSymbolUsage | null;
 
   constructor(
       name: string,
-      definitionLocation: MLocation,
+      definitionLocation: MLocation | null,
       final: boolean = true,
       members: Map<string, MSymbol> | null = null) {
     this.name = name;
@@ -45,9 +42,7 @@ export class MSymbol {
     this.valueType = type.Any;
     this.typeType = null;
     this.members = members || new Map();
-    this.usages = [];
-    this.definition = new MSymbolUsage(definitionLocation, this);
-    this.usages.push(this.definition);
+    this.definition = definitionLocation ? new MSymbolUsage(definitionLocation, this) : null;
   }
 }
 

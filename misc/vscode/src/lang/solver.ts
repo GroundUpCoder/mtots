@@ -47,7 +47,9 @@ export class Solver {
       }
       this.scope.set(symbol);
     }
-    this.symbolUsages.push(symbol.definition);
+    if (symbol.definition) {
+      this.symbolUsages.push(symbol.definition);
+    }
     return symbol;
   }
 
@@ -106,7 +108,6 @@ class TypeVisitor {
         return type.Any;
       }
       const memberUsage = new MSymbolUsage(memberIdentifier.location, memberSymbol);
-      memberSymbol.usages.push(memberUsage);
       this.symbolUsages.push(memberUsage);
       const symbolTypeType = memberSymbol.typeType;
       if (symbolTypeType === null) {
@@ -165,7 +166,6 @@ class TypeVisitor {
       const typeSymbol = scope.get(typeName);
       if (typeSymbol) {
         const typeUsage = new MSymbolUsage(typeIdentifier.location, typeSymbol);
-        typeSymbol.usages.push(typeUsage);
         this.symbolUsages.push(typeUsage);
         const typeType = typeSymbol.typeType;
         if (typeType === null) {
