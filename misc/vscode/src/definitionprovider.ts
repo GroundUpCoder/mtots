@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as converter from "./converter";
+import { ParseContext } from "./lang/context";
 import { MLocation } from "./lang/location";
-import { MParser, ParseContext } from "./lang/parser";
 import { MScanner } from "./lang/scanner";
 import { MSymbol } from "./lang/symbol";
 import { DefaultSourceFinder } from "./sourcefinder";

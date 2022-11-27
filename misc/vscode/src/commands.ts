@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { MError } from './lang/error';
 import { MLocation } from './lang/location';
-import { MParser, ParseContext } from './lang/parser';
+import { ParseContext } from './lang/context';
 import { MScanner } from './lang/scanner';
 import { MSymbol } from './lang/symbol';
 import { DefaultSourceFinder } from './sourcefinder';

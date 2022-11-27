@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import * as converter from "./converter";
-import { ParseContext } from "./lang/parser";
+import { ParseContext } from "./lang/context";
 import { MPosition } from "./lang/position";
 import { DefaultSourceFinder } from "./sourcefinder";
 

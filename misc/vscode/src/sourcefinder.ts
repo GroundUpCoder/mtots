@@ -1,6 +1,6 @@
-import { join, sep } from "path";
+import { join } from "path";
 import { Uri } from "vscode";
-import { SourceFinder } from "./lang/parser";
+import { SourceFinder } from "./lang/context";
 import * as vscode from "vscode";
 
 

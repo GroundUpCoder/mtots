@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import * as converter from "./converter";
 import { MError } from "./lang/error";
 import { MLocation } from "./lang/location";
-import { MParser, ParseContext } from "./lang/parser";
+import { ParseContext } from "./lang/context";
 import { MRange } from "./lang/range";
 import { MScanner } from "./lang/scanner";
 import { MSymbol } from "./lang/symbol";
