@@ -961,7 +961,7 @@ static void parseFunction(ThunkType type) {
       }
       constant = parseAndGetVariable("Expect parameter name");
       parseDefineVariable(constant);
-      if (atToken(TOKEN_IDENTIFIER)) {
+      if (atToken(TOKEN_IDENTIFIER) || atToken(TOKEN_NIL)) {
         parseTypeExpression();
       }
       if (compiler.defaultArgsCount > 0 && !atToken(TOKEN_EQUAL)) {
@@ -974,7 +974,7 @@ static void parseFunction(ThunkType type) {
   }
   expectToken(TOKEN_RIGHT_PAREN, "Expect ')' after parameters");
 
-  if (atToken(TOKEN_IDENTIFIER)) {
+  if (atToken(TOKEN_IDENTIFIER) || atToken(TOKEN_NIL)) {
     parseTypeExpression();
   }
 
@@ -1091,7 +1091,7 @@ static void expectStatementDelimiter(const char *message) {
 static void parseVarDeclaration() {
   u8 global = parseAndGetVariable("Expect variable name");
 
-  if (atToken(TOKEN_IDENTIFIER)) {
+  if (atToken(TOKEN_IDENTIFIER) || atToken(TOKEN_NIL)) {
     parseTypeExpression();
   }
 
@@ -1326,7 +1326,9 @@ static void parseFieldDeclaration() {
 static void parseTypeExpression() {
   /* Type expressions are completely ignored by the runtime, and are used
    * purely for documentation */
-  expectToken(TOKEN_IDENTIFIER, "Expected type expression");
+  if (!consumeToken(TOKEN_NIL)) {
+    expectToken(TOKEN_IDENTIFIER, "Expected type expression");
+  }
   for (;;) {
     if (consumeToken(TOKEN_QMARK)) {
       continue;
