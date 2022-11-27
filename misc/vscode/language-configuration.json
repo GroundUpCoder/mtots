@@ -3,6 +3,20 @@
       "lineComment": "#",
       "blockComment": [ "r###\"", "\"###" ]
   },
+  "onEnterRules": [
+    {
+        "beforeText": "^\\s*(?:def|class|for|if|elif|else|while)\\b.*?:\\s*$",
+        "action": { "indent": "indent" }
+    },
+    {
+        "beforeText": "^\\s*pass\\s*$",
+        "action": { "indent": "outdent" }
+    },
+    {
+        "beforeText": "^\\s*return\\b.*?$",
+        "action": { "indent": "outdent" }
+    }
+  ],
   // symbols used as brackets
   "brackets": [
       ["{", "}"],
