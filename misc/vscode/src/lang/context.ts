@@ -144,9 +144,4 @@ export class ParseContext {
     }
     return module;
   }
-
-  async reset() {
-    this.builtinScope.map.clear();
-    await this.loadBuiltin();
-  }
 }
