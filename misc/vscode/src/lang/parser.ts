@@ -9,7 +9,6 @@ import { MToken, MTokenType } from "./token";
 import * as types from './type';
 import { Solver } from './solver';
 import { CompletionPoint } from './completion';
-import type { ParseContext } from './context';
 
 const PrecList: MTokenType[][] = [
   [],
@@ -58,33 +57,14 @@ export class MParser {
   private readonly symbolUsages: MSymbolUsage[];
   private readonly completionPoints: CompletionPoint[];
 
-  /**
-   * Semantic errors are useful to alert about, but they should not
-   * cause the parse to fail.
-   * On the other hand, we throw on the first parse error since
-   * such an error means we cannot be sure if anything we parse going forward
-   * is at all meaningful.
-   */
-  private semanticErrors: MError[];
-
   private readonly scanner: MScanner;
-  private scope: MScope;
   private peek: MToken;
 
-  private context: ParseContext;
-
-  constructor(scanner: MScanner, context: ParseContext) {
+  constructor(scanner: MScanner) {
     this.symbolUsages = [];
     this.completionPoints = [];
-    this.semanticErrors = [];
     this.scanner = scanner;
-    this.scope = new MScope(context.builtinScope);
     this.peek = scanner.scanToken();
-    this.context = context;
-  }
-
-  private newSemanticErrorAt(location: MLocation, message: string) {
-    this.semanticErrors.push(this.newErrorAt(location, message));
   }
 
   private newError(message: string) {
@@ -202,24 +182,6 @@ export class MParser {
       }
     }
     return args;
-  }
-
-  private recordSymbolDefinition(
-      identifier: ast.Identifier, addToScope: boolean, final: boolean = true): MSymbol {
-    const previous = this.scope.map.get(identifier.name);
-    if (previous) {
-      this.newSemanticErrorAt(
-        identifier.location,
-        `'${previous.name}' is already defined in this scope`);
-    }
-    const symbol = new MSymbol(identifier.name, identifier.location, final);
-    if (addToScope) {
-      this.scope.set(symbol);
-    }
-    if (symbol.definition) {
-      this.symbolUsages.push(symbol.definition);
-    }
-    return symbol;
   }
 
   private parsePrefix(): ast.Expression {
@@ -482,7 +444,7 @@ export class MParser {
     return new ast.While(location, condition, body);
   }
 
-  private async parseImportStatement(): Promise<ast.Statement> {
+  private parseImportStatement(): ast.Import {
     const startLocation = this.peek.location;
     this.expect('import');
     const moduleID = this.parseQualifiedIdentifier();
@@ -490,19 +452,6 @@ export class MParser {
     const location = startLocation.merge(
       alias === null ? moduleID.location : alias.location);
     const importModule = new ast.Import(location, moduleID, alias);
-    const importSymbol = this.recordSymbolDefinition(importModule.alias, true);
-    const module = await this.context.loadModule(moduleID.toString());
-    importSymbol.valueType = types.Module.of(importSymbol, moduleID);
-    if (module) {
-      importSymbol.members = module.scope.map;
-      if (module.errors.length > 0) {
-        const e = module.errors[0];
-        this.newSemanticErrorAt(
-          location, `module ${moduleID} has errors: ${e.message}`);
-      }
-    } else {
-      this.newSemanticErrorAt(moduleID.location, `Module ${moduleID} not found`);
-    }
     return importModule;
   }
 
@@ -515,8 +464,6 @@ export class MParser {
   }
 
   private parseBlock(): ast.Block {
-    const oldScope = this.scope;
-    this.scope = new MScope(oldScope);
     const startLocation = this.expect(':').location;
     while (this.consume('NEWLINE') || this.consume(';'));
     this.expect('INDENT');
@@ -528,7 +475,6 @@ export class MParser {
     }
     const location = startLocation.merge(this.expect('DEDENT').location);
     while (this.consume('NEWLINE') || this.consume(';'));
-    this.scope = oldScope;
     return new ast.Block(location, statements);
   }
 
@@ -616,8 +562,6 @@ export class MParser {
   private parseFunctionDeclaration(): ast.Function {
     const startLocation = this.expect('def').location;
     const identifier = this.parseIdentifier();
-    const outerScope = this.scope;
-    this.scope = new MScope(outerScope);
     const parameters = [];
     this.expect('(');
     while (!this.at(')')) {
@@ -643,7 +587,6 @@ export class MParser {
       }
     }
     const location = startLocation.merge(body.location);
-    this.scope = outerScope;
     return new ast.Function(
       location,
       identifier,
@@ -690,48 +633,37 @@ export class MParser {
     }
   }
 
-  private async parseModuleLevelDeclaration(): Promise<ast.Statement> {
+  private parseModuleLevelDeclaration(): ast.Statement {
     switch (this.peek.type) {
-      case 'import': return await this.parseImportStatement();
       case 'class': return this.parseClassDeclaration();
       default: return this.parseDeclaration();
     }
   }
 
-  async parseModule(): Promise<ast.Module> {
+  parseFile(): ast.File {
     const startLocation = this.peek.location;
+    let documentation: string | null = null;
+    const imports: ast.Import[] = [];
     const statements: ast.Statement[] = [];
     try {
+      while (this.consume('NEWLINE') || this.consume(';'));
+      if (this.at('STRING')) {
+        documentation = <string>this.advance().value;
+      }
+      while (this.consume('NEWLINE') || this.consume(';'));
+      while (this.at('import')) {
+        imports.push(this.parseImportStatement());
+        while (this.consume('NEWLINE') || this.consume(';'));
+      }
       while (!this.at('EOF')) {
-        statements.push(await this.parseModuleLevelDeclaration());
+        statements.push(this.parseModuleLevelDeclaration());
       }
       const location = startLocation.merge(this.peek.location);
-      const solver = new Solver(
-        this.scope,
-        this.semanticErrors,
-        this.symbolUsages,
-        this.completionPoints);
-      for (const statement of statements) {
-        solver.solveStatement(statement);
-      }
-      return new ast.Module(
-        location,
-        statements,
-        this.scope,
-        this.symbolUsages,
-        this.completionPoints,
-        this.semanticErrors);
+      return new ast.File(location, documentation, imports, statements, []);
     } catch (e) {
       if (e instanceof MError) {
         const location = startLocation.merge(this.peek.location);
-        const errors = [e, ...this.semanticErrors];
-        return new ast.Module(
-          location,
-          statements,
-          this.scope,
-          this.symbolUsages,
-          this.completionPoints,
-          errors);
+        return new ast.File(location, documentation, imports, statements, [e]);
       } else {
         throw e;
       }

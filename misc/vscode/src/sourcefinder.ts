@@ -13,17 +13,18 @@ const roots = [
 ].filter(s => s.length > 0);
 
 
-export const DefaultSourceFinder: SourceFinder = async (path, oldVersion) => {
+export const DefaultSourceFinder: SourceFinder = async (path, oldUriAndVersion) => {
   const relativeFilePath = join(...path.split('.'));
   for (const root of roots) {
     for (const extension of ['.types.mtots', '.mtots']) {
       const filePath = join(root, relativeFilePath + extension);
       const uri = Uri.file(filePath);
       const document = await vscode.workspace.openTextDocument(uri);
-      // TODO: This is actually wrong because we also need to check whether
-      // the dependencies have changed as well. Fix.
-      if (oldVersion !== null && document.version <= oldVersion) {
-        return 'useCached';
+      if (oldUriAndVersion) {
+        const [oldUri, oldVersion] = oldUriAndVersion;
+        if (oldUri.toString() === document.uri.toString() && oldVersion === document.version) {
+          return 'useCached';
+        }
       }
       const contents = document.getText();
       return { uri: document.uri, contents, version: document.version};

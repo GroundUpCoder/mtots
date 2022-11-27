@@ -76,25 +76,37 @@ export class TypeExpression extends Ast {
   }
 }
 
-export class Module extends Ast {
+export class File extends Ast {
+  readonly imports: Import[];
+  readonly documentation: string | null;
   readonly statements: Statement[];
-  readonly scope: MScope;
-  private readonly symbolUsages: MSymbolUsage[];
-  private readonly completionPoints: CompletionPoint[];
-  readonly errors: MError[];
+  readonly syntaxErrors: MError[];
   constructor(
       location: MLocation,
+      documentation: string | null,
+      imports: Import[],
       statements: Statement[],
-      scope: MScope,
-      symbolUsages: MSymbolUsage[],
-      completionPoints: CompletionPoint[],
-      errors: MError[]) {
+      syntaxErrors: MError[]) {
     super(location);
+    this.documentation = documentation;
+    this.imports = imports;
     this.statements = statements;
+    this.syntaxErrors = syntaxErrors;
+  }
+}
+
+export class Module {
+  readonly file: File;
+  readonly scope: MScope;
+  readonly symbolUsages: MSymbolUsage[];
+  readonly completionPoints: CompletionPoint[];
+  readonly errors: MError[];
+  constructor(file: File, scope: MScope) {
+    this.file = file;
     this.scope = scope;
-    this.symbolUsages = symbolUsages;
-    this.completionPoints = completionPoints;
-    this.errors = errors;
+    this.symbolUsages = [];
+    this.completionPoints = [];
+    this.errors = [...file.syntaxErrors];
   }
 
   findUsage(position: MPosition): MSymbolUsage | null {
@@ -211,7 +223,7 @@ export class Class extends Statement {
   }
 }
 
-export class Import extends Statement {
+export class Import extends Ast {
   readonly module: QualifiedIdentifier;
   readonly alias: Identifier;
   constructor(
@@ -221,10 +233,6 @@ export class Import extends Statement {
     super(location);
     this.module = module;
     this.alias = alias || module.identifier;
-  }
-
-  accept<R>(visitor: StatementVisitor<R>): R {
-    return visitor.visitImport(this);
   }
 }
 
@@ -568,7 +576,6 @@ export abstract class StatementVisitor<R> {
   abstract visitNop(s: Nop): R;
   abstract visitFunction(s: Function): R;
   abstract visitClass(s: Class): R;
-  abstract visitImport(s: Import): R;
   abstract visitVariable(s: Variable): R;
   abstract visitWhile(s: While): R;
   abstract visitFor(s: For): R;

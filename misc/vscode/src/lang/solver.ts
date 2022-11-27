@@ -561,6 +561,7 @@ class StatementVisitor extends ast.StatementVisitor<void> {
     }
     for (const method of s.methods) {
       const methodSymbol = classSolver.recordSymbolDefinition(method.identifier, false);
+      methodSymbol.documentation = method.documentation?.value || null;
       classSymbol.members.set(methodSymbol.name, methodSymbol);
       this.visitFunctionOrMethod(method, methodSymbol);
     }
