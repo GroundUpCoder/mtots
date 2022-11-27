@@ -491,6 +491,32 @@ export class SetField extends Expression {
   }
 }
 
+/**
+ * Syntax error - this AST node indicates a '.' after an expression
+ * but IDENTIFIER is missing after the '.'.
+ * This node is purely for implementing autocomplete.
+ */
+export class Dot extends Expression {
+  readonly owner: Expression;
+  readonly dotLocation: MLocation;
+
+  /** Location of the token immediately following the '.' */
+  readonly followLocation: MLocation;
+  constructor(
+      location: MLocation,
+      owner: Expression,
+      dotLocation: MLocation,
+      followLocation: MLocation) {
+    super(location);
+    this.owner = owner;
+    this.dotLocation = dotLocation;
+    this.followLocation = followLocation;
+  }
+  accept<R>(visitor: ExpressionVisitor<R>): R {
+    return visitor.visitDot(this);
+  }
+}
+
 export class Logical extends Expression {
   readonly op: LogicalOperator;
   readonly args: Expression[];
@@ -533,6 +559,7 @@ export abstract class ExpressionVisitor<R> {
   abstract visitMethodCall(e: MethodCall): R;
   abstract visitGetField(e: GetField): R;
   abstract visitSetField(e: SetField): R;
+  abstract visitDot(e: Dot): R;
   abstract visitLogical(e: Logical): R;
   abstract visitRaise(e: Raise): R;
 }

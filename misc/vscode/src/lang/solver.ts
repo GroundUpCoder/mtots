@@ -416,6 +416,16 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
     return fieldType;
   }
 
+  visitDot(e: ast.Dot): type.MType {
+    const ownerType = this.solveExpression(e.owner);
+    const memberScope = ownerType.getCompletionScope();
+    if (memberScope) {
+      this.solver.completionPoints.push(new CompletionPoint(e.dotLocation, memberScope));
+    }
+    this.errors.push(new MError(e.followLocation, `Expected member identifier`));
+    return type.Any;
+  }
+
   visitLogical(e: ast.Logical): type.MType {
     switch (e.op) {
       case 'not':

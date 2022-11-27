@@ -376,7 +376,12 @@ export class MParser {
 
     switch (tokenType) {
       case '.': {
-        this.advance();
+        const dotLocation = this.advance().location;
+        if (!this.at('IDENTIFIER')) {
+          const followLocation = this.peek.location;
+          const location = startLocation.merge(dotLocation);
+          return new ast.Dot(location, lhs, dotLocation, followLocation);
+        }
         const identifier = this.parseIdentifier();
         if (this.at('(')) {
           this.advance();

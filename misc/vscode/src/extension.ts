@@ -21,6 +21,6 @@ export function activate(context: ExtensionContext) {
     hoverProvider));
   context.subscriptions.push(vscode.languages.registerCompletionItemProvider(
     { language: 'mtots' },
-    completionProvider));
+    completionProvider, '.'));
   initDiagnostic(context);
 }
