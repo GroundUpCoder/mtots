@@ -1,14 +1,8 @@
-import { Uri } from 'vscode';
 import * as ast from './ast';
 import { MError } from "./error";
 import { MLocation } from './location';
 import { MScanner } from "./scanner";
-import { MScope } from "./scope";
-import { MSymbol, MSymbolUsage } from "./symbol";
 import { MToken, MTokenType } from "./token";
-import * as types from './type';
-import { Solver } from './solver';
-import { CompletionPoint } from './completion';
 
 const PrecList: MTokenType[][] = [
   [],
@@ -54,15 +48,10 @@ const BinopMethodMap: Map<MTokenType, string> = new Map([
 ]);
 
 export class MParser {
-  private readonly symbolUsages: MSymbolUsage[];
-  private readonly completionPoints: CompletionPoint[];
-
   private readonly scanner: MScanner;
   private peek: MToken;
 
   constructor(scanner: MScanner) {
-    this.symbolUsages = [];
-    this.completionPoints = [];
     this.scanner = scanner;
     this.peek = scanner.scanToken();
   }
