@@ -1,10 +1,7 @@
 import * as vscode from 'vscode';
 import { MError } from './lang/error';
-import { MLocation } from './lang/location';
-import { ParseContext } from './lang/context';
 import { MScanner } from './lang/scanner';
-import { MSymbol } from './lang/symbol';
-import { DefaultSourceFinder } from './sourcefinder';
+import { MContext } from './state';
 
 async function writeToNewEditor(
     f: (emit: (m: string) => void) => void,
@@ -80,8 +77,7 @@ export async function parse() {
   }
   const text = getSelectionOrAllText(editor);
   await writeToNewEditor(async emit => {
-    const ctx = new ParseContext(DefaultSourceFinder);
-    const module = await ctx.loadModule('__main__', [editor.document.uri, text]);
+    const module = await MContext.loadModuleWithContents(editor.document.uri, text);
     emit(JSON.stringify(module));
   }, 'json');
 }

@@ -1,16 +1,11 @@
 import * as vscode from "vscode";
 import * as converter from "./converter";
-import { ParseContext } from "./lang/context";
-import { MLocation } from "./lang/location";
-import { MScanner } from "./lang/scanner";
-import { MSymbol } from "./lang/symbol";
-import { DefaultSourceFinder } from "./sourcefinder";
+import { MContext } from "./state";
 
 
 export const definitionProvider: vscode.DefinitionProvider = {
   async provideDefinition(document, position, token) {
-    const ctx = new ParseContext(DefaultSourceFinder);
-    const module = await ctx.loadModule('__main__', [document.uri, document.getText()]);
+    const module = await MContext.loadModuleWithContents(document.uri, document.getText());
     if (!module) {
       return;
     }

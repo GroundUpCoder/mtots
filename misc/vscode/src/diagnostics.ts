@@ -1,12 +1,7 @@
 import * as vscode from "vscode";
 import * as converter from "./converter";
 import { MError } from "./lang/error";
-import { MLocation } from "./lang/location";
-import { ParseContext } from "./lang/context";
-import { MRange } from "./lang/range";
-import { MScanner } from "./lang/scanner";
-import { MSymbol } from "./lang/symbol";
-import { DefaultSourceFinder } from "./sourcefinder";
+import { MContext } from "./state";
 
 
 export async function initDiagnostic(context: vscode.ExtensionContext) {
@@ -30,8 +25,7 @@ export async function initDiagnostic(context: vscode.ExtensionContext) {
 
 async function updateDiagnostics(document: vscode.TextDocument, dc: vscode.DiagnosticCollection) {
   try {
-    const ctx = new ParseContext(DefaultSourceFinder);
-    const module = await ctx.loadModule('__main__', [document.uri, document.getText()]);
+    const module = await MContext.loadModuleWithContents(document.uri, document.getText());
     if (!module) {
       return;
     }

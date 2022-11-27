@@ -1,15 +1,12 @@
 import * as vscode from "vscode";
 import * as converter from "./converter";
-import { ParseContext } from "./lang/context";
-import { MPosition } from "./lang/position";
-import { DefaultSourceFinder } from "./sourcefinder";
+import { MContext } from "./state";
 
 
 
 export const completionProvider: vscode.CompletionItemProvider = {
   async provideCompletionItems(document, position, token, context) {
-    const ctx = new ParseContext(DefaultSourceFinder);
-    const module = await ctx.loadModule('__main__', [document.uri, document.getText()]);
+    const module = await MContext.loadModuleWithContents(document.uri, document.getText());
     if (!module) {
       return null;
     }

@@ -13,15 +13,18 @@ const roots = [
 ].filter(s => s.length > 0);
 
 
-export const DefaultSourceFinder: SourceFinder = async path => {
+export const DefaultSourceFinder: SourceFinder = async (path, oldVersion) => {
   const relativeFilePath = join(...path.split('.'));
   for (const root of roots) {
     for (const extension of ['.types.mtots', '.mtots']) {
       const filePath = join(root, relativeFilePath + extension);
       const uri = Uri.file(filePath);
       const document = await vscode.workspace.openTextDocument(uri);
+      if (oldVersion !== null && document.version <= oldVersion) {
+        return 'useCached';
+      }
       const contents = document.getText();
-      return [document.uri, contents];
+      return { uri: document.uri, contents, version: document.version};
     }
   }
   return null;

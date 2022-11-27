@@ -4,11 +4,14 @@ import { Uri } from "vscode";
 import { MScanner } from "./scanner";
 import { MParser } from "./parser";
 
-export type SourceFinder = (path: string) => Promise<[string | Uri, string] | null>;
+export type SourceFinder = (
+  path: string,
+  oldVersion: number | null) => Promise<
+    { uri: Uri, contents: string, version: number} | 'useCached' | null>;
 
 export class ParseContext {
   readonly sourceFinder: SourceFinder;
-  private readonly moduleCache: Map<string, ast.Module> = new Map();
+  private readonly moduleCache: Map<string, [ast.Module, number]> = new Map();
   readonly builtinScope: MScope = new MScope();
   constructor(sourceFinder: SourceFinder) {
     this.sourceFinder = sourceFinder;
@@ -25,30 +28,38 @@ export class ParseContext {
     }
   }
 
-  async loadModule(
-      moduleName: string,
-      uriAndContents: [Uri, string] | null = null): Promise<ast.Module | null> {
-    const cached = this.moduleCache.get(moduleName);
-    if (cached) {
-      return cached;
-    }
-    let filePath: string | Uri = '';
-    let contents: string = '';
-    if (uriAndContents) {
-      [filePath, contents] = uriAndContents;
-    } else {
-      const finderResult = await this.sourceFinder(moduleName);
-      if (!finderResult) {
-        return null;
-      }
-      const [foundFilePath, foundContents] = finderResult;
-      filePath = foundFilePath;
-      contents = foundContents;
-    }
-    const scanner = new MScanner(filePath, contents);
+  async loadModuleWithContents(uri: Uri, contents: string) {
+    const scanner = new MScanner(uri, contents);
     const parser = new MParser(scanner, this);
     const module = await parser.parseModule();
-    this.moduleCache.set(moduleName, module);
     return module;
+  }
+
+  async loadModule(moduleName: string): Promise<ast.Module | null> {
+    let oldVersion: number | null = null;
+    const cacheEntry = this.moduleCache.get(moduleName);
+    let cachedAst: ast.Module | null = null;
+    if (cacheEntry) {
+      [cachedAst, oldVersion] = cacheEntry;
+    }
+    const finderResult = await this.sourceFinder(moduleName, oldVersion);
+    if (finderResult === 'useCached') {
+      return cachedAst;
+    }
+    if (finderResult === null) {
+      return null;
+    }
+    const { uri, contents, version } = finderResult;
+    const scanner = new MScanner(uri, contents);
+    const parser = new MParser(scanner, this);
+    const module = await parser.parseModule();
+    this.moduleCache.set(moduleName, [module, version]);
+    return module;
+  }
+
+  async reset() {
+    this.moduleCache.clear();
+    this.builtinScope.map.clear();
+    await this.loadBuiltin();
   }
 }
