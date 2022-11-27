@@ -1,3 +1,5 @@
+r"""Bindings for the SDL library
+"""
 
 final WINDOW_FULLSCREEN = 0
 final WINDOW_OPENGL = 0
@@ -76,6 +78,7 @@ class Event:
 
   final type int
   final key int
+  final repeat bool
 
 
 class Rect:
@@ -89,7 +92,7 @@ class Rect:
 
 
 class Window:
-  pass
+  "Window comments"
 
 
 def createWindow(title string, x int, y int, width int, height int, flags int) Window:
@@ -188,7 +191,7 @@ def getKeyboardState() KeyboardState:
   pass
 
 
-def init(flags int):
+def init(flags int) nil:
   r"""
   Initialize the SDL library
   """

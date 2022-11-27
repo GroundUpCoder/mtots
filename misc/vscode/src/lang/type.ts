@@ -442,6 +442,10 @@ export class Class extends MType {
     // TODO: qualify the name
     return `class[${this.symbol.name}]`;
   }
+
+  format(isFinal: boolean, variableName: string): string {
+    return `class ${variableName}`;
+  }
 }
 
 export class Instance extends MType {
@@ -534,6 +538,14 @@ export class Module extends MType {
 
   toString(): string {
     return `module[${this.symbol.name}]`
+  }
+
+  format(isFinal: boolean, variableName: string): string {
+    const path = this.path.toString();
+    if (path === variableName) {
+      return `import ${path}`;
+    }
+    return `import ${this.path} as ${variableName}`;
   }
 }
 

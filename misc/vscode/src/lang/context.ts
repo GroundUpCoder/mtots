@@ -125,11 +125,14 @@ export class ParseContext {
       module.errors,
       module.symbolUsages,
       module.completionPoints);
+
+    // PREPARE IMPORTS
     for (const imp of module.file.imports) {
       const importSymbol = solver.recordSymbolDefinition(imp.alias, true);
       importSymbol.valueType = new type.Module(importSymbol, imp.module);
       const importedModule = await this.loadModule(imp.module.toString(), localCache);
       if (importedModule) {
+        importSymbol.documentation = importedModule.file.documentation;
         importSymbol.members = importedModule.scope.map;
         if (importedModule.errors.length > 0) {
           solver.errors.push(new MError(imp.location, `imported module has errors`));
@@ -139,6 +142,17 @@ export class ParseContext {
           imp.location, `Module ${imp.module} not found`));
       }
     }
+
+    // PREPARE CLASS DEFINITIONS
+    for (const cdecl of module.file.statements) {
+      if (cdecl instanceof ast.Class) {
+        const classSymbol = solver.recordSymbolDefinition(cdecl.identifier, true);
+        classSymbol.typeType = type.Instance.of(classSymbol);
+        classSymbol.valueType = type.Class.of(classSymbol);
+      }
+    }
+
+    // MAIN SOLVE LOOP
     for (const statement of module.file.statements) {
       solver.solveStatement(statement);
     }

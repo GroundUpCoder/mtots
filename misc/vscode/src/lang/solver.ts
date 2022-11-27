@@ -547,9 +547,10 @@ class StatementVisitor extends ast.StatementVisitor<void> {
   }
 
   visitClass(s: ast.Class) {
-    const classSymbol = this.solver.recordSymbolDefinition(s.identifier, true);
-    classSymbol.typeType = type.Instance.of(classSymbol);
-    classSymbol.valueType = type.Class.of(classSymbol);
+    const classSymbol = this.solver.scope.get(s.identifier.name);
+    if (!classSymbol) {
+      throw new Error(`Assertion Error: class symbol not found (${s.identifier.name})`);
+    }
     const classScope = new MScope(this.solver.scope);
     const classSolver = this.withScope(classScope);
     const baseValueTypes: MType[] = s.bases.map(be => classSolver.solveExpression(be));
