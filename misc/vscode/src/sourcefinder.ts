@@ -20,6 +20,8 @@ export const DefaultSourceFinder: SourceFinder = async (path, oldVersion) => {
       const filePath = join(root, relativeFilePath + extension);
       const uri = Uri.file(filePath);
       const document = await vscode.workspace.openTextDocument(uri);
+      // TODO: This is actually wrong because we also need to check whether
+      // the dependencies have changed as well. Fix.
       if (oldVersion !== null && document.version <= oldVersion) {
         return 'useCached';
       }
