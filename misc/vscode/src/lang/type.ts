@@ -1,4 +1,5 @@
 import { QualifiedIdentifier } from "./ast";
+import { MScope } from "./scope";
 import { MSymbol } from "./symbol";
 
 export abstract class MType {
@@ -32,6 +33,14 @@ export abstract class MType {
    * what would the loop variable's type be?
    */
   getForInItemType(): MType | null {
+    return null;
+  }
+
+  /**
+   * When you put '.' after an expression of this type, return the scope
+   * that can be used to find all possible candidates for auto-complete.
+   */
+  getCompletionScope(): MScope | null {
     return null;
   }
 
@@ -188,6 +197,10 @@ export class List extends MType {
 
   getForInItemType(): MType | null {
     return this.itemType;
+  }
+
+  getCompletionScope(): MScope | null {
+    return new MScope(null, this.methodMap);
   }
 
   toString() {
@@ -465,6 +478,10 @@ export class Instance extends MType {
     return this.symbol.members.get(methodName) || super.getMethodSymbol(methodName);
   }
 
+  getCompletionScope(): MScope | null {
+    return new MScope(null, this.symbol.members);
+  }
+
   toString() {
     // TODO: qualify the name
     return this.symbol.name;
@@ -505,6 +522,10 @@ export class Module extends MType {
 
   getMethodSymbol(methodName: string): MSymbol | null {
     return this.symbol.members.get(methodName) || null;
+  }
+
+  getCompletionScope(): MScope | null {
+    return new MScope(null, this.symbol.members);
   }
 
   toString(): string {

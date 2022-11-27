@@ -395,6 +395,10 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
 
   visitGetField(e: ast.GetField): type.MType {
     const ownerType = this.solveExpression(e.owner);
+    const memberScope = ownerType.getCompletionScope();
+    if (memberScope) {
+      this.solver.completionPoints.push(new CompletionPoint(e.identifier.location, memberScope));
+    }
     const fieldSymbol = this.getFieldSymbolAndRecordUsage(ownerType, e.identifier);
     return fieldSymbol?.valueType || type.Any;
   }
