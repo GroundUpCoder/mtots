@@ -96,12 +96,14 @@ export class File extends Ast {
 }
 
 export class Module {
+  readonly version: number;
   readonly file: File;
   readonly scope: MScope;
   readonly symbolUsages: MSymbolUsage[];
   readonly completionPoints: CompletionPoint[];
   readonly errors: MError[];
-  constructor(file: File, scope: MScope) {
+  constructor(version: number, file: File, scope: MScope) {
+    this.version = version;
     this.file = file;
     this.scope = scope;
     this.symbolUsages = [];

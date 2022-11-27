@@ -15,13 +15,15 @@ export type SourceFinder = (
 export class ParseContext {
   readonly sourceFinder: SourceFinder;
   private readonly fileCache: Map<string, [ast.File, [Uri, number]]> = new Map();
+  private readonly moduleCache: Map<string, ast.Module> = new Map();
+  private currentVersion: number = 1;
   readonly builtinScope: MScope = new MScope();
   constructor(sourceFinder: SourceFinder) {
     this.sourceFinder = sourceFinder;
     this.loadBuiltin();
   }
 
-  async loadBuiltin() {
+  private async loadBuiltin() {
     const preludeModule = await this.loadModule('__builtin__', new Map());
     if (!preludeModule) {
       return; // TODO: indicate error
@@ -32,6 +34,7 @@ export class ParseContext {
   }
 
   async loadModuleWithContents(uri: Uri, contents: string) {
+    this.currentVersion++;
     const scanner = new MScanner(uri, contents);
     const parser = new MParser(scanner);
     const file = parser.parseFile();
@@ -39,7 +42,8 @@ export class ParseContext {
     return module;
   }
 
-  private async loadFile(moduleName: string): Promise<ast.File | null> {
+  private async loadFile(moduleName: string): Promise<
+      {file: ast.File, fromCache: boolean} | null> {
     let oldUriAndVersion: [Uri, number] | null = null;
     let cachedAst: ast.File | null = null;
     const cacheEntry = this.fileCache.get(moduleName);
@@ -48,7 +52,11 @@ export class ParseContext {
     }
     const finderResult = await this.sourceFinder(moduleName, oldUriAndVersion);
     if (finderResult === 'useCached') {
-      return cachedAst;
+      if (cachedAst) {
+        return {file: cachedAst, fromCache: true};
+      } else {
+        throw Error(`Assertion Error`);
+      }
     }
     if (finderResult === null) {
       this.fileCache.delete(moduleName);
@@ -59,29 +67,59 @@ export class ParseContext {
     const parser = new MParser(scanner);
     const file = parser.parseFile();
     this.fileCache.set(moduleName, [file, [uri, version]]);
-    return file;
+    return {file, fromCache: false};
   }
 
   private async loadModule(
       moduleName: string,
-      moduleCache: Map<string, ast.Module>): Promise<ast.Module | null> {
-    const cachedModule = moduleCache.get(moduleName);
-    if (cachedModule) {
-      return cachedModule;
+      localCache: Map<string, ast.Module>): Promise<ast.Module | null> {
+    const locallyCachedModule = localCache.get(moduleName);
+    if (locallyCachedModule) {
+      return locallyCachedModule;
     }
-    const file = await this.loadFile(moduleName);
-    if (file === null) {
+    const loadFileResult = await this.loadFile(moduleName);
+    if (loadFileResult === null) {
       return null;
     }
-    const module = await this.solveFile(file, moduleCache);
-    moduleCache.set(moduleName, module);
+    const { file, fromCache } = loadFileResult;
+    if (fromCache) {
+      // If the File was cached, there's a chance that we can use the
+      // cached Module as well.
+      const cachedModule = this.moduleCache.get(moduleName);
+      if (cachedModule) {
+        const cachedVersion = cachedModule.version;
+        let refreshRequired = false;
+        for (const imp of file.imports) {
+          const importPath = imp.module.toString();
+          const importedModule = await this.loadModule(importPath, localCache);
+          if (importedModule) {
+            if (importedModule.version > cachedVersion) {
+              // We have a dependency that is newer than the last time this
+              // module was cached. This means that we have to re-solve the
+              // module.
+              refreshRequired = true;
+              break;
+            }
+          } else {
+            refreshRequired = true;
+            break;
+          }
+        }
+        if (!refreshRequired) {
+          localCache.set(moduleName, cachedModule);
+          return cachedModule;
+        }
+      }
+    }
+    const module = await this.solveFile(file, localCache);
+    localCache.set(moduleName, module);
     return module;
   }
 
   private async solveFile(
       file: ast.File,
-      moduleCache: Map<string, ast.Module>): Promise<ast.Module> {
-    const module = new ast.Module(file, new MScope(this.builtinScope));
+      localCache: Map<string, ast.Module>): Promise<ast.Module> {
+    const module = new ast.Module(this.currentVersion, file, new MScope(this.builtinScope));
     const solver = new Solver(
       module.scope,
       module.errors,
@@ -90,7 +128,7 @@ export class ParseContext {
     for (const imp of module.file.imports) {
       const importSymbol = solver.recordSymbolDefinition(imp.alias, true);
       importSymbol.valueType = new type.Module(importSymbol, imp.module);
-      const importedModule = await this.loadModule(imp.module.toString(), moduleCache);
+      const importedModule = await this.loadModule(imp.module.toString(), localCache);
       if (importedModule) {
         importSymbol.members = importedModule.scope.map;
         if (importedModule.errors.length > 0) {

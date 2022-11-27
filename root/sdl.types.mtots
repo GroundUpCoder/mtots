@@ -72,7 +72,10 @@ final key dict[string, int] = {}
 
 
 class Event:
+  "Wrapper around SDL's native Event struct"
+
   final type int
+  final key int
 
 
 class Rect:
@@ -96,17 +99,57 @@ def createWindow(title string, x int, y int, width int, height int, flags int) W
 
 
 class Renderer:
+  def present() nil:
+    r"""
+    Update the screen with any rendering performed since the previous call.
+    SDL's rendering functions operate on a backbuffer; that is, calling a
+    rendering function such as SDL_RenderDrawLine() does not directly put
+    a line on the screen, but rather updates the backbuffer.
+    As such, you compose your entire scene and *present* the composed
+    backbuffer to the screen as a complete picture.
+    Therefore, when using SDL's rendering API, one does all drawing intended
+    for the frame, and then calls this function once per frame to present
+    the final drawing to the user. The backbuffer should be considered
+    invalidated after each present; do not assume that previous contents
+    will exist between frames. You are strongly encouraged to call
+    SDL_RenderClear() to initialize the backbuffer before starting each
+    new frame's drawing, even if you plan to overwrite every pixel.
+
+    Parameters:
+    * renderer - the rendering context
+    """
+
+  def setDrawColor(r int, g int, b int, a int) int:
+    r"""
+    ## SDL_SetRenderDrawColor
+    Set the color used for drawing operations (Rect, Line and Clear).
+    Set the color for drawing or filling rectangles, lines, and points,
+    and for SDL_RenderClear().
+
+    Parameters:
+    * r - the red value used to draw on the rendering target
+    * g - the green value used to draw on the rendering target
+    * b - the blue value used to draw on the rendering target
+    * a - the alpha value used to draw on the rendering target;
+        usually `SDL_ALPHA_OPAQUE` (255).
+        Use SDL_SetRenderDrawBlendMode to specify how the alpha channel is used
+
+    Returns:
+    0 on success or a negative error code on failure; call SDL_GetError()
+    for more information.
+    """
+
   def fillRect(rect Rect) nil:
     r"""
+    ## SDL_RenderFillRect
     Fill a rectangle on the current rendering target with the drawing color.
     The current drawing color is set by SDL_SetRenderDrawColor(),
     and the color's alpha value is ignored unless blending is enabled with the
     appropriate call to SDL_SetRenderDrawBlendMode().
 
     Parameters:
-    this - the rendering context
-    rect - the SDL_Rect structure representing the rectangle to fill,
-    or NULL for the entire rendering target
+    * rect - the SDL_Rect structure representing the rectangle to fill,
+      or NULL for the entire rendering target
 
     Returns:
     0 on success or a negative error code on failure; call SDL_GetError()
@@ -120,11 +163,13 @@ def createRenderer(window Window, index int, flags int) Renderer:
 
   Parameters:
   * window - the window where rendering is displayed
-  * index - the index of the rendering driver to initialize, or -1 to initialize the first one supporting the requested flags
+  * index - the index of the rendering driver to initialize, or -1 to
+    initialize the first one supporting the requested flags
   * flags - 0, or one or more SDL_RendererFlags OR'd together
 
   Returns:
-  a valid rendering context or NULL if there was an error; call SDL_GetError() for more information.
+  a valid rendering context or NULL if there was an error; call
+  SDL_GetError() for more information.
   """
 
 

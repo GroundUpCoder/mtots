@@ -9,12 +9,12 @@
 
 static ubool implRendererSetDrawColor(i16 argCount, Value *args, Value *out) {
   ObjRenderer *renderer = (ObjRenderer*)AS_OBJ(args[-1]);
-  SDL_SetRenderDrawColor(
+  *out = NUMBER_VAL(SDL_SetRenderDrawColor(
     renderer->handle,
     AS_NUMBER(args[0]),
     AS_NUMBER(args[1]),
     AS_NUMBER(args[2]),
-    AS_NUMBER(args[3]));
+    AS_NUMBER(args[3])));
   return UTRUE;
 }
 
