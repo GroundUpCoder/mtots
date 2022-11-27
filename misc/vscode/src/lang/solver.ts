@@ -190,7 +190,6 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
   readonly typeHint: MType;
   private readonly scope: MScope;
   private readonly errors: MError[];
-  private readonly symbolUsages: MSymbolUsage[];
 
   constructor(solver: Solver, typeHint: MType) {
     super();
@@ -198,7 +197,6 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
     this.typeHint = typeHint;
     this.scope = solver.scope;
     this.errors = solver.errors;
-    this.symbolUsages = solver.symbolUsages;
   }
 
   private solveExpression(e: ast.Expression, typeHint: MType = type.Any) {
