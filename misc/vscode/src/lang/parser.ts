@@ -8,6 +8,7 @@ import { MSymbol, MSymbolUsage } from "./symbol";
 import { MToken, MTokenType } from "./token";
 import * as types from './type';
 import { Solver } from './solver';
+import { CompletionPoint } from './completion';
 
 const PrecList: MTokenType[][] = [
   [],
@@ -102,7 +103,8 @@ export class ParseContext {
 }
 
 export class MParser {
-  private symbolUsages: MSymbolUsage[];
+  private readonly symbolUsages: MSymbolUsage[];
+  private readonly completionPoints: CompletionPoint[];
 
   /**
    * Semantic errors are useful to alert about, but they should not
@@ -115,17 +117,16 @@ export class MParser {
 
   private readonly scanner: MScanner;
   private scope: MScope;
-  private readonly moduleScope: MScope;
   private peek: MToken;
 
   private context: ParseContext;
 
   constructor(scanner: MScanner, context: ParseContext) {
     this.symbolUsages = [];
+    this.completionPoints = [];
     this.semanticErrors = [];
     this.scanner = scanner;
     this.scope = new MScope(context.builtinScope);
-    this.moduleScope = this.scope;
     this.peek = scanner.scanToken();
     this.context = context;
   }
@@ -748,18 +749,32 @@ export class MParser {
         statements.push(await this.parseModuleLevelDeclaration());
       }
       const location = startLocation.merge(this.peek.location);
-      const solver = new Solver(this.scope, this.semanticErrors, this.symbolUsages);
+      const solver = new Solver(
+        this.scope,
+        this.semanticErrors,
+        this.symbolUsages,
+        this.completionPoints);
       for (const statement of statements) {
         solver.solveStatement(statement);
       }
       return new ast.Module(
-        location, statements, this.scope, this.symbolUsages, this.semanticErrors);
+        location,
+        statements,
+        this.scope,
+        this.symbolUsages,
+        this.completionPoints,
+        this.semanticErrors);
     } catch (e) {
       if (e instanceof MError) {
         const location = startLocation.merge(this.peek.location);
         const errors = [e, ...this.semanticErrors];
         return new ast.Module(
-          location, statements, this.scope, this.symbolUsages, errors);
+          location,
+          statements,
+          this.scope,
+          this.symbolUsages,
+          this.completionPoints,
+          errors);
       } else {
         throw e;
       }

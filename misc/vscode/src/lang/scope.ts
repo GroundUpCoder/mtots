@@ -3,11 +3,11 @@ import { MSymbol } from "./symbol";
 
 
 export class MScope {
-  map: Map<string, MSymbol>;
   parent: MScope | null;
-  constructor(parent: MScope | null = null) {
-    this.map = new Map();
+  map: Map<string, MSymbol>;
+  constructor(parent: MScope | null = null, map: Map<string, MSymbol> | null = null) {
     this.parent = parent;
+    this.map = map || new Map();
   }
 
   get(name: string): MSymbol | null {

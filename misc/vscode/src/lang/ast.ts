@@ -1,3 +1,4 @@
+import { CompletionPoint } from "./completion";
 import { MError } from "./error";
 import { MLocation } from "./location";
 import { MPosition } from "./position";
@@ -79,17 +80,20 @@ export class Module extends Ast {
   readonly statements: Statement[];
   readonly scope: MScope;
   private readonly symbolUsages: MSymbolUsage[];
+  private readonly completionPoints: CompletionPoint[];
   readonly errors: MError[];
   constructor(
       location: MLocation,
       statements: Statement[],
       scope: MScope,
       symbolUsages: MSymbolUsage[],
+      completionPoints: CompletionPoint[],
       errors: MError[]) {
     super(location);
     this.statements = statements;
     this.scope = scope;
     this.symbolUsages = symbolUsages;
+    this.completionPoints = completionPoints;
     this.errors = errors;
   }
 
@@ -97,6 +101,16 @@ export class Module extends Ast {
     for (const usage of this.symbolUsages) {
       if (usage.location.range.contains(position)) {
         return usage;
+      }
+    }
+    return null;
+  }
+
+  findCompletionPoint(position: MPosition): CompletionPoint | null {
+    for (const cp of this.completionPoints) {
+      const cpRange = cp.location.range;
+      if (cpRange.start.le(position) && position.le(cpRange.end)) {
+        return cp;
       }
     }
     return null;

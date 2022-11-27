@@ -4,6 +4,7 @@ import { ExtensionContext } from 'vscode';
 import { definitionProvider } from './definitionprovider';
 import { hoverProvider } from './hoverprovider';
 import { initDiagnostic } from './diagnostics';
+import { completionProvider } from './completionprovider';
 
 export function activate(context: ExtensionContext) {
   context.subscriptions.push(vscode.commands.registerCommand(
@@ -18,5 +19,9 @@ export function activate(context: ExtensionContext) {
   context.subscriptions.push(vscode.languages.registerHoverProvider(
     { language: 'mtots' },
     hoverProvider));
+  context.subscriptions.push(vscode.languages.registerCompletionItemProvider(
+    { language: 'mtots' },
+    completionProvider,
+  ));
   initDiagnostic(context);
 }

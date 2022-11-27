@@ -1,4 +1,5 @@
 import * as ast from "./ast";
+import { CompletionPoint } from "./completion";
 import { MError } from "./error";
 import { MLocation } from "./location";
 import { MScope } from "./scope";
@@ -12,13 +13,19 @@ export class Solver {
   readonly scope: MScope;
   readonly errors: MError[];
   readonly symbolUsages: MSymbolUsage[];
+  readonly completionPoints: CompletionPoint[];
   private readonly typeVisitor: TypeVisitor;
   private readonly statementVisitor: StatementVisitor;
 
-  constructor(scope: MScope, errors: MError[], symbolUsages: MSymbolUsage[]) {
+  constructor(
+      scope: MScope,
+      errors: MError[],
+      symbolUsages: MSymbolUsage[],
+      completionPoints: CompletionPoint[]) {
     this.scope = scope;
     this.errors = errors;
     this.symbolUsages = symbolUsages;
+    this.completionPoints = completionPoints;
     this.typeVisitor = new TypeVisitor(this);
     this.statementVisitor = new StatementVisitor(this);
   }
@@ -204,6 +211,7 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
   }
 
   visitGetVariable(e: ast.GetVariable): type.MType {
+    this.solver.completionPoints.push(new CompletionPoint(e.identifier.location, this.scope));
     const symbol = this.scope.get(e.identifier.name);
     if (!symbol) {
       return type.Any;
@@ -438,7 +446,11 @@ class StatementVisitor extends ast.StatementVisitor<void> {
   }
 
   private withScope(scope: MScope): Solver {
-    return new Solver(scope, this.solver.errors, this.solver.symbolUsages);
+    return new Solver(
+      scope,
+      this.solver.errors,
+      this.solver.symbolUsages,
+      this.solver.completionPoints);
   }
 
   private solveStatement(s: ast.Statement, scope: MScope | null = null) {
