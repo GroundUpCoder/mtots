@@ -27,7 +27,16 @@ export class MSymbol {
   /** The members of this MSymbol, if provided */
   members: Map<string, MSymbol>;
 
-  /** The usage that also corresponds to the definition of this MSymbol */
+  /**
+   * If this symbol is a function, this field contains the
+   * function signature.
+   */
+  functionSignature: type.FunctionSignature | null;
+
+  /**
+   * The usage that also corresponds to the definition of this MSymbol.
+   * Some builtin symbols will not have a 'definition' to go to.
+   */
   readonly definition: MSymbolUsage | null;
 
   constructor(
@@ -42,6 +51,7 @@ export class MSymbol {
     this.valueType = null;
     this.typeType = null;
     this.members = members || new Map();
+    this.functionSignature = null;
     this.definition = definitionLocation ? new MSymbolUsage(definitionLocation, this) : null;
   }
 }

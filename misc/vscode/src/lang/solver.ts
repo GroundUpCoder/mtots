@@ -515,14 +515,23 @@ class StatementVisitor extends ast.StatementVisitor<void> {
     const functionSolver = this.withScope(functionScope);
     this.checkParameters(s.parameters);
     const parameterTypes: MType[] = [];
+    const parameters: [string, MType][] = [];
+    const optionalParameters: [string, MType][] = [];
     for (const parameter of s.parameters) {
       const parameterSymbol = functionSolver.recordSymbolDefinition(
         parameter.identifier, true, false);
       const parameterType = functionSolver.solveType(parameter.typeExpression);
       parameterSymbol.valueType = parameterType;
       parameterTypes.push(parameterType);
+      if (parameter.defaultValue === null) {
+        parameters.push([parameter.identifier.name, parameterType]);
+      } else {
+        optionalParameters.push([parameter.identifier.name, parameterType]);
+      }
     }
     const returnType = functionSolver.solveType(s.returnType);
+    const signature = new type.FunctionSignature(parameters, optionalParameters, returnType);
+    symbol.functionSignature = signature;
     const functionType = type.Function.of(
       parameterTypes,
       s.parameters.filter(p => p.defaultValue !== null).length,

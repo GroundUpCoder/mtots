@@ -20,14 +20,22 @@ export const hoverProvider: vscode.HoverProvider = {
     }
     const usage = module.findUsage(converter.convertPosition(position));
     if (usage) {
+      const symbol = usage.symbol;
       const markedStrings: vscode.MarkdownString[] = [];
-      const type = usage.symbol.valueType
-      if (type) {
-        const typeMarkdownString = new vscode.MarkdownString();
-        typeMarkdownString.appendCodeblock(type.toString());
-        markedStrings.push(typeMarkdownString);
+      const signature = symbol.functionSignature;
+      if (signature) {
+        const signatureMarkdownString = new vscode.MarkdownString();
+        signatureMarkdownString.appendCodeblock(signature.format(symbol.name));
+        markedStrings.push(signatureMarkdownString);
+      } else {
+        const type = symbol.valueType
+        if (type) {
+          const typeMarkdownString = new vscode.MarkdownString();
+          typeMarkdownString.appendCodeblock(type.format(symbol.final, symbol.name));
+          markedStrings.push(typeMarkdownString);
+        }
       }
-      const documentation = usage.symbol.documentation;
+      const documentation = symbol.documentation;
       if (documentation) {
         const docMarkdownString = new vscode.MarkdownString();
         const docString = formatDocString(documentation);

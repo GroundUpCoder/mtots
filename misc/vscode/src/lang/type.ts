@@ -45,6 +45,10 @@ export abstract class MType {
   }
 
   abstract toString(): string;
+
+  format(isFinal: boolean, variableName: string): string {
+    return `${isFinal ? 'final' : 'var'} ${variableName} ${this}`;
+  }
 }
 
 /** aka "Top Type" */
@@ -530,6 +534,35 @@ export class Module extends MType {
 
   toString(): string {
     return `module[${this.symbol.name}]`
+  }
+}
+
+export class FunctionSignature {
+  readonly parameters: [string, MType][];
+  readonly optionalParameters: [string, MType][];
+  readonly returnType: MType;
+  constructor(
+      parameters: [string, MType][],
+      optionalParameters: [string, MType][],
+      returnType: MType) {
+    this.parameters = parameters;
+    this.optionalParameters = optionalParameters;
+    this.returnType = returnType;
+  }
+  toType(): MType {
+    return Function.of(
+      this.parameters.concat(this.optionalParameters).map(p => p[1]),
+      this.optionalParameters.length,
+      this.returnType);
+  }
+  format(functionName: string): string {
+    const reqargs = this.parameters.map(p => `${p[0]} ${p[1]}`).join(', ');
+    const optargs = this.optionalParameters.map(p => `${p[0]} ${p[1]} =...`).join(', ');
+    const args =
+      reqargs.length === 0 ? optargs :
+      optargs.length === 0 ? reqargs :
+      reqargs + ', ' + optargs;
+    return `def ${functionName}(${args}) ${this.returnType}`;
   }
 }
 
