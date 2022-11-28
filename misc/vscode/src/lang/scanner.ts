@@ -67,6 +67,9 @@ export class MScanner {
   processedSyntheticNewline: boolean;
 
   constructor(filePath: string | Uri, s: string) {
+    if (!s.endsWith('\n')) {
+      s += '\n';
+    }
     this.filePath = filePath;
     this.s = s;
     this.i = 0;
