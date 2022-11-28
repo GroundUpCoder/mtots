@@ -260,3 +260,4 @@ def eventLoop() nil:
       sdl.delay((TICKS_PER_FRAME - elapsedTicks) // 1)
 
 eventLoop()
+

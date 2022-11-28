@@ -10,18 +10,25 @@ export const signatureHelpProvider: vscode.SignatureHelpProvider = {
     if (!sh) {
       return null;
     }
+    const parameterLabels = sh.parameterNames ?
+      sh.parameterNames.map((n, i) => `${n} ${sh.parameterTypes[i]}`) :
+      sh.parameterTypes.map((t, i) => `arg${i} ${t}`);
+
     const help = new vscode.SignatureHelp();
     help.activeParameter = sh.parameterIndex;
     help.activeSignature = 0;
     const signatureInformation = new vscode.SignatureInformation(
-      `(${sh.parameterTypes.map((pt, i) => `arg${i} ${pt}`).join(', ')})`);
+      (sh.functionName || '') +
+      `(${parameterLabels.join(', ')})` +
+      (sh.returnType ? ` ${sh.returnType}` : ''));
+    if (sh.functionDocumentation) {
+      signatureInformation.documentation = sh.functionDocumentation;
+    }
     signatureInformation.activeParameter = sh.parameterIndex;
     signatureInformation.parameters.push(...sh.parameterTypes.map((pt, i) => {
-      const pi = new vscode.ParameterInformation(`arg${i} ${pt}`);
-      pi.documentation = pt.toString();
-      return pi;
+      return new vscode.ParameterInformation(parameterLabels[i]);
     }));
-    help.signatures = [signatureInformation, new vscode.SignatureInformation('signature-2')];
+    help.signatures = [signatureInformation];
     return help;
   },
 }

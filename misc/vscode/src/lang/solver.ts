@@ -307,23 +307,24 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
 
   private checkArgTypes(
       callLocation: MLocation,
+      functionName: string | null,
+      functionDocumentation: string | null,
       args: ast.Expression[],
       argLocations: MLocation[] | null,
       parameterTypes: MType[],
-      optionalCount: number) {
+      parameterNames: string[] | null,
+      optionalCount: number,
+      returnType: MType | null) {
     if (argLocations) {
       for (let i = 0; i < argLocations.length; i++) {
         this.solver.signatureHelpers.push(new MSignatureHelper(
-          argLocations[i], parameterTypes, i));
-      }
-    }
-    if (args.length === 0) {
-      this.solver.signatureHelpers.push(new MSignatureHelper(
-        callLocation, parameterTypes, 0));
-    } else {
-      for (let i = 0; i < args.length; i++) {
-        this.solver.signatureHelpers.push(new MSignatureHelper(
-          args[i].location, parameterTypes, i));
+          argLocations[i],
+          functionName,
+          functionDocumentation,
+          parameterTypes,
+          parameterNames,
+          i,
+          returnType));
       }
     }
     if (args.length < parameterTypes.length - optionalCount ||
@@ -350,6 +351,7 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
   private handleCall(
       callLocation: MLocation,
       funcType: MType,
+      funcSymbol: MSymbol | null,
       args: ast.Expression[],
       argLocations: MLocation[] | null): type.MType {
     if (funcType === type.Any) {
@@ -365,21 +367,39 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
         initMethodSymbol !== null && initMethodSymbol.valueType instanceof type.Function ?
           [initMethodSymbol.valueType.parameters, initMethodSymbol.valueType.optionalCount] :
           [[], 0];
+      let parameterNames: string[] | null = null;
+      if (initMethodSymbol?.functionSignature?.parameters) {
+        const parameters = initMethodSymbol.functionSignature.parameters;
+        parameterNames = parameters.map(p => p[0]);
+      }
       this.checkArgTypes(
         callLocation,
+        funcType.symbol.name,
+        funcType.symbol.documentation,
         args,
         argLocations,
         parameterTypes,
-        optCount);
+        parameterNames,
+        optCount,
+        null);
       return instanceType;
     }
     if (funcType instanceof type.Function) {
+      let parameterNames: string[] | null = null;
+      if (funcSymbol && funcSymbol.functionSignature) {
+        const parameters = funcSymbol.functionSignature.parameters;
+        parameterNames = parameters.map(p => p[0]);
+      }
       this.checkArgTypes(
         callLocation,
+        funcSymbol?.name || null,
+        funcSymbol?.documentation || null,
         args,
         argLocations,
         funcType.parameters,
-        funcType.optionalCount);
+        parameterNames,
+        funcType.optionalCount,
+        funcType.returnType);
       return funcType.returnType;
     }
     this.errors.push(new MError(callLocation, `${funcType} is not callable`));
@@ -391,7 +411,14 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
 
   visitFunctionCall(e: ast.FunctionCall): type.MType {
     const funcType = this.solveExpression(e.func);
-    return this.handleCall(e.location, funcType, e.args, e.argLocations);
+    let funcSymbol: MSymbol | null = null;
+    if (e.func instanceof ast.GetVariable) {
+      const foundSymbol = this.scope.get(e.func.identifier.name);
+      if (foundSymbol) {
+        funcSymbol = foundSymbol;
+      }
+    }
+    return this.handleCall(e.location, funcType, funcSymbol, e.args, e.argLocations);
   }
 
   visitMethodCall(e: ast.MethodCall): type.MType {
@@ -408,7 +435,7 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
     }
     this.solver.recordSymbolUsage(e.identifier, methodSymbol);
     const methodType = methodSymbol.valueType || type.Any;
-    return this.handleCall(e.location, methodType, e.args, e.argLocations);
+    return this.handleCall(e.location, methodType, methodSymbol, e.args, e.argLocations);
   }
 
   private getFieldSymbolAndRecordUsage(
