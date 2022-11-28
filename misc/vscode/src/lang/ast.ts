@@ -134,10 +134,8 @@ export class Module {
   }
 
   findSignatureHelper(position: MPosition): MSignatureHelper | null {
-    console.log(`position = ${position}`);
     for (const sh of this.signatureHelpers) {
       const shRange = sh.location.range;
-      console.log(`  ${shRange}`);
       if (shRange.start.le(position) && position.le(shRange.end)) {
         return sh;
       }
