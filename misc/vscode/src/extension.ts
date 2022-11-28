@@ -5,6 +5,7 @@ import { definitionProvider } from './definitionprovider';
 import { hoverProvider } from './hoverprovider';
 import { initDiagnostic } from './diagnostics';
 import { completionProvider } from './completionprovider';
+import { signatureHelpProvider } from './signaturehelpprovider';
 
 export function activate(context: ExtensionContext) {
   context.subscriptions.push(vscode.commands.registerCommand(
@@ -22,5 +23,8 @@ export function activate(context: ExtensionContext) {
   context.subscriptions.push(vscode.languages.registerCompletionItemProvider(
     { language: 'mtots' },
     completionProvider, '.'));
+  context.subscriptions.push(vscode.languages.registerSignatureHelpProvider(
+    { language: 'mtots' },
+    signatureHelpProvider, '(', ','));
   initDiagnostic(context);
 }

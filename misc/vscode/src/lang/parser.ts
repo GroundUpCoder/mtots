@@ -1,6 +1,7 @@
 import * as ast from './ast';
 import { MError } from "./error";
 import { MLocation } from './location';
+import { MRange } from './range';
 import { MScanner } from "./scanner";
 import { MToken, MTokenType } from "./token";
 
@@ -163,14 +164,37 @@ export class MParser {
   }
 
   private parseArguments(): ast.Expression[] {
+    return this.parseArgumentsAndLocations()[0];
+  }
+
+  private parseArgumentsAndLocations(): [ast.Expression[], MLocation[]] {
     const args: ast.Expression[] = [];
+    const argLocations: MLocation[] = [];
+    while (true) {
+      const argStartPosition = this.peek.location.range.start;
+      if (this.at(')')) {
+        const argEndPosition = this.peek.location.range.start;
+        argLocations.push(new MLocation(
+          this.scanner.filePath,
+          new MRange(argStartPosition, argEndPosition)));
+        break;
+      }
+      args.push(this.parseExpression());
+      const argEndPosition = this.peek.location.range.start;
+      argLocations.push(new MLocation(
+        this.scanner.filePath,
+        new MRange(argStartPosition, argEndPosition)));
+      if (!this.consume(',')) {
+        break;
+      }
+    }
     while (!this.at(')')) {
       args.push(this.parseExpression());
       if (!this.consume(',')) {
         break;
       }
     }
-    return args;
+    return [args, argLocations];
   }
 
   private parsePrefix(): ast.Expression {
@@ -288,10 +312,10 @@ export class MParser {
         const identifier = this.parseIdentifier();
         if (this.at('(')) {
           this.advance();
-          const args = this.parseArguments();
+          const [args, argLocations] = this.parseArgumentsAndLocations();
           const endLocation = this.expect(')').location;
           const location = startLocation.merge(endLocation);
-          return new ast.MethodCall(location, lhs, identifier, args);
+          return new ast.MethodCall(location, lhs, identifier, args, argLocations);
         } else if (this.consume('=')) {
           const value = this.parseExpression();
           const location = startLocation.merge(value.location);
@@ -319,10 +343,10 @@ export class MParser {
       }
       case '(': {
         this.advance();
-        const args = this.parseArguments();
+        const [args, argLocations] = this.parseArgumentsAndLocations();
         const closeParenLocation = this.expect(')').location;
         const location = startLocation.merge(closeParenLocation);
-        return new ast.FunctionCall(location, lhs, args);
+        return new ast.FunctionCall(location, lhs, args, argLocations);
       }
       case 'as': {
         this.advance();

@@ -124,7 +124,8 @@ export class ParseContext {
       module.scope,
       module.errors,
       module.symbolUsages,
-      module.completionPoints);
+      module.completionPoints,
+      module.signatureHelpers);
 
     // PREPARE IMPORTS
     for (const imp of module.file.imports) {

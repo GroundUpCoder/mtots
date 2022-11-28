@@ -2,7 +2,9 @@ import * as ast from "./ast";
 import { CompletionPoint } from "./completion";
 import { MError } from "./error";
 import { MLocation } from "./location";
+import { MRange } from "./range";
 import { MScope } from "./scope";
+import { MSignatureHelper } from "./sighelp";
 import { MSymbol, MSymbolUsage } from "./symbol";
 import * as type from "./type";
 import { MType } from "./type";
@@ -14,6 +16,7 @@ export class Solver {
   readonly errors: MError[];
   readonly symbolUsages: MSymbolUsage[];
   readonly completionPoints: CompletionPoint[];
+  readonly signatureHelpers: MSignatureHelper[];
   private readonly typeVisitor: TypeVisitor;
   private readonly statementVisitor: StatementVisitor;
 
@@ -21,11 +24,13 @@ export class Solver {
       scope: MScope,
       errors: MError[],
       symbolUsages: MSymbolUsage[],
-      completionPoints: CompletionPoint[]) {
+      completionPoints: CompletionPoint[],
+      signatureHelpers: MSignatureHelper[]) {
     this.scope = scope;
     this.errors = errors;
     this.symbolUsages = symbolUsages;
     this.completionPoints = completionPoints;
+    this.signatureHelpers = signatureHelpers;
     this.typeVisitor = new TypeVisitor(this);
     this.statementVisitor = new StatementVisitor(this);
   }
@@ -303,8 +308,24 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
   private checkArgTypes(
       callLocation: MLocation,
       args: ast.Expression[],
+      argLocations: MLocation[] | null,
       parameterTypes: MType[],
       optionalCount: number) {
+    if (argLocations) {
+      for (let i = 0; i < argLocations.length; i++) {
+        this.solver.signatureHelpers.push(new MSignatureHelper(
+          argLocations[i], parameterTypes, i));
+      }
+    }
+    if (args.length === 0) {
+      this.solver.signatureHelpers.push(new MSignatureHelper(
+        callLocation, parameterTypes, 0));
+    } else {
+      for (let i = 0; i < args.length; i++) {
+        this.solver.signatureHelpers.push(new MSignatureHelper(
+          args[i].location, parameterTypes, i));
+      }
+    }
     if (args.length < parameterTypes.length - optionalCount ||
         args.length > parameterTypes.length) {
       this.errors.push(new MError(
@@ -326,7 +347,11 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
     }
   }
 
-  private handleCall(callLocation: MLocation, funcType: MType, args: ast.Expression[]): type.MType {
+  private handleCall(
+      callLocation: MLocation,
+      funcType: MType,
+      args: ast.Expression[],
+      argLocations: MLocation[] | null): type.MType {
     if (funcType === type.Any) {
       for (const arg of args) {
         this.solveExpression(arg);
@@ -343,12 +368,18 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
       this.checkArgTypes(
         callLocation,
         args,
+        argLocations,
         parameterTypes,
         optCount);
       return instanceType;
     }
     if (funcType instanceof type.Function) {
-      this.checkArgTypes(callLocation, args, funcType.parameters, funcType.optionalCount);
+      this.checkArgTypes(
+        callLocation,
+        args,
+        argLocations,
+        funcType.parameters,
+        funcType.optionalCount);
       return funcType.returnType;
     }
     this.errors.push(new MError(callLocation, `${funcType} is not callable`));
@@ -360,7 +391,7 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
 
   visitFunctionCall(e: ast.FunctionCall): type.MType {
     const funcType = this.solveExpression(e.func);
-    return this.handleCall(e.location, funcType, e.args);
+    return this.handleCall(e.location, funcType, e.args, e.argLocations);
   }
 
   visitMethodCall(e: ast.MethodCall): type.MType {
@@ -377,7 +408,7 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
     }
     this.solver.recordSymbolUsage(e.identifier, methodSymbol);
     const methodType = methodSymbol.valueType || type.Any;
-    return this.handleCall(e.location, methodType, e.args);
+    return this.handleCall(e.location, methodType, e.args, e.argLocations);
   }
 
   private getFieldSymbolAndRecordUsage(
@@ -464,7 +495,8 @@ class StatementVisitor extends ast.StatementVisitor<void> {
       scope,
       this.solver.errors,
       this.solver.symbolUsages,
-      this.solver.completionPoints);
+      this.solver.completionPoints,
+      this.solver.signatureHelpers);
   }
 
   private solveStatement(s: ast.Statement, scope: MScope | null = null) {

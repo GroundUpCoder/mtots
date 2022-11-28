@@ -3,6 +3,7 @@ import { MError } from "./error";
 import { MLocation } from "./location";
 import { MPosition } from "./position";
 import { MScope } from "./scope";
+import { MSignatureHelper } from "./sighelp";
 import { MSymbol, MSymbolUsage } from "./symbol";
 
 type LogicalOperator = (
@@ -101,6 +102,7 @@ export class Module {
   readonly scope: MScope;
   readonly symbolUsages: MSymbolUsage[];
   readonly completionPoints: CompletionPoint[];
+  readonly signatureHelpers: MSignatureHelper[];
   readonly errors: MError[];
   constructor(version: number, file: File, scope: MScope) {
     this.version = version;
@@ -108,6 +110,7 @@ export class Module {
     this.scope = scope;
     this.symbolUsages = [];
     this.completionPoints = [];
+    this.signatureHelpers = [];
     this.errors = [...file.syntaxErrors];
   }
 
@@ -125,6 +128,18 @@ export class Module {
       const cpRange = cp.location.range;
       if (cpRange.start.le(position) && position.le(cpRange.end)) {
         return cp;
+      }
+    }
+    return null;
+  }
+
+  findSignatureHelper(position: MPosition): MSignatureHelper | null {
+    console.log(`position = ${position}`);
+    for (const sh of this.signatureHelpers) {
+      const shRange = sh.location.range;
+      console.log(`  ${shRange}`);
+      if (shRange.start.le(position) && position.le(shRange.end)) {
+        return sh;
       }
     }
     return null;
@@ -440,10 +455,25 @@ export class DictDisplay extends Expression {
 export class FunctionCall extends Expression {
   readonly func: Expression;
   readonly args: Expression[];
-  constructor(location: MLocation, func: Expression, args: Expression[]) {
+
+  /**
+   * argLocations are the spaces where the arguments are.
+   * This overlaps with, but are generally broader than the
+   * locations of the expressions themselves.
+   * When available, these values are used to generate signature
+   * help providers.
+   */
+  readonly argLocations: MLocation[] | null;
+
+  constructor(
+      location: MLocation,
+      func: Expression,
+      args: Expression[],
+      argLocations: MLocation[] | null) {
     super(location);
     this.func = func;
     this.args = args;
+    this.argLocations = argLocations;
   }
   accept<R>(visitor: ExpressionVisitor<R>): R {
     return visitor.visitFunctionCall(this);
@@ -454,15 +484,27 @@ export class MethodCall extends Expression {
   readonly owner: Expression;
   readonly identifier: Identifier;
   readonly args: Expression[];
+
+  /**
+   * argLocations are the spaces where the arguments are.
+   * This overlaps with, but are generally broader than the
+   * locations of the expressions themselves.
+   * When available, these values are used to generate signature
+   * help providers.
+   */
+  readonly argLocations: MLocation[] | null;
+
   constructor(
       location: MLocation,
       owner: Expression,
       identifier: Identifier,
-      args: Expression[]) {
+      args: Expression[],
+      argLocations: MLocation[] | null = null) {
     super(location);
     this.owner = owner;
     this.identifier = identifier;
     this.args = args;
+    this.argLocations = argLocations;
   }
   accept<R>(visitor: ExpressionVisitor<R>): R {
     return visitor.visitMethodCall(this);
