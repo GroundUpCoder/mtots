@@ -229,7 +229,7 @@ def init(flags int) nil:
   call SDL_Quit() to force shutdown). If a subsystem is already loaded then
   this call will increase the ref-count and return.
 
-  \param flags subsystem initialization flags
+  - \param flags subsystem initialization flags
   \returns 0 on success or a negative error code on failure; call
            SDL_GetError() for more information.
 
@@ -256,4 +256,85 @@ def quit() nil:
   other dynamically loaded code.
 
   \since This function is available since SDL 2.0.0.
+  """
+
+def delay(ms int) nil:
+  r"""
+  NOTE: on emscripten, `emscripten_sleep` is used instead of `SDL_delay`.
+
+  ## SDL_delay
+
+  Wait a specified number of milliseconds before returning.
+
+  This function waits a specified number of milliseconds before returning. It
+  waits at least the specified time, but possibly longer due to OS
+  scheduling.
+
+  - \param ms the number of milliseconds to delay
+
+  \since This function is available since SDL 2.0.0.
+  """
+
+
+def pollEvent(event Event) bool:
+  r"""
+  ## SDL_PollEvent
+
+  Poll for currently pending events.
+
+  If `event` is not NULL, the next event is removed from the queue and stored
+  in the SDL_Event structure pointed to by `event`. The 1 returned refers to
+  this event, immediately stored in the SDL Event structure -- not an event
+  to follow.
+
+  If `event` is NULL, it simply returns 1 if there is an event in the queue,
+  but will not remove it from the queue.
+
+  As this function may implicitly call SDL_PumpEvents(), you can only call
+  this function in the thread that set the video mode.
+
+  SDL_PollEvent() is the favored way of receiving system events since it can
+  be done from the main loop and does not suspend the main loop while waiting
+  on an event to be posted.
+
+  The common practice is to fully process the event queue once every frame,
+  usually as a first step before updating the game's state:
+
+  ```c
+  while (game_is_still_running) {
+      SDL_Event event;
+      while (SDL_PollEvent(&event)) {  // poll until all events are handled!
+          // decide what to do with this event.
+      }
+
+      // update game state, draw the current frame
+  }
+  ```
+
+  \param event the SDL_Event structure to be filled with the next event from
+               the queue, or NULL
+  \returns 1 if there is a pending event or 0 if there are none available.
+
+  \since This function is available since SDL 2.0.0.
+  """
+
+
+class AudioDevice:
+  r"""
+  Wrapper around SDL_AudioDeviceID
+
+  ## typedef Uint32 SDL_AudioDeviceID
+
+  SDL Audio Device IDs.
+
+  A successful call to SDL_OpenAudio() is always device id 1, and legacy
+  SDL audio APIs assume you want this device ID. SDL_OpenAudioDevice() calls
+  always returns devices >= 2 on success. The legacy calls are good both
+  for backwards compatibility and when you don't care about multiple,
+  specific, or capture devices.
+  """
+
+
+def openAudioDevice(device optional[string]) AudioDevice:
+  r"""
   """

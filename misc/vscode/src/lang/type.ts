@@ -504,7 +504,7 @@ export class Instance extends MType {
 
   isAssignableTo(other: MType): boolean {
     // TODO: consider base classes
-    return this === other || Any.isAssignableTo(other);
+    return this === other || other === Optional.of(this) || Any.isAssignableTo(other);
   }
 
   closestCommonType(other: MType): MType {
@@ -662,6 +662,10 @@ export const BuiltinMap = new Map<BuiltinPrimitive, Map<string, MSymbol>>([
     mkmethod('__mul__', Function.of([Number], 0, String)),
     mkmethod('__getitem__', Function.of([Number], 0, String)),
     mkmethod('__mod__', Function.of([UntypedList], 0, String)),
+    mkmethod('__slice__', Function.of([Optional.of(Number), Optional.of(Number)], 2, String)),
+    mkmethod('strip', Function.of([String], 1, String)),
+    mkmethod('replace', Function.of([String, String], 0, String)),
+    mkmethod('join', Function.of([List.of(String)], 0, String)),
   ])],
 ]);
 
@@ -672,6 +676,9 @@ export function makeListMethodMap(self: List): Map<string, MSymbol> {
     mkmethod('__setitem__', Function.of([Number, self.itemType], 0, Nil)),
     mkmethod('__contains__', Function.of([self.itemType], 0, Bool)),
     mkmethod('__notcontains__', Function.of([self.itemType], 0, Bool)),
+    mkmethod('append', Function.of([self.itemType], 0, Nil)),
+    mkmethod('pop', Function.of([], 0, self.itemType)),
+    mkmethod('__iter__', Function.of([], 0, Function.of([], 0, Iterate.of(self.itemType)))),
   ]);
 }
 
@@ -681,5 +688,8 @@ export function makeDictMethodMap(self: Dict): Map<string, MSymbol> {
     mkmethod('__setitem__', Function.of([self.keyType, self.valueType], 0, Nil)),
     mkmethod('__contains__', Function.of([self.keyType], 0, Bool)),
     mkmethod('__notcontains__', Function.of([self.keyType], 0, Bool)),
+    mkmethod('__iter__', Function.of([], 0, Function.of([], 0, Iterate.of(self.keyType)))),
+    mkmethod('delete', Function.of([self.keyType], 0, Bool)),
+    mkmethod('rget', Function.of([self.valueType, self.keyType], 1, self.keyType)),
   ]);
 }

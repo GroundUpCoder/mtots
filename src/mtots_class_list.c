@@ -151,7 +151,7 @@ static ubool implListIter(i16 argCount, Value *args, Value *out) {
   ObjList *list;
   ObjListIterator *iter;
   if (!IS_LIST(receiver)) {
-    runtimeError("Expected list as receiver to List.__setitem__()");
+    runtimeError("Expected list as receiver to List.__iter__()");
     return UFALSE;
   }
   list = AS_LIST(receiver);
