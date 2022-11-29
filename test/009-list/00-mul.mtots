@@ -3,9 +3,10 @@
 print([nil] * 3)
 print([5] * 10)
 
-final inner = []
+final inner list[string] = []
 final outer = [inner] * 4
 print(outer)
 inner.append('hi')
 print(outer)
 
+abs(7)

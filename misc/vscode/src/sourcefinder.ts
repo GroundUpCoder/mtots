@@ -13,13 +13,26 @@ const roots = [
 ].filter(s => s.length > 0);
 
 
+async function openDocument(uri: Uri): Promise<vscode.TextDocument | null> {
+  try {
+    return await vscode.workspace.openTextDocument(uri);
+  } catch (e) {
+    // Assume that the document does not exist
+    return null;
+  }
+}
+
+
 export const DefaultSourceFinder: SourceFinder = async (path, oldUriAndVersion) => {
   const relativeFilePath = join(...path.split('.'));
   for (const root of roots) {
     for (const extension of ['.types.mtots', '.mtots']) {
       const filePath = join(root, relativeFilePath + extension);
       const uri = Uri.file(filePath);
-      const document = await vscode.workspace.openTextDocument(uri);
+      const document = await openDocument(uri);
+      if (document === null) {
+        continue;
+      }
       if (oldUriAndVersion) {
         const [oldUri, oldVersion] = oldUriAndVersion;
         if (oldUri.toString() === document.uri.toString() && oldVersion === document.version) {

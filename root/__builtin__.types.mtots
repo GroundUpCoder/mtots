@@ -17,7 +17,7 @@ def exit() noreturn:
   pass
 
 
-def type(value) type:
+def type(value) any:
   "Returns the value's class"
 
 
@@ -38,11 +38,11 @@ def int(value) int:
   """
 
 
-def str(value) str:
+def str(value) string:
   "Converts the given value to a string"
 
 
-def repr(value) str:
+def repr(value) string:
   "Converts the given value to a string representation"
 
 
@@ -60,3 +60,7 @@ def cos(x number) number:
 
 def tan(x number) number:
   "Returns the tangent of x radians"
+
+
+def print(x) nil:
+  "print "

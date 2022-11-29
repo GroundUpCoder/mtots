@@ -1,0 +1,36 @@
+r"""
+The operating system module
+"""
+
+r"""
+The path separator for the current system.
+On windows this value is '\\', and '/' everywhere else.
+"""
+final sep = '/'
+
+"A human readable name of the current operating system"
+final name = 'macos'
+
+
+def dirname(path string) string:
+  r"""
+  The dirname function deletes the filename portion, beginning with the
+  last path separator character to the end of string and returns the result
+  """
+
+
+def basename(path string) string:
+  r"""
+  The basename function deletes any prefix ending with the last path
+  separator character present in 'path' and returns the result.
+  """
+
+
+def join(parts list[string]) string:
+  r"""
+  The join function joins parts of a path into a single path
+  connected by the path separator character.
+
+  TODO: currently, join is actually variadic, but there's no way to
+  represent functions in mtots' type system.
+  """
