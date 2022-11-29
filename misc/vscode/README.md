@@ -8,6 +8,19 @@ language itself is more fleshed out.
 
 ## Release Notes
 
+### 0.0.5
+
+Bugfix for when modules cannot be found.
+
+### 0.0.4
+
+Actual smart language features!
+Diagnostics, goto-definition, auto-completes based on variables in scope and
+members available for a given value; parameter hints.
+
+Likely still lots of bugs that need to be squashed. Will address them
+as I use this extension and find them.
+
 ### 0.0.3
 
 `try` and `raise` are valid keywords
