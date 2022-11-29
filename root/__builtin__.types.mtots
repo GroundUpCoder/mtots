@@ -1,8 +1,30 @@
 
 
+class file:
+  pass
+
+
+final NAN number = 0
+final INFINITY number = 0
+
 
 def len(collection) int:
   "Returns the number of elements in a collection"
+
+
+def exit() noreturn:
+  pass
+
+
+def type(value) type:
+  "Returns the value's class"
+
+
+def chr(codePoint int) string:
+  r"""
+  Given a unicode code point, returns a
+  string of just that single code point.
+  """
 
 
 def range(start int, end int=0, step int=1) iterate[int]:
@@ -21,3 +43,19 @@ def str(value) str:
 
 def repr(value) str:
   "Converts the given value to a string representation"
+
+
+def abs(x number) number:
+  "Returns the absolute value of x"
+
+
+def sin(x number) number:
+  "Returns the sine of x radians"
+
+
+def cos(x number) number:
+  "Returns the cosine of x radians"
+
+
+def tan(x number) number:
+  "Returns the tangent of x radians"
