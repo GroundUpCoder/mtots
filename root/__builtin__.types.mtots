@@ -9,8 +9,12 @@ final NAN number = 0
 final INFINITY number = 0
 
 
-def len(collection) int:
+def len(iterable) int:
   "Returns the number of elements in a collection"
+
+
+def sorted(iterable, key any = nil) list:
+  "Sorts all the items in the iterable and returns them as a list"
 
 
 def exit() noreturn:
