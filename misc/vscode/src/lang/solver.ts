@@ -134,6 +134,7 @@ class TypeVisitor {
     switch (name) {
       case 'any': this.checkTypeArgc(te, 0); return type.Any;
       case 'noreturn': this.checkTypeArgc(te, 0); return type.NoReturn;
+      case 'StopIteration': this.checkTypeArgc(te, 0); return type.StopIteration;
       case 'nil': this.checkTypeArgc(te, 0); return type.Nil;
       case 'bool': this.checkTypeArgc(te, 0); return type.Bool;
       case 'float': // TODO: specialized float and int types

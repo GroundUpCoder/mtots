@@ -3,8 +3,9 @@
 class file:
   pass
 
-
+"NAN is not a number"
 final NAN number = 0
+
 final INFINITY number = 0
 
 

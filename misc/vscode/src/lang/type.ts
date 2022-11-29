@@ -105,6 +105,7 @@ export class BuiltinPrimitive extends MType {
   static UntypedList = new BuiltinPrimitive('list', Any);
   static UntypedDict = new BuiltinPrimitive('dict', Any);
   static UntypedFunction = new BuiltinPrimitive('function', Any);
+  static UntypedClass = new BuiltinPrimitive('class', Any);
 
   private constructor(name: string, parent: MType) {
     super();
@@ -165,6 +166,7 @@ export const UntypedModule = BuiltinPrimitive.UntypedModule;
 export const UntypedList = BuiltinPrimitive.UntypedList;
 export const UntypedDict = BuiltinPrimitive.UntypedDict;
 export const UntypedFunction = BuiltinPrimitive.UntypedFunction;
+export const UntypedClass = BuiltinPrimitive.UntypedClass;
 
 export class List extends MType {
   private static readonly map: Map<MType, List> = new Map();
@@ -325,6 +327,40 @@ export class Optional extends MType {
   }
 }
 
+export class StopIterationType extends MType {
+  static Instance = new StopIterationType();
+
+  private constructor() {
+    super();
+  }
+
+  isAssignableTo(other: MType): boolean {
+    if (this === other) {
+      return true;
+    }
+    if (other instanceof Iterate) {
+      return true;
+    }
+    return Any.isAssignableTo(other);
+  }
+
+  closestCommonType(other: MType): MType {
+    if (this === other) {
+      return this;
+    }
+    if (other instanceof Iterate) {
+      return other;
+    }
+    return Any;
+  }
+
+  toString(): string {
+    return 'StopIteration';
+  }
+}
+
+export const StopIteration = StopIterationType.Instance;
+
 /**
  * Union type between the given item type and StopIteration
  */
@@ -357,7 +393,7 @@ export class Iterate extends MType {
   }
 
   closestCommonType(other: MType): MType {
-    if (this === other) {
+    if (this === other || other === StopIteration) {
       return this;
     }
     if (other instanceof Iterate) {
@@ -431,11 +467,11 @@ export class Class extends MType {
   }
 
   isAssignableTo(other: MType): boolean {
-    return this === other || Any.isAssignableTo(other);
+    return this === other || UntypedClass.isAssignableTo(other);
   }
 
   closestCommonType(other: MType): MType {
-    return this === other ? this : Any;
+    return this === other ? this : UntypedClass.closestCommonType(other);
   }
 
   toString() {
@@ -598,6 +634,8 @@ AnyUnknownSymbol.valueType = Any;
 AnyUnknownSymbol.typeType = Any;
 
 export const AnyMap = mkmap([
+  mkmethod('__is__', Function.of([Any], 0, Bool)),
+  mkmethod('__isnot__', Function.of([Any], 0, Bool)),
   mkmethod('__eq__', Function.of([Any], 0, Bool)),
   mkmethod('__ne__', Function.of([Any], 0, Bool)),
   mkmethod('__lt__', Function.of([Any], 0, Bool)),
