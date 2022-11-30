@@ -275,6 +275,12 @@ export class MParser {
         const location = startLocation.merge(arg.location);
         return new ast.Logical(location, 'not', [arg]);
       }
+      case 'raise': {
+        this.advance();
+        const exc = this.parseExpression();
+        const location = startLocation.merge(exc.location);
+        return new ast.Raise(location, exc);
+      }
       case '~':
       case '-':
       case '+':
@@ -483,7 +489,8 @@ export class MParser {
     const statements: ast.Statement[] = [];
     while (this.consume('NEWLINE') || this.consume(';'));
     while (!this.at('DEDENT')) {
-      statements.push(this.parseDeclaration());
+      const itemDoc = getLastDocumentation(statements);
+      statements.push(this.parseDeclaration(itemDoc));
       while (this.consume('NEWLINE') || this.consume(';'));
     }
     const location = startLocation.merge(this.expect('DEDENT').location);
@@ -624,7 +631,7 @@ export class MParser {
     return new ast.NilLiteral(location, null);
   }
 
-  private parseVariableDeclaration(): ast.Variable {
+  private parseVariableDeclaration(itemDoc: string | null): ast.Variable {
     const startLocation = this.peek.location;
     const final = this.consume('final');
     if (!final) this.expect('var');
@@ -635,21 +642,21 @@ export class MParser {
     this.expect('=');
     const value = this.parseExpression();
     const location = startLocation.merge(value.location);
-    return new ast.Variable(location, final, identifier, typeExpression, value);
+    return new ast.Variable(location, itemDoc, final, identifier, typeExpression, value);
   }
 
-  private parseDeclaration(): ast.Statement {
+  private parseDeclaration(itemDoc: string | null): ast.Statement {
     switch (this.peek.type) {
       case 'def': return this.parseFunctionDeclaration();
-      case 'final': case 'var': return this.parseVariableDeclaration();
+      case 'final': case 'var': return this.parseVariableDeclaration(itemDoc);
       default: return this.parseStatement();
     }
   }
 
-  private parseModuleLevelDeclaration(): ast.Statement {
+  private parseModuleLevelDeclaration(itemDoc: string | null): ast.Statement {
     switch (this.peek.type) {
       case 'class': return this.parseClassDeclaration();
-      default: return this.parseDeclaration();
+      default: return this.parseDeclaration(itemDoc);
     }
   }
 
@@ -669,7 +676,8 @@ export class MParser {
         while (this.consume('NEWLINE') || this.consume(';'));
       }
       while (!this.at('EOF')) {
-        statements.push(this.parseModuleLevelDeclaration());
+        const itemDoc: string | null = getLastDocumentation(statements);
+        statements.push(this.parseModuleLevelDeclaration(itemDoc));
       }
       const location = startLocation.merge(this.peek.location);
       return new ast.File(location, documentation, imports, statements, []);
@@ -682,4 +690,17 @@ export class MParser {
       }
     }
   }
+}
+
+function getLastDocumentation(statements: ast.Statement[]): string | null {
+  if (statements.length > 1) {
+    const last = statements[statements.length - 1];
+    if (last instanceof ast.ExpressionStatement) {
+      const expr = last.expression;
+      if (expr instanceof ast.StringLiteral) {
+        return expr.value;
+      }
+    }
+  }
+  return null;
 }

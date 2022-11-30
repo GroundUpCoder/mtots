@@ -647,6 +647,7 @@ class StatementVisitor extends ast.StatementVisitor<void> {
     const valueType = this.solver.solveExpression(s.valueExpression, explicitType || type.Any);
     const variableType = explicitType ? explicitType : valueType;
     variableSymbol.valueType = variableType;
+    variableSymbol.documentation = s.documentation;
     if (explicitType && !valueType.isAssignableTo(explicitType)) {
       this.solver.errors.push(new MError(
         s.location,

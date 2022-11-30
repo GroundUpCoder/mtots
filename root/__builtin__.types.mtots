@@ -4,9 +4,9 @@ class file:
   pass
 
 "NAN is not a number"
-final NAN number = 0
+final NAN number = raise 0
 
-final INFINITY number = 0
+final INFINITY number = raise 0
 
 
 def len(iterable) int:

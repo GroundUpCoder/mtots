@@ -253,17 +253,20 @@ export class Import extends Ast {
 
 /** Variable Declaration */
 export class Variable extends Statement {
+  readonly documentation: string | null;
   readonly final: boolean;
   readonly identifier: Identifier;
   readonly typeExpression: TypeExpression | null;
   readonly valueExpression: Expression;
   constructor(
       location: MLocation,
+      documentation: string | null,
       final: boolean,
       identifier: Identifier,
       typeExpression: TypeExpression | null,
       valueExpression: Expression) {
     super(location);
+    this.documentation = documentation;
     this.final = final;
     this.identifier = identifier;
     this.typeExpression = typeExpression;
