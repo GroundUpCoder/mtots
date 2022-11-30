@@ -260,6 +260,13 @@ export class MParser {
         this.advance();
         return new ast.NilLiteral(startLocation, null);
       }
+      case 'this':
+      case 'super': {
+        const name = this.advance().type;
+        return new ast.GetVariable(
+          startLocation,
+          new ast.Identifier(startLocation, name));
+      }
       case 'IDENTIFIER': {
         const identifier = this.parseIdentifier();
         if (this.consume('=')) {

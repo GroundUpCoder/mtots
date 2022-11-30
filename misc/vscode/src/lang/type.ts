@@ -629,7 +629,7 @@ function mkmap(symbols: MSymbol[]): Map<string, MSymbol> {
   return new Map(symbols.map(s => [s.name, s]));
 }
 
-export const AnyUnknownSymbol = new MSymbol('any', null, true, null);
+export const AnyUnknownSymbol = new MSymbol('_', null, true, null);
 AnyUnknownSymbol.valueType = Any;
 AnyUnknownSymbol.typeType = Any;
 

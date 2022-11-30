@@ -18,7 +18,7 @@ export class Solver {
   readonly completionPoints: CompletionPoint[];
   readonly signatureHelpers: MSignatureHelper[];
   private readonly typeVisitor: TypeVisitor;
-  private readonly statementVisitor: StatementVisitor;
+  readonly statementVisitor: StatementVisitor;
 
   constructor(
       scope: MScope,
@@ -220,6 +220,9 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
     this.solver.completionPoints.push(new CompletionPoint(e.identifier.location, this.scope));
     const symbol = this.scope.get(e.identifier.name);
     if (!symbol) {
+      this.errors.push(new MError(
+        e.location,
+        `Variable '${e.identifier.name}' not found`));
       return type.Any;
     }
     this.solver.recordSymbolUsage(e.identifier, symbol);
@@ -229,6 +232,9 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
   visitSetVariable(e: ast.SetVariable): type.MType {
     const symbol = this.scope.get(e.identifier.name);
     if (!symbol) {
+      this.errors.push(new MError(
+        e.location,
+        `Variable '${e.identifier.name}' not found`));
       return type.Any;
     }
     this.solver.recordSymbolUsage(e.identifier, symbol);
@@ -613,15 +619,31 @@ class StatementVisitor extends ast.StatementVisitor<void> {
     }
     const classScope = new MScope(this.solver.scope);
     const classSolver = this.withScope(classScope);
-    const baseValueTypes: MType[] = s.bases.map(be => classSolver.solveExpression(be));
-    for (const baseValueType of baseValueTypes) {
+    const baseValueTypes: type.Class[] = [];
+    for (const be of s.bases) {
+      const baseValueType = this.solveExpression(be);
       if (baseValueType instanceof type.Class) {
         for (const [key, value] of baseValueType.symbol.members) {
-          classSymbol.members.set(key, value);
+          if (!classSymbol.members.has(key)) {
+            classSymbol.members.set(key, value);
+          }
         }
+        baseValueTypes.push(baseValueType);
+      } else {
+        classSolver.errors.push(new MError(
+          be.location,
+          `Expected Class but got ${baseValueType}`));
       }
     }
     classSymbol.documentation = s.documentation?.value || null;
+    const thisIdentifier = new ast.Identifier(s.identifier.location, 'this');
+    const thisSymbol = classSolver.recordSymbolDefinition(thisIdentifier, true);
+    thisSymbol.valueType = type.Instance.of(classSymbol);
+    if (baseValueTypes.length > 0) {
+      const superIdentifier = new ast.Identifier(s.identifier.location, 'super');
+      const superSymbol = classSolver.recordSymbolDefinition(superIdentifier, true);
+      superSymbol.valueType = type.Instance.of(baseValueTypes[0].symbol);
+    }
     for (const field of s.fields) {
       const fieldSymbol = classSolver.recordSymbolDefinition(
         field.identifier, false, field.final);
@@ -633,7 +655,7 @@ class StatementVisitor extends ast.StatementVisitor<void> {
       const methodSymbol = classSolver.recordSymbolDefinition(method.identifier, false);
       methodSymbol.documentation = method.documentation?.value || null;
       classSymbol.members.set(methodSymbol.name, methodSymbol);
-      this.visitFunctionOrMethod(method, methodSymbol);
+      classSolver.statementVisitor.visitFunctionOrMethod(method, methodSymbol);
     }
   }
 
