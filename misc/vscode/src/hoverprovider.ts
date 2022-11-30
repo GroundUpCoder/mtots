@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as type from './lang/type';
 import * as converter from './converter';
 import { MContext } from './state';
 
@@ -28,11 +29,20 @@ export const hoverProvider: vscode.HoverProvider = {
         signatureMarkdownString.appendCodeblock(signature.format(symbol.name));
         markedStrings.push(signatureMarkdownString);
       } else {
-        const type = symbol.valueType
-        if (type) {
+        const valueType = symbol.valueType
+        if (valueType) {
           const typeMarkdownString = new vscode.MarkdownString();
-          typeMarkdownString.appendCodeblock(type.format(symbol.final, symbol.name));
+          typeMarkdownString.appendCodeblock(valueType.format(symbol.final, symbol.name));
           markedStrings.push(typeMarkdownString);
+        } else {
+          const typeType = symbol.typeType;
+          if (typeType) {
+            if (typeType instanceof type.BuiltinPrimitive) {
+              const builtinMarkdownString = new vscode.MarkdownString();
+              builtinMarkdownString.appendCodeblock(`class ${typeType.name}(Builtin)`);
+              markedStrings.push(builtinMarkdownString);
+            }
+          }
         }
       }
       const documentation = symbol.documentation;

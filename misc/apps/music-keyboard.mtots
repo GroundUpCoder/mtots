@@ -1,14 +1,14 @@
 import sdl
 
 final AMPLITUDE = 63
-final SAMPLE_RATE int = 44100
-final SCREEN_WIDTH int = 640
-final SCREEN_HEIGHT int = 480
-final FPS int = 60
-final TICKS_PER_FRAME int = (1 / FPS) * 1000 # 1 tick <-> millis
+final SAMPLE_RATE Int = 44100
+final SCREEN_WIDTH Int = 640
+final SCREEN_HEIGHT Int = 480
+final FPS Int = 60
+final TICKS_PER_FRAME Int = (1 / FPS) * 1000 # 1 tick <-> millis
 
-final STAFF_DISTANCE int = 25 # 25 pixels between adjacent pairs of staff lines
-final STAFF_THICKNESS int = 2 # thickness of each staff line
+final STAFF_DISTANCE Int = 25 # 25 pixels between adjacent pairs of staff lines
+final STAFF_THICKNESS Int = 2 # thickness of each staff line
 
 sdl.init(sdl.INIT_AUDIO | sdl.INIT_VIDEO)
 
@@ -17,8 +17,8 @@ sdl.init(sdl.INIT_AUDIO | sdl.INIT_VIDEO)
 ################################################################
 # we can't initialize this right away on web
 var adev optional[sdl.AudioDevice] = nil
-final keyToTrackMap dict[int, int] = {}
-final trackToKeyMap list[int?] = [nil as int?] * sdl.AUDIO_TRACK_COUNT
+final keyToTrackMap Dict[Int, Int] = {}
+final trackToKeyMap List[Int?] = [nil as Int?] * sdl.AUDIO_TRACK_COUNT
 final keyToNoteID = {
 
   # Number Row (sharp and flats for the QWERTY row)
@@ -121,7 +121,7 @@ final waveforms = [
 ]
 var waveformIndex = 0
 
-def computeNoteIndex(noteID string) int:
+def computeNoteIndex(noteID String) Int:
   # The note index is useful in determining the position
   # of where the note should be drawn on the staff
   var letter = noteID[0]
@@ -135,7 +135,7 @@ def computeNoteIndex(noteID string) int:
 for noteID in noteIDToFreq:
   print('%s -> %s' % [noteID, computeNoteIndex(noteID)])
 
-def getOpenTrack() int?:
+def getOpenTrack() Int?:
   for t in range(sdl.AUDIO_TRACK_COUNT):
     if trackToKeyMap[t] == nil:
       return t
@@ -239,7 +239,7 @@ def eventLoop() nil:
     rect2.x = rect1.x + 4 * STAFF_DISTANCE // 5
     for trackID in range(len(trackToKeyMap)):
       if trackToKeyMap[trackID] != nil:
-        final noteID = keyToNoteID[trackToKeyMap[trackID] as int]
+        final noteID = keyToNoteID[trackToKeyMap[trackID] as Int]
         final noteIndex = computeNoteIndex(noteID)
         final indexOffset = noteIndex - A4_INDEX
         rect1.x = SCREEN_WIDTH // 3 + trackID * STAFF_DISTANCE

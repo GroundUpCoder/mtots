@@ -2,7 +2,6 @@ import * as ast from "./ast";
 import { CompletionPoint } from "./completion";
 import { MError } from "./error";
 import { MLocation } from "./location";
-import { MRange } from "./range";
 import { MScope } from "./scope";
 import { MSignatureHelper } from "./sighelp";
 import { MSymbol, MSymbolUsage } from "./symbol";
@@ -132,22 +131,33 @@ class TypeVisitor {
     }
     const name = te.identifier.toString();
     switch (name) {
-      case 'any': this.checkTypeArgc(te, 0); return type.Any;
+      case 'Any': this.checkTypeArgc(te, 0); return type.Any;
       case 'noreturn': this.checkTypeArgc(te, 0); return type.NoReturn;
       case 'StopIteration': this.checkTypeArgc(te, 0); return type.StopIteration;
       case 'nil': this.checkTypeArgc(te, 0); return type.Nil;
-      case 'bool': this.checkTypeArgc(te, 0); return type.Bool;
-      case 'float': // TODO: specialized float and int types
-      case 'int':
-      case 'number': this.checkTypeArgc(te, 0); return type.Number;
-      case 'string': this.checkTypeArgc(te, 0); return type.String;
-      case 'list':
+      case 'Bool':
+        this.checkTypeArgc(te, 0);
+        this.symbolUsages.push(new MSymbolUsage(
+          te.identifier.location, type.BoolSymbol));
+        return type.Bool;
+      case 'Float': // TODO: specialized float and int types
+      case 'Int':
+      case 'Number':
+        this.checkTypeArgc(te, 0);
+        this.symbolUsages.push(new MSymbolUsage(
+          te.identifier.location, type.NumberSymbol));
+        return type.Number;
+      case 'String':
+        this.symbolUsages.push(new MSymbolUsage(
+          te.identifier.location, type.StringSymbol));
+        this.checkTypeArgc(te, 0); return type.String;
+      case 'List':
         if (te.args.length === 0) {
           return type.UntypedList;
         }
         this.checkTypeArgc(te, 1);
         return type.List.of(this.solveTypeExpression(te.args[0]));
-      case 'dict':
+      case 'Dict':
         if (te.args.length === 0) {
           return type.UntypedDict;
         }
@@ -161,7 +171,7 @@ class TypeVisitor {
       case 'iterate':
         this.checkTypeArgc(te, 1);
         return type.Iterate.of(this.solveTypeExpression(te.args[0]));
-      case 'function':
+      case 'Function':
         if (te.args.length === 0) {
           return type.UntypedFunction;
         }

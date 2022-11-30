@@ -44,6 +44,11 @@
 					"match": "\\b(Nil|Bool|Number|String|List|Dict|Function|Class|File|Table)\\b"
 				},
 				{
+					"comment": "Pseudo Types (Not provide by the runtime, purely for type annotations)",
+					"name": "support.class.mtots",
+					"match": "\\b(Int|Float)\\b"
+				},
+				{
 					"comment": "Globals provided by the runtime (variables and constants)",
 					"name": "support.variable.mtots",
 					"match": "\\b(len|exit|type|repr|str|chr|ord|print|range|open|StopIteration)\\b"

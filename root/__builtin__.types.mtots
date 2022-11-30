@@ -4,16 +4,16 @@ class file:
   pass
 
 "NAN is not a number"
-final NAN number = raise 0
+final NAN Number = raise 0
 
-final INFINITY number = raise 0
+final INFINITY Number = raise 0
 
 
-def len(iterable) int:
+def len(iterable) Int:
   "Returns the number of elements in a collection"
 
 
-def sorted(iterable, key any = nil) list:
+def sorted(iterable, key Any = nil) List:
   "Sorts all the items in the iterable and returns them as a list"
 
 
@@ -21,48 +21,54 @@ def exit() noreturn:
   pass
 
 
-def type(value) any:
+def type(value) Any:
   "Returns the value's class"
 
 
-def chr(codePoint int) string:
+def chr(codePoint Int) String:
   r"""
   Given a unicode code point, returns a
   string of just that single code point.
   """
 
 
-def range(start int, end int=0, step int=1) iterate[int]:
+def ord(ch String) Int:
+  r"""
+  Given a string or length one, returns the code point of that character.
+  """
+
+
+def range(start Int, end Int=0, step Int=1) iterate[Int]:
   "Iterates over the numbers from start (inclusive) to end (exclusive)"
 
 
-def int(value) int:
+def int(value) Int:
   r"""
   Tries to convert the given value to an integer.
   """
 
 
-def str(value) string:
+def str(value) String:
   "Converts the given value to a string"
 
 
-def repr(value) string:
+def repr(value) String:
   "Converts the given value to a string representation"
 
 
-def abs(x number) number:
+def abs(x Number) Number:
   "Returns the absolute value of x"
 
 
-def sin(x number) number:
+def sin(x Float) Float:
   "Returns the sine of x radians"
 
 
-def cos(x number) number:
+def cos(x Float) Float:
   "Returns the cosine of x radians"
 
 
-def tan(x number) number:
+def tan(x Float) Float:
   "Returns the tangent of x radians"
 
 

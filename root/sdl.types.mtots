@@ -69,23 +69,23 @@ final MOUSEBUTTONUP = 0
 final MOUSEWHEEL = 0
 final QUIT = 0
 
-final scancode dict[string, int] = {}
-final key dict[string, int] = {}
+final scancode Dict[String, Int] = {}
+final key Dict[String, Int] = {}
 
 
 class Event:
   "Wrapper around SDL's native Event struct"
 
-  final type int
-  final key int
-  final repeat bool
+  final type Int
+  final key Int
+  final repeat Bool
 
 
 class Rect:
-  var x int
-  var y int
-  var w int
-  var h int
+  var x Int
+  var y Int
+  var w Int
+  var h Int
 
   def __init__(x, y, width, heigth):
     pass
@@ -95,7 +95,7 @@ class Window:
   "Window comments"
 
 
-def createWindow(title string, x int, y int, width int, height int, flags int) Window:
+def createWindow(title String, x Int, y Int, width Int, height Int, flags Int) Window:
   r"""
   Create a window
   """
@@ -122,7 +122,7 @@ class Renderer:
     * renderer - the rendering context
     """
 
-  def setDrawColor(r int, g int, b int, a int) int:
+  def setDrawColor(r Int, g Int, b Int, a Int) Int:
     r"""
     ## SDL_SetRenderDrawColor
     Set the color used for drawing operations (Rect, Line and Clear).
@@ -160,7 +160,7 @@ class Renderer:
     """
 
 
-def createRenderer(window Window, index int, flags int) Renderer:
+def createRenderer(window Window, index Int, flags Int) Renderer:
   r"""
   Create a 2D rendering context for a window.
 
@@ -176,7 +176,7 @@ def createRenderer(window Window, index int, flags int) Renderer:
   """
 
 
-def getTicks() float:
+def getTicks() Float:
   r"""
   The `getTicks` function does not actually use SDL_GetTicks().
   Instead it is `SDL_GetPerformanceCounter()/SDL_GetPerformanceFrequency() * 1000`
@@ -191,7 +191,7 @@ def getKeyboardState() KeyboardState:
   pass
 
 
-def init(flags int) nil:
+def init(flags Int) nil:
   r"""
   ## SDL_Init
   Initialize the SDL library.
@@ -258,7 +258,7 @@ def quit() nil:
   \since This function is available since SDL 2.0.0.
   """
 
-def delay(ms int) nil:
+def delay(ms Int) nil:
   r"""
   NOTE: on emscripten, `emscripten_sleep` is used instead of `SDL_delay`.
 
@@ -276,7 +276,7 @@ def delay(ms int) nil:
   """
 
 
-def pollEvent(event Event) bool:
+def pollEvent(event Event) Bool:
   r"""
   ## SDL_PollEvent
 
@@ -335,6 +335,6 @@ class AudioDevice:
   """
 
 
-def openAudioDevice(device optional[string]) AudioDevice:
+def openAudioDevice(device optional[String]) AudioDevice:
   r"""
   """

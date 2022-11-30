@@ -54,7 +54,7 @@ export abstract class MType {
 /** aka "Top Type" */
 class AnyType extends MType {
   toString() {
-    return 'any';
+    return 'Any';
   }
   isAssignableTo(other: MType): boolean {
     return this === other;
@@ -98,14 +98,14 @@ export class BuiltinPrimitive extends MType {
   readonly name: string;
 
   static Nil = new BuiltinPrimitive('nil', Any);
-  static Bool = new BuiltinPrimitive('bool', Any);
-  static Number = new BuiltinPrimitive('number', Any);
-  static String = new BuiltinPrimitive('string', Any);
-  static UntypedModule = new BuiltinPrimitive('module', Any);
-  static UntypedList = new BuiltinPrimitive('list', Any);
-  static UntypedDict = new BuiltinPrimitive('dict', Any);
-  static UntypedFunction = new BuiltinPrimitive('function', Any);
-  static UntypedClass = new BuiltinPrimitive('class', Any);
+  static Bool = new BuiltinPrimitive('Bool', Any);
+  static Number = new BuiltinPrimitive('Number', Any);
+  static String = new BuiltinPrimitive('String', Any);
+  static UntypedModule = new BuiltinPrimitive('Module', Any);
+  static UntypedList = new BuiltinPrimitive('List', Any);
+  static UntypedDict = new BuiltinPrimitive('Dict', Any);
+  static UntypedFunction = new BuiltinPrimitive('Function', Any);
+  static UntypedClass = new BuiltinPrimitive('Class', Any);
 
   private constructor(name: string, parent: MType) {
     super();
@@ -210,7 +210,7 @@ export class List extends MType {
   }
 
   toString() {
-    return `list[${this.itemType}]`;
+    return `List[${this.itemType}]`;
   }
 }
 
@@ -267,7 +267,7 @@ export class Dict extends MType {
   }
 
   toString() {
-    return `dict[${this.keyType},${this.valueType}]`;
+    return `Dict[${this.keyType},${this.valueType}]`;
   }
 }
 
@@ -643,6 +643,21 @@ export const AnyMap = mkmap([
   mkmethod('__gt__', Function.of([Any], 0, Bool)),
   mkmethod('__ge__', Function.of([Any], 0, Bool)),
 ]);
+
+export const AnySymbol = new MSymbol('Any', null, true);
+AnySymbol.typeType = Any;
+
+export const BoolSymbol = new MSymbol('Bool', null, true);
+BoolSymbol.typeType = Bool;
+
+export const NumberSymbol = new MSymbol('Number', null, true);
+NumberSymbol.typeType = Number;
+NumberSymbol.documentation =
+  '(NOTE: Int and Float are just aliases to Number and are mostly ' +
+  'for documentation purposes only)';
+
+export const StringSymbol = new MSymbol('String', null, true);
+StringSymbol.typeType = String;
 
 export const BuiltinMap = new Map<BuiltinPrimitive, Map<string, MSymbol>>([
   [Number, mkmap([

@@ -629,7 +629,7 @@ export class MParser {
       new ast.QualifiedIdentifier(
         location,
         null,
-        new ast.Identifier(location, 'any')
+        new ast.Identifier(location, 'Any')
       ),
       []);
   }

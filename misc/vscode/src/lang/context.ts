@@ -18,9 +18,10 @@ export class ParseContext {
   private readonly moduleCache: Map<string, ast.Module> = new Map();
   private currentVersion: number = 1;
   readonly builtinScope: MScope = new MScope();
+  private builtinPromise: Promise<void>;
   constructor(sourceFinder: SourceFinder) {
     this.sourceFinder = sourceFinder;
-    this.loadBuiltin();
+    this.builtinPromise = this.loadBuiltin();
   }
 
   private async loadBuiltin() {
@@ -34,6 +35,7 @@ export class ParseContext {
   }
 
   async loadModuleWithContents(uri: Uri, contents: string) {
+    await this.builtinPromise;
     this.currentVersion++;
     const scanner = new MScanner(uri, contents);
     const parser = new MParser(scanner);
