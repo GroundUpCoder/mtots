@@ -1,7 +1,7 @@
 #ifndef mtots_value_h
 #define mtots_value_h
 
-#include "mtots_ref.h"
+#include "mtots_util.h"
 
 typedef struct CFunction CFunction;
 typedef struct Obj Obj;
@@ -127,11 +127,5 @@ const char *getTypePatternName(TypePattern pattern);
 /* Just a convenience function to check that a Value is
  * equal to the given C-string */
 ubool valueIsCString(Value value, const char *string);
-
-/* Direct access to references. These cannot be in mtots_ref.h because
- * they require references to Value.
- * However, they are implemented in mtots_ref.c */
-Value refGet(Ref r);
-void refSet(Ref r, Value v);
 
 #endif/*mtots_value_h*/
