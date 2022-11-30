@@ -32,11 +32,6 @@ Value STRING_VAL(String *string) {
   v.as.string = string;
   return v;
 }
-Value CFUNC_VAL(CFunc *func) {
-  Value v = {VAL_CFUNC};
-  v.as.cfunc = func;
-  return v;
-}
 Value CFUNCTION_VAL(CFunction *func) {
   Value v = {VAL_CFUNCTION};
   v.as.cfunction = func;
@@ -94,11 +89,6 @@ void printValue(Value value) {
     case VAL_STRING:
       printf("%s", AS_CSTRING(value));
       return;
-    case VAL_CFUNC: {
-      CFunc *fn = AS_CFUNC(value);
-      printf("<function %s at %p>", fn->name, (void*)fn);
-      return;
-    }
     case VAL_CFUNCTION: {
       CFunction *fn = AS_CFUNCTION(value);
       printf("<function %s at %p>", fn->name, (void*)fn);
@@ -126,7 +116,6 @@ const char *getValueTypeName(ValueType type) {
     case VAL_NIL: return "VAL_NIL";
     case VAL_NUMBER: return "VAL_NUMBER";
     case VAL_STRING: return "VAL_STRING";
-    case VAL_CFUNC: return "VAL_CFUNC";
     case VAL_CFUNCTION: return "VAL_CFUNCTION";
     case VAL_OPERATOR: return "VAL_OPERATOR";
     case VAL_SENTINEL: return "VAL_SENTINEL";
@@ -145,7 +134,6 @@ const char *getKindName(Value value) {
     case VAL_NIL: return "nil";
     case VAL_NUMBER: return "number";
     case VAL_STRING: return "string";
-    case VAL_CFUNC: return "cfunc";
     case VAL_CFUNCTION: return "cfunction";
     case VAL_OPERATOR: return "operator";
     case VAL_SENTINEL: return "sentinel";

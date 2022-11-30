@@ -61,20 +61,6 @@ void defineGlobal(const char *name, Value value) {
   pop();
 }
 
-void addNativeModuleCFunc(CFunc *cfunc) {
-  String *name;
-  if (cfunc->arity != 1) {
-    panic("Native modules must accept 1 argument but got %d", cfunc->arity);
-  }
-  name = internCString(cfunc->name);
-  push(STRING_VAL(name));
-  if (!mapSetStr(&vm.nativeModuleThunks, name, CFUNC_VAL(cfunc))) {
-    panic("Native module %s is already defined", name->chars);
-  }
-
-  pop(); /* name */
-}
-
 void addNativeModule(CFunction *func) {
   String *name;
   if (func->arity != 1) {
@@ -224,51 +210,6 @@ static ubool isIterator(Value value) {
     }
   }
   return UFALSE;
-}
-
-static ubool callCFunc(CFunc *cfunc, i16 argCount) {
-  Value *argsStart;
-  ubool status;
-  Ref resultRef;
-  RefSet argsRefSet;
-  StackState stackState;
-  if (cfunc->arity != argCount) {
-    /* not an exact match for the arity
-     * We need further checks */
-    if (cfunc->maxArity) {
-      /* we have optional args */
-      if (argCount < cfunc->arity) {
-        runtimeError(
-          "Function %s expects at least %d arguments but got %d",
-          cfunc->name, cfunc->arity, argCount);
-        return UFALSE;
-      } else if (argCount > cfunc->maxArity) {
-        runtimeError(
-          "Function %s expects at most %d arguments but got %d",
-          cfunc->name, cfunc->maxArity, argCount);
-        return UFALSE;
-      }
-      /* At this point we have argCount between
-       * cfunc->arity and cfunc->maxArity */
-    } else {
-      runtimeError(
-        "Function %s expects %d arguments but got %d",
-        cfunc->name, cfunc->arity, argCount);
-      return UFALSE;
-    }
-  }
-  argsStart = vm.stackTop - argCount;
-  argsRefSet.start = argsStart - vm.stack;
-  argsRefSet.length = argCount;
-  resultRef.i = argsRefSet.start - 1;
-  stackState = getStackState();
-  status = cfunc->body(resultRef, argsRefSet);
-  if (!status) {
-    return UFALSE;
-  }
-  restoreStackState(stackState);
-  vm.stackTop -= argCount;
-  return UTRUE;
 }
 
 static ubool callCFunction(CFunction *cfunc, i16 argCount) {
@@ -540,10 +481,7 @@ static ubool callOperator(Operator op, i16 argCount) {
 }
 
 static ubool callValue(Value callee, i16 argCount) {
-  if (IS_CFUNC(callee)) {
-    CFunc *cfunc = AS_CFUNC(callee);
-    return callCFunc(cfunc, argCount);
-  } else if (IS_CFUNCTION(callee)) {
+  if (IS_CFUNCTION(callee)) {
     CFunction *cfunc = AS_CFUNCTION(callee);
     return callCFunction(cfunc, argCount);
   } else if (IS_OBJ(callee)) {

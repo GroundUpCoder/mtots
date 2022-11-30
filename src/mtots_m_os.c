@@ -1,13 +1,14 @@
 #include "mtots_m_os.h"
 
-#include "mtots_ref.h"
+#include "mtots_vm.h"
 
 #include <string.h>
 #include <stdlib.h>
 
-static ubool implDirname(Ref out, RefSet args) {
-  const char *chars = getString(refAt(args, 0));
-  size_t i = stringSize(refAt(args, 0));
+static ubool implDirname(i16 argCount, Value *args, Value *out) {
+  String *string = AS_STRING(args[0]);
+  const char *chars = string->chars;
+  size_t i = string->length;
   while (i > 0 && chars[i - 1] == PATH_SEP) {
     i--;
   }
@@ -17,15 +18,20 @@ static ubool implDirname(Ref out, RefSet args) {
       break;
     }
   }
-  setString(out, chars, i);
+  *out = STRING_VAL(internString(chars, i));
   return UTRUE;
 }
 
-static CFunc funcDirname = { implDirname, "dirname", 1 };
+static TypePattern argsDirname[] = {
+  { TYPE_PATTERN_STRING },
+};
 
-static ubool implBasename(Ref out, RefSet args) {
-  const char *chars = getString(refAt(args, 0));
-  size_t i = stringSize(refAt(args, 0)), end;
+static CFunction funcDirname = { implDirname, "dirname", 1, 0, argsDirname };
+
+static ubool implBasename(i16 argCount, Value *args, Value *out) {
+  String *string = AS_STRING(args[0]);
+  const char *chars = string->chars;
+  size_t i = string->length, end;
   while (i > 0 && chars[i - 1] == PATH_SEP) {
     i--;
   }
@@ -35,70 +41,72 @@ static ubool implBasename(Ref out, RefSet args) {
       break;
     }
   }
-  setString(out, chars + i, end - i);
+  *out = STRING_VAL(internString(chars + i, end - i));
   return UTRUE;
 }
 
-static CFunc funcBasename = {implBasename, "basename", 1};
+static TypePattern argsBasename[] = {
+  { TYPE_PATTERN_STRING },
+};
+
+static CFunction funcBasename = {implBasename, "basename", 1, 0, argsBasename};
 
 /* TODO: For now, this is basically just a simple join, but in
  * the future, this function will have to evolve to match the
  * behaviors you would expect from a path join */
-static ubool implJoin(Ref out, RefSet args) {
-  size_t i, len = args.length - 1;
-  char *chars, *p;
-  for (i = 0; i < args.length; i++) {
-    len += stringSize(refAt(args, i));
-  }
-  p = chars = malloc(len + 1);
-  for (i = 0; i < args.length; i++) {
-    const char *schars = getString(refAt(args, i));
-    size_t slength = stringSize(refAt(args, i));
+static ubool implJoin(i16 argCount, Value *args, Value *out) {
+  ObjList *list = AS_LIST(args[0]);
+  size_t i, len = list->length;
+  StringBuffer sb;
+
+  initStringBuffer(&sb);
+
+  for (i = 0; i < len; i++) {
+    String *item;
     if (i > 0) {
-      *p++ = PATH_SEP;
+      sbputchar(&sb, PATH_SEP);
     }
-    memcpy(p, schars, slength);
-    p += slength;
+    if (!IS_STRING(list->buffer[i])) {
+      panic("Expected String but got %s", getKindName(list->buffer[i]));
+    }
+    item = AS_STRING(list->buffer[i]);
+    sbputstrlen(&sb, item->chars, item->length);
   }
-  *p = '\0';
-  if (p - chars != len) {
-    panic("internal consistency error in os.join()");
-  }
-  setString(out, chars, len);
-  free(chars);
+
+  *out = STRING_VAL(internString(sb.chars, sb.length));
+
+  freeStringBuffer(&sb);
+
   return UTRUE;
 }
 
-static CFunc funcJoin = { implJoin, "join", 1, MAX_ARG_COUNT };
+static TypePattern argsJoin[] = {
+  { TYPE_PATTERN_LIST },
+};
 
-static ubool impl(Ref out, RefSet args) {
-  Ref module = refAt(args, 0);
-  CFunc *cfuncs[] = {
+static CFunction funcJoin = { implJoin, "join", 1, 0, argsJoin };
+
+static ubool impl(i16 argCount, Value *args, Value *out) {
+  ObjInstance *module = AS_INSTANCE(args[0]);
+  CFunction *cfunctions[] = {
     &funcDirname,
     &funcBasename,
     &funcJoin,
   };
   size_t i;
-  StackState stackState = getStackState();
-  Ref ref = allocRef();
 
-  for (i = 0; i < sizeof(cfuncs)/sizeof(CFunc*); i++) {
-    setCFunc(ref ,cfuncs[i]);
-    setInstanceField(module, cfuncs[i]->name, ref);
+  for (i = 0; i < sizeof(cfunctions)/sizeof(CFunction*); i++) {
+    mapSetN(&module->fields, cfunctions[i]->name, CFUNCTION_VAL(cfunctions[i]));
   }
 
-  setCString(ref, OS_NAME);
-  setInstanceField(module, "name", ref);
+  mapSetN(&module->fields, "name", STRING_VAL(internCString(OS_NAME)));
+  mapSetN(&module->fields, "sep", STRING_VAL(internCString(PATH_SEP_STR)));
 
-  setCString(ref, PATH_SEP_STR);
-  setInstanceField(module, "sep", ref);
-
-  restoreStackState(stackState);
   return UTRUE;
 }
 
-static CFunc func = { impl, "os", 1 };
+static CFunction func = { impl, "os", 1 };
 
 void addNativeModuleOs() {
-  addNativeModuleCFunc(&func);
+  addNativeModule(&func);
 }

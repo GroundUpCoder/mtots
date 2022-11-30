@@ -8,13 +8,6 @@ typedef struct RefSet { i16 start, length; } RefSet;
 typedef struct Ref { i16 i; } Ref;
 typedef struct StackState { size_t size; } StackState;
 
-typedef struct CFunc {
-  ubool (*body)(Ref out, RefSet args);
-  const char *name;
-  i16 arity;
-  i16 maxArity;
-} CFunc;
-
 RefSet allocRefs(i16 n);
 Ref refAt(RefSet rs, i16 offset);
 Ref allocRef();
@@ -36,7 +29,6 @@ ubool isFile(Ref r);
 void setNil(Ref out);
 void setBool(Ref out, ubool value);
 void setNumber(Ref out, double value);
-void setCFunc(Ref out, CFunc *value);
 void setString(Ref out, const char *string, size_t length);
 void setCString(Ref out, const char *string);
 void setEmptyList(Ref out);
@@ -63,9 +55,5 @@ ubool getBool(Ref r);
 double getNumber(Ref r);
 const char *getString(Ref r);
 size_t stringSize(Ref r);
-
-
-/* Add new native modules */
-void addNativeModuleCFunc(CFunc *cfunc);
 
 #endif/*mtots_ref_h*/

@@ -81,24 +81,6 @@ static ubool importModuleNoCache(String *moduleName) {
           stackStart - vm.stack,
           vm.stackTop - vm.stack);
       }
-    } else if (IS_CFUNC(nativeModuleThunkValue)) {
-      CFunc *nativeModuleThunk;
-      RefSet moduleRefSet = allocRefs(1);
-      StackState stackState;
-      nativeModuleThunk = AS_CFUNC(nativeModuleThunkValue);
-      module = newModule(moduleName, UFALSE);
-      moduleValue = INSTANCE_VAL(module);
-
-      refSet(refAt(moduleRefSet, 0), INSTANCE_VAL(module));
-
-      stackState = getStackState();
-      /* NOTE: We depend on the native module thunk NOT actually returning
-       * any value. If it does, it will corrupt the slot that contains
-       * the module value */
-      if (!nativeModuleThunk->body(allocRef(), moduleRefSet)) {
-        return UFALSE;
-      }
-      restoreStackState(stackState);
     } else {
       abort();
     }

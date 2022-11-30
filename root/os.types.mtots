@@ -12,21 +12,21 @@ final sep = '/'
 final name = 'macos'
 
 
-def dirname(path string) string:
+def dirname(path String) String:
   r"""
   The dirname function deletes the filename portion, beginning with the
   last path separator character to the end of string and returns the result
   """
 
 
-def basename(path string) string:
+def basename(path String) String:
   r"""
   The basename function deletes any prefix ending with the last path
   separator character present in 'path' and returns the result.
   """
 
 
-def join(parts list[string]) string:
+def join(parts List[String]) String:
   r"""
   The join function joins parts of a path into a single path
   connected by the path separator character.

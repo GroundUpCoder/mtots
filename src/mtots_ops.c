@@ -13,7 +13,6 @@ ubool valuesIs(Value a, Value b) {
     case VAL_NIL: return UTRUE;
     case VAL_NUMBER: return AS_NUMBER(a) == AS_NUMBER(b);
     case VAL_STRING: return AS_STRING(a) == AS_STRING(b);
-    case VAL_CFUNC: return AS_CFUNC(a) == AS_CFUNC(b);
     case VAL_CFUNCTION: return AS_CFUNCTION(a) == AS_CFUNCTION(b);
     case VAL_OPERATOR: return AS_OPERATOR(a) == AS_OPERATOR(b);
     case VAL_SENTINEL: return AS_SENTINEL(a) == AS_SENTINEL(b);
@@ -32,7 +31,6 @@ ubool valuesEqual(Value a, Value b) {
     case VAL_NIL: return UTRUE;
     case VAL_NUMBER: return AS_NUMBER(a) == AS_NUMBER(b);
     case VAL_STRING: return AS_STRING(a) == AS_STRING(b);
-    case VAL_CFUNC: return AS_CFUNC(a) == AS_CFUNC(b);
     case VAL_CFUNCTION: return AS_CFUNCTION(a) == AS_CFUNCTION(b);
     case VAL_OPERATOR: return AS_OPERATOR(a) == AS_OPERATOR(b);
     case VAL_SENTINEL: return AS_SENTINEL(a) == AS_SENTINEL(b);
@@ -125,7 +123,6 @@ ubool valueLessThan(Value a, Value b) {
       }
       return lenA < lenB;
     }
-    case VAL_CFUNC: break;
     case VAL_CFUNCTION: break;
     case VAL_OPERATOR: break;
     case VAL_SENTINEL: break;
@@ -262,8 +259,7 @@ ubool valueRepr(StringBuffer *out, Value value) {
       sbputchar(out, '"');
       return UTRUE;
     }
-    case VAL_CFUNC: sbprintf(out, "<function %s>", AS_CFUNC(value)->name); return UTRUE;
-    case VAL_CFUNCTION: sbprintf(out, "<cfunction %s>", AS_CFUNCTION(value)->name); return UTRUE;
+    case VAL_CFUNCTION: sbprintf(out, "<function %s>", AS_CFUNCTION(value)->name); return UTRUE;
     case VAL_OPERATOR: sbprintf(out, "<operator %d>", AS_OPERATOR(value)); return UTRUE;
     case VAL_SENTINEL: sbprintf(out, "<sentinel %d>", AS_SENTINEL(value)); return UTRUE;
     case VAL_OBJ: {

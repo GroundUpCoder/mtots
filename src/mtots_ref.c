@@ -57,10 +57,6 @@ ubool isNumber(Ref r) {
   return IS_NUMBER(DEREF(r));
 }
 
-ubool isCFunc(Ref r) {
-  return IS_CFUNC(DEREF(r));
-}
-
 ubool isObj(Ref r) {
   return IS_OBJ(DEREF(r));
 }
@@ -99,10 +95,6 @@ void setBool(Ref out, ubool value) {
 
 void setNumber(Ref out, double value) {
   DEREF(out) = NUMBER_VAL(value);
-}
-
-void setCFunc(Ref out, CFunc *value) {
-  DEREF(out) = CFUNC_VAL(value);
 }
 
 void setString(Ref out, const char *value, size_t byteLength) {

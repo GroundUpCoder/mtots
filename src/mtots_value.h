@@ -41,7 +41,6 @@ typedef enum ValueType {
   VAL_NIL,
   VAL_NUMBER,
   VAL_STRING,
-  VAL_CFUNC,
   VAL_CFUNCTION,
   VAL_OPERATOR,
   VAL_SENTINEL,
@@ -54,7 +53,6 @@ typedef struct Value {
     ubool boolean;
     double number;
     String *string;
-    CFunc *cfunc;
     CFunction *cfunction; /* cfunction is deprecated, prefer cfunc */
     Operator op;
     Sentinel sentinel;
@@ -62,7 +60,6 @@ typedef struct Value {
   } as;
 } Value;
 
-/* NOTE: CFunction is deprecated. Use CFunc instead */
 struct CFunction {
   ubool (*body)(i16 argCount, Value *args, Value *out);
   const char *name;
@@ -83,7 +80,6 @@ typedef struct ValueArray {
 #define IS_NUMBER(value) ((value).type == VAL_NUMBER)
 #define IS_STRING(value) ((value).type == VAL_STRING)
 #define IS_CFUNCTION(value) ((value).type == VAL_CFUNCTION)
-#define IS_CFUNC(value) ((value).type == VAL_CFUNC)
 #define IS_OPERATOR(value) ((value).type == VAL_OPERATOR)
 #define IS_SENTINEL(value) ((value).type == VAL_SENTINEL)
 #define IS_OBJ(value) ((value).type == VAL_OBJ)
@@ -92,7 +88,6 @@ typedef struct ValueArray {
 #define AS_NUMBER(value) ((value).as.number)
 #define AS_STRING(value) ((value).as.string)
 #define AS_CSTRING(value) ((value).as.string->chars)
-#define AS_CFUNC(value) ((value).as.cfunc)
 #define AS_CFUNCTION(value) ((value).as.cfunction)
 #define AS_OPERATOR(value) ((value).as.op)
 #define AS_SENTINEL(value) ((value).as.sentinel)
@@ -104,7 +99,6 @@ Value BOOL_VAL(ubool value);
 Value NIL_VAL();
 Value NUMBER_VAL(double value);
 Value STRING_VAL(String *string);
-Value CFUNC_VAL(CFunc *func);
 Value CFUNCTION_VAL(CFunction *func);
 Value OPERATOR_VAL(Operator op);
 Value SENTINEL_VAL(Sentinel sentinel);

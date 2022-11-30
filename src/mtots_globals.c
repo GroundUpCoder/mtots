@@ -16,23 +16,27 @@ static ubool implClock(i16 argCount, Value *args, Value *out) {
 
 static CFunction cfunctionClock = { implClock, "clock", 0 };
 
-static ubool implExit(Ref out, RefSet args) {
+static ubool implExit(i16 argCount, Value *args, Value *out) {
   int exitCode = 0;
-  if (args.length > 0) {
-    exitCode = getNumber(refAt(args, 0));
+  if (argCount > 0) {
+    exitCode = AS_NUMBER(args[0]);
   }
   exit(exitCode);
   return UTRUE;
 }
 
-static CFunc cfuncExit = { implExit, "exit", 0, 1 };
+static TypePattern argsExit[] = {
+  { TYPE_PATTERN_NUMBER },
+};
 
-static ubool implType(Ref out, RefSet args) {
-  getClass(out, refAt(args, 0));
+static CFunction cfuncExit = { implExit, "exit", 0, 1, argsExit };
+
+static ubool implType(i16 argCount, Value *args, Value *out) {
+  *out = CLASS_VAL(getClassOfValue(args[0]));
   return UTRUE;
 }
 
-static CFunc cfuncType = { implType, "type", 1};
+static CFunction cfuncType = { implType, "type", 1};
 
 static ubool implRepr(i16 argCount, Value *args, Value *out) {
   StringBuffer sb;
@@ -405,8 +409,8 @@ void defineDefaultGlobals() {
   defineGlobal("len", OPERATOR_VAL(OperatorLen));
 
   defineGlobal("clock", CFUNCTION_VAL(&cfunctionClock));
-  defineGlobal("exit", CFUNC_VAL(&cfuncExit));
-  defineGlobal("type", CFUNC_VAL(&cfuncType));
+  defineGlobal("exit", CFUNCTION_VAL(&cfuncExit));
+  defineGlobal("type", CFUNCTION_VAL(&cfuncType));
   defineGlobal("repr", CFUNCTION_VAL(&cfunctionRepr));
   defineGlobal("str", CFUNCTION_VAL(&cfunctionStr));
   defineGlobal("chr", CFUNCTION_VAL(&cfunctionChr));
