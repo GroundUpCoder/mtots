@@ -8,6 +8,10 @@ language itself is more fleshed out.
 
 ## Release Notes
 
+### 0.0.6
+
+raise syntax and documentation for variables
+
 ### 0.0.5
 
 Bugfix for when modules cannot be found.
