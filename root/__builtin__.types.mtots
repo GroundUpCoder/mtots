@@ -1,7 +1,19 @@
 
 
-class file:
-  pass
+class File:
+
+  def write(data String) nil:
+    r"""
+    Write the given data to this File.
+    """
+
+  def read(n Int?=nil) String:
+    r"""
+    Read n bytes from this File.
+    """
+
+  def close() nil:
+    r"""Close this File"""
 
 "NAN is not a number"
 final NAN Number = raise 0
@@ -73,4 +85,4 @@ def tan(x Float) Float:
 
 
 def print(x) nil:
-  "print "
+  "print str(x) to stdout"
