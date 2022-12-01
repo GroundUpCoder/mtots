@@ -51,13 +51,6 @@ ubool valuesEqual(Value a, Value b) {
           }
           return memcmp(bA->buffer.data, bB->buffer.data, bA->buffer.length) == 0;
         }
-        case OBJ_BYTE_ARRAY: {
-          ObjByteArray *aa = (ObjByteArray*)objA, *ab = (ObjByteArray*)objB;
-          if (aa->length != ab->length) {
-            return UFALSE;
-          }
-          return memcmp(aa->buffer, ab->buffer, aa->length) == 0;
-        }
         case OBJ_LIST: {
           ObjList *listA = (ObjList*)objA, *listB = (ObjList*)objB;
           size_t i;
@@ -300,20 +293,6 @@ ubool valueRepr(StringBuffer *out, Value value) {
           sbputchar(out, '"');
           return UTRUE;
         }
-        case OBJ_BYTE_ARRAY: {
-          ObjByteArray *ba = AS_BYTE_ARRAY(value);
-          StringEscapeOptions opts;
-          initStringEscapeOptions(&opts);
-          opts.shorthandControlCodes = UFALSE;
-          opts.tryUnicode = UFALSE;
-          sbputchar(out, 'b');
-          sbputchar(out, '"');
-          escapeString2(out, (const char*)ba->buffer, ba->length, &opts);
-          sbputchar(out, '"');
-          return UTRUE;
-        }
-        case OBJ_BYTE_ARRAY_VIEW:
-          panic("TODO: repr ByteArrayView");
         case OBJ_LIST: {
           ObjList *list = AS_LIST(value);
           size_t i, len = list->length;

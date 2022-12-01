@@ -136,11 +136,6 @@ static void blackenObject(Obj *object) {
       break;
     case OBJ_BUFFER:
       break;
-    case OBJ_BYTE_ARRAY:
-      break;
-    case OBJ_BYTE_ARRAY_VIEW:
-      markObject((Obj*)((ObjByteArrayView*)object)->array);
-      break;
     case OBJ_LIST: {
       ObjList *list = (ObjList*)object;
       size_t i;
@@ -229,16 +224,6 @@ static void freeObject(Obj *object) {
       FREE(ObjBuffer, object);
       break;
     }
-    case OBJ_BYTE_ARRAY: {
-      ObjByteArray *byteArray = (ObjByteArray*)object;
-      FREE_ARRAY(u8, byteArray->buffer, byteArray->length);
-      FREE(ObjByteArray, object);
-      break;
-    }
-    case OBJ_BYTE_ARRAY_VIEW: {
-      FREE(ObjByteArrayView, object);
-      break;
-    }
     case OBJ_LIST: {
       ObjList *list = (ObjList*)object;
       FREE_ARRAY(Value, list->buffer, list->capacity);
@@ -313,8 +298,6 @@ static void markRoots() {
   markObject((Obj*)vm.numberClass);
   markObject((Obj*)vm.stringClass);
   markObject((Obj*)vm.bufferClass);
-  markObject((Obj*)vm.byteArrayClass);
-  markObject((Obj*)vm.byteArrayViewClass);
   markObject((Obj*)vm.listClass);
   markObject((Obj*)vm.tupleClass);
   markObject((Obj*)vm.mapClass);

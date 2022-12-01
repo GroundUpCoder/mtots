@@ -435,8 +435,6 @@ void defineDefaultGlobals() {
   mapSetStr(&vm.globals, vm.numberClass->name, CLASS_VAL(vm.numberClass));
   mapSetStr(&vm.globals, vm.stringClass->name, CLASS_VAL(vm.stringClass));
   mapSetStr(&vm.globals, vm.bufferClass->name, CLASS_VAL(vm.bufferClass));
-  mapSetStr(&vm.globals, vm.byteArrayClass->name, CLASS_VAL(vm.byteArrayClass));
-  mapSetStr(&vm.globals, vm.byteArrayViewClass->name, CLASS_VAL(vm.byteArrayViewClass));
   mapSetStr(&vm.globals, vm.listClass->name, CLASS_VAL(vm.listClass));
   mapSetStr(&vm.globals, vm.tupleClass->name, CLASS_VAL(vm.tupleClass));
   mapSetStr(&vm.globals, vm.mapClass->name, CLASS_VAL(vm.mapClass));

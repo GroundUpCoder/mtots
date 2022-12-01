@@ -10,8 +10,8 @@
 
 static ubool implAudioDeviceQueue(i16 argCount, Value *args, Value *out) {
   ObjAudioDevice *ad = (ObjAudioDevice*)AS_OBJ(args[-1]);
-  ObjByteArray *ba = AS_BYTE_ARRAY(args[0]);
-  if (SDL_QueueAudio(ad->handle, ba->buffer, ba->length) != 0) {
+  ObjBuffer *bo = AS_BUFFER(args[0]);
+  if (SDL_QueueAudio(ad->handle, bo->buffer.data, bo->buffer.length) != 0) {
     runtimeError("Failed to queue SDL audio: %s", SDL_GetError());
     return UFALSE;
   }
@@ -19,7 +19,7 @@ static ubool implAudioDeviceQueue(i16 argCount, Value *args, Value *out) {
 }
 
 static TypePattern argsAudioDeviceQueue[] = {
-  { TYPE_PATTERN_BYTE_ARRAY_OR_VIEW },
+  { TYPE_PATTERN_BUFFER },
 };
 
 static CFunction funcAudioDeviceQueue = {

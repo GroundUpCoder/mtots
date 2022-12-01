@@ -169,53 +169,6 @@ ObjBuffer *newBuffer() {
   return buffer;
 }
 
-ObjByteArray *newByteArray(size_t length) {
-  u8 *newBuffer = ALLOCATE(u8, length);
-  ObjByteArray *byteArray = ALLOCATE_OBJ(ObjByteArray, OBJ_BYTE_ARRAY);
-  memset(newBuffer, 0, length);
-  byteArray->buffer = newBuffer;
-  byteArray->length = length;
-  return byteArray;
-}
-
-ObjByteArray *takeByteArray(u8 *buffer, size_t length) {
-  ObjByteArray *byteArray = ALLOCATE_OBJ(ObjByteArray, OBJ_BYTE_ARRAY);
-  byteArray->buffer = buffer;
-  byteArray->length = length;
-  return byteArray;
-}
-
-ObjByteArray *copyByteArray(const u8 *buffer, size_t length) {
-  u8 *newBuffer = ALLOCATE(u8, length);
-  memcpy(newBuffer, buffer, length);
-  return takeByteArray(newBuffer, length);
-}
-
-static ObjByteArray *getUnderlyingByteArray(ObjByteArray *arrayOrView) {
-  while (arrayOrView->obj.type == OBJ_BYTE_ARRAY_VIEW) {
-    arrayOrView = ((ObjByteArrayView*)arrayOrView)->array;
-  }
-  if (arrayOrView->obj.type != OBJ_BYTE_ARRAY) {
-    abort(); /* some other type of object? needs to be handled */
-  }
-  return arrayOrView;
-}
-
-ObjByteArrayView *newByteArrayView(
-    size_t length, u8 *buffer, ObjByteArray *array) {
-  ObjByteArrayView *view = ALLOCATE_OBJ(ObjByteArrayView, OBJ_BYTE_ARRAY_VIEW);
-  view->obj.length = length;
-  view->obj.buffer = buffer;
-  view->array = getUnderlyingByteArray(array);
-  if (view->obj.buffer < array->buffer ||
-      view->obj.buffer >= array->buffer + array->length ||
-      view->obj.buffer + view->obj.length > array->buffer + array->length) {
-    /* Invalid view */
-    abort();
-  }
-  return view;
-}
-
 ObjList *newList(size_t size) {
   ObjList *list = ALLOCATE_OBJ(ObjList, OBJ_LIST);
   list->capacity = 0;
@@ -332,8 +285,6 @@ ObjClass *getClassOfValue(Value value) {
         case OBJ_NATIVE_CLOSURE: return vm.functionClass;
         case OBJ_INSTANCE: return AS_INSTANCE(value)->klass;
         case OBJ_BUFFER: return vm.bufferClass;
-        case OBJ_BYTE_ARRAY: return vm.byteArrayClass;
-        case OBJ_BYTE_ARRAY_VIEW: return vm.byteArrayViewClass;
         case OBJ_LIST: return vm.listClass;
         case OBJ_TUPLE: return vm.tupleClass;
         case OBJ_DICT: return vm.mapClass;
@@ -381,9 +332,6 @@ void printObject(Value value) {
     case OBJ_BUFFER:
       printf("<buffer %lu>", (unsigned long)AS_BUFFER(value)->buffer.length);
       break;
-    case OBJ_BYTE_ARRAY:
-      printf("<byteArray %lu>", (unsigned long)AS_BYTE_ARRAY(value)->length);
-      break;
     case OBJ_LIST:
       printf("<list %lu items>", (unsigned long) AS_LIST(value)->length);
       break;
@@ -416,8 +364,6 @@ const char *getObjectTypeName(ObjType type) {
   case OBJ_NATIVE_CLOSURE: return "OBJ_NATIVE_CLOSURE";
   case OBJ_INSTANCE: return "OBJ_INSTANCE";
   case OBJ_BUFFER: return "OBJ_BUFFER";
-  case OBJ_BYTE_ARRAY: return "OBJ_BYTE_ARRAY";
-  case OBJ_BYTE_ARRAY_VIEW: return "OBJ_BYTE_ARRAY_VIEW";
   case OBJ_LIST: return "OBJ_LIST";
   case OBJ_TUPLE: return "OBJ_TUPLE";
   case OBJ_DICT: return "OBJ_DICT";
@@ -446,14 +392,6 @@ Value INSTANCE_VAL(ObjInstance *instance) {
 
 Value BUFFER_VAL(ObjBuffer *buffer) {
   return OBJ_VAL_EXPLICIT((Obj*)buffer);
-}
-
-Value BYTE_ARRAY_VAL(ObjByteArray *byteArray) {
-  return OBJ_VAL_EXPLICIT((Obj*)byteArray);
-}
-
-Value BYTE_ARRAY_VIEW_VAL(ObjByteArrayView *byteArrayView) {
-  return OBJ_VAL_EXPLICIT((Obj*)byteArrayView);
 }
 
 Value THUNK_VAL(ObjThunk *thunk) {

@@ -197,7 +197,7 @@ static CFunction funcCreateRenderer = {
   argsCreateRenderer };
 
 static ubool implCreateRGBSurfaceFrom(i16 argCount, Value *args, Value *out) {
-  ObjByteArray *byteArray = AS_BYTE_ARRAY(args[0]);
+  ObjBuffer *bo = AS_BUFFER(args[0]);
   int width = AS_NUMBER(args[1]);
   int height = AS_NUMBER(args[2]);
   int depth = AS_NUMBER(args[3]);
@@ -207,9 +207,10 @@ static ubool implCreateRGBSurfaceFrom(i16 argCount, Value *args, Value *out) {
   Uint32 bmask = AS_NUMBER(args[7]);
   Uint32 amask = AS_NUMBER(args[8]);
   ObjSurface *surface = NEW_NATIVE(ObjSurface, &descriptorSurface);
+  bufferLock(&bo->buffer);
   surface->pixelData = args[0];
   surface->handle = SDL_CreateRGBSurfaceFrom(
-    byteArray->buffer,
+    bo->buffer.data,
     width, height, depth, pitch, rmask, gmask, bmask, amask);
   if (surface->handle == NULL) {
     runtimeError("Failed to create SDL Surface: %s", SDL_GetError());
@@ -220,7 +221,7 @@ static ubool implCreateRGBSurfaceFrom(i16 argCount, Value *args, Value *out) {
 }
 
 static TypePattern argsCreateRGBSurfaceFrom[] = {
-  { TYPE_PATTERN_BYTE_ARRAY_OR_VIEW },
+  { TYPE_PATTERN_BUFFER },
   { TYPE_PATTERN_NUMBER },
   { TYPE_PATTERN_NUMBER },
   { TYPE_PATTERN_NUMBER },

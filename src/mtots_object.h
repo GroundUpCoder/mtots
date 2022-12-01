@@ -16,8 +16,6 @@
 #define IS_NATIVE_CLOSURE(value) isObjType(value, OBJ_NATIVE_CLOSURE)
 #define IS_INSTANCE(value) isObjType(value, OBJ_INSTANCE)
 #define IS_BUFFER(value) isObjType(value, OBJ_BUFFER)
-#define IS_BYTE_ARRAY(value) isObjType(value, OBJ_BYTE_ARRAY)
-#define IS_BYTE_ARRAY_VIEW(value) isObjType(value, OBJ_BYTE_ARRAY_VIEW)
 #define IS_LIST(value) isObjType(value, OBJ_LIST)
 #define IS_TUPLE(value) isObjType(value, OBJ_TUPLE)
 #define IS_DICT(value) isObjType(value, OBJ_DICT)
@@ -30,8 +28,6 @@
 #define AS_NATIVE_CLOSURE(value) ((ObjNativeClosure*)AS_OBJ(value))
 #define AS_INSTANCE(value) ((ObjInstance*)AS_OBJ(value))
 #define AS_BUFFER(value) ((ObjBuffer*)AS_OBJ(value))
-#define AS_BYTE_ARRAY(value) ((ObjByteArray*)AS_OBJ(value))
-#define AS_BYTE_ARRAY_VIEW(value) ((ObjByteArrayView*)AS_OBJ(value))
 #define AS_LIST(value) ((ObjList*)AS_OBJ(value))
 #define AS_TUPLE(value) ((ObjTuple*)AS_OBJ(value))
 #define AS_DICT(value) ((ObjDict*)AS_OBJ(value))
@@ -57,8 +53,6 @@ typedef enum ObjType {
   OBJ_NATIVE_CLOSURE,
   OBJ_INSTANCE,
   OBJ_BUFFER,
-  OBJ_BYTE_ARRAY,
-  OBJ_BYTE_ARRAY_VIEW,
   OBJ_LIST,
   OBJ_TUPLE,
   OBJ_DICT,
@@ -96,23 +90,6 @@ typedef struct ObjBuffer {
   Obj obj;
   Buffer buffer;
 } ObjBuffer;
-
-/* NOTE: ByteArray objects can never change size. This is because in many
- * cases, a ByteArray will be used as a backing buffer (e.g. for SDL_Surface)
- * when one is needed. Reallocating could potentially invalidate data structures
- * that point to the underlying buffer */
-typedef struct ObjByteArray {
-  Obj obj;
-  size_t length;
-  u8 *buffer;
-} ObjByteArray;
-
-/* NOTE: The fields in ObjByteArrayView should always match ObjByteArray
- * In some cases, ObjByteArrayViews will be cast as ObjByteArray */
-typedef struct ObjByteArrayView {
-  ObjByteArray obj;
-  ObjByteArray *array;    /* for GC to keep underlying array alive */
-} ObjByteArrayView;
 
 typedef struct ObjList {
   Obj obj;
@@ -231,11 +208,6 @@ ObjNativeClosure *newNativeClosure(
   i16 maxArity);
 ObjInstance *newInstance(ObjClass *klass);
 ObjBuffer *newBuffer();
-ObjByteArray *newByteArray(size_t size);
-ObjByteArray *takeByteArray(u8 *buffer, size_t size);
-ObjByteArray *copyByteArray(const u8 *buffer, size_t size);
-ObjByteArrayView *newByteArrayView(
-    size_t length, u8 *buffer, ObjByteArray *array);
 ObjList *newList(size_t size);
 ObjTuple *copyTuple(Value *buffer, size_t length);
 ObjDict *newDict();
@@ -255,8 +227,6 @@ Value LIST_VAL(ObjList *list);
 Value DICT_VAL(ObjDict *dict);
 Value INSTANCE_VAL(ObjInstance *instance);
 Value BUFFER_VAL(ObjBuffer *buffer);
-Value BYTE_ARRAY_VAL(ObjByteArray *byteArray);
-Value BYTE_ARRAY_VIEW_VAL(ObjByteArrayView *byteArrayView);
 Value THUNK_VAL(ObjThunk *thunk);
 Value CLOSURE_VAL(ObjClosure *closure);
 Value FILE_VAL(ObjFile *file);
