@@ -5,10 +5,10 @@ import { MContext } from './state';
 
 function formatDocString(docString: string): string {
   if (docString.startsWith('\n    ')) {
-    return docString.replace(/\n    /g, '\n');
+    return docString.replace(/\n    /g, '\n').replace('\n', '');
   }
   if (docString.startsWith('\n  ')) {
-    return docString.replace(/\n  /g, '\n');
+    return docString.replace(/\n  /g, '\n').replace('\n', '');
   }
   return docString;
 }

@@ -392,7 +392,7 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
       this.checkArgTypes(
         callLocation,
         funcType.symbol.name,
-        funcType.symbol.documentation,
+        initMethodSymbol?.documentation || null,
         args,
         argLocations,
         parameterTypes,

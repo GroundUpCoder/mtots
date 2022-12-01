@@ -46,7 +46,7 @@
 				{
 					"comment": "Pseudo Types (Not provide by the runtime, purely for type annotations)",
 					"name": "support.class.mtots",
-					"match": "\\b(Int|Float)\\b"
+					"match": "\\b(Int|Float|ByteArray|ByteArrayView)\\b"
 				},
 				{
 					"comment": "Globals provided by the runtime (variables and constants)",

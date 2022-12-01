@@ -1,20 +1,4 @@
 
-
-class File:
-
-  def write(data String) nil:
-    r"""
-    Write the given data to this File.
-    """
-
-  def read(n Int?=nil) String:
-    r"""
-    Read n bytes from this File.
-    """
-
-  def close() nil:
-    r"""Close this File"""
-
 "NAN is not a number"
 final NAN Number = raise 0
 
@@ -86,3 +70,93 @@ def tan(x Float) Float:
 
 def print(x) nil:
   "print str(x) to stdout"
+
+
+class ByteArrayView:
+  r"View into ByteArray"
+
+  def raw() String:
+    "Gets this byte array as a raw String"
+
+  def view(start Int, end Int) ByteArrayView:
+    pass
+
+  def getI8(index Int) Int:
+    pass
+
+  def getU8(index Int) Int:
+    pass
+
+  def getI16(index Int) Int:
+    pass
+
+  def getU16(index Int) Int:
+    pass
+
+  def getI32(index Int) Int:
+    pass
+
+  def getU32(index Int) Int:
+    pass
+
+  def getF32(index Int) Float:
+    pass
+
+  def getF64(index Int) Float:
+    pass
+
+  def setI8(index Int, value Int):
+    pass
+
+  def setU8(index Int, value Int):
+    pass
+
+  def setI16(index Int, value Int):
+    pass
+
+  def setU16(index Int, value Int):
+    pass
+
+  def setI32(index Int, value Int):
+    pass
+
+  def setU32(index Int, value Int):
+    pass
+
+  def setF32(index Int, value Float):
+    pass
+
+  def setF64(index Int, value Float):
+    pass
+
+
+class ByteArray(ByteArrayView):
+  r"""
+  A mutable array of bytes. Even though the bytes are mutable,
+  the size is fixed.
+  """
+
+  def __init__(n) nil:
+    r"""
+    Argument n may be one of:
+    * Int - to create a zerod out ByteArray of n bytes
+    * ByteArray - to create a copy
+    * String - to create a ByteArray by copying the bytes in a String
+    * List[Int] - from a list of direct byte values
+    """
+
+
+class File:
+
+  def write(data String) nil:
+    r"""
+    Write the given data to this File.
+    """
+
+  def read(n Int?=nil) String:
+    r"""
+    Read n bytes from this File.
+    """
+
+  def close() nil:
+    r"""Close this File"""
