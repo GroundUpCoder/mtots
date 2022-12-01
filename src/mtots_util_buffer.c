@@ -52,6 +52,9 @@ static void setDataWithByteOrder(Buffer *buf, size_t pos, void *src, size_t leng
 }
 
 static void addBufferSize(Buffer *buf, size_t length) {
+  if (buf->isLocked) {
+    panic("Cannot increase the size of a locked Buffer");
+  }
   if (buf->length + length > buf->capacity) {
     do {
       buf->capacity = buf->capacity < 8 ? 8 : 2 * buf->capacity;
@@ -71,6 +74,26 @@ void initBuffer(Buffer *buf) {
   buf->data = NULL;
   buf->length = buf->capacity = 0;
   buf->byteOrder = LITTLE_ENDIAN;
+  buf->isLocked = UFALSE;
+}
+
+void bufferLock(Buffer *buf) {
+  buf->isLocked = UTRUE;
+}
+
+void bufferSetLength(Buffer *buf, size_t newLength) {
+  if (buf->isLocked) {
+    panic("Cannot change the size of a locked buffer");
+  }
+  if (newLength <= buf->length) {
+    buf->length = newLength;
+  } else {
+    size_t i, oldLength = buf->length;
+    addBufferSize(buf, newLength - buf->length);
+    for (i = oldLength; i < newLength; i++) {
+      buf->data[i] = 0;
+    }
+  }
 }
 
 void freeBuffer(Buffer *buf) {

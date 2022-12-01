@@ -12,10 +12,22 @@ typedef struct Buffer {
   u8 *data;
   size_t length, capacity;
   ByteOrder byteOrder;
+
+  /**
+   * When a Buffer is locked, it may no longer grow in size.
+   * It can still mutate values with bufferSet* methods.
+   *
+   * NOTE: A locked Buffer should never be unlocked. There may be
+   * entities holding pointers to the raw data assuming that
+   * the Buffer is locked.
+   */
+  ubool isLocked;
 } Buffer;
 
 void initBuffer(Buffer *buf);
 void freeBuffer(Buffer *buf);
+void bufferLock(Buffer *buf);
+void bufferSetLength(Buffer *buf, size_t newLength);
 u8 bufferGetU8(Buffer *buf, size_t pos);
 u16 bufferGetU16(Buffer *buf, size_t pos);
 u32 bufferGetU32(Buffer *buf, size_t pos);

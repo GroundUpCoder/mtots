@@ -93,6 +93,12 @@ class Buffer:
   def toRawString() String:
     "Returns a new String with the current contents of this Buffer"
 
+  def isLocked() Bool:
+    "Indicates whether this Buffer is locked and can no longer change in size"
+
+  def lock() nil:
+    "Lock this buffer so that it may no longer change in size"
+
   def getI8(index Int) Int:
     pass
 

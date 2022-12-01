@@ -5,6 +5,22 @@
 #include <stdlib.h>
 
 
+static ubool implBufferLock(i16 argCount, Value *args, Value *out) {
+  ObjBuffer *bo = AS_BUFFER(args[-1]);
+  bufferLock(&bo->buffer);
+  return UTRUE;
+}
+
+static CFunction funcBufferLock = { implBufferLock, "lock", 0 };
+
+static ubool implBufferIsLocked(i16 argCount, Value *args, Value *out) {
+  ObjBuffer *bo = AS_BUFFER(args[-1]);
+  *out = BOOL_VAL(bo->buffer.isLocked);
+  return UTRUE;
+}
+
+static CFunction funcBufferIsLocked = { implBufferIsLocked, "isLocked", 0 };
+
 static ubool implBufferAddI8(i16 argCount, Value *args, Value *out) {
   ObjBuffer *bo = AS_BUFFER(args[-1]);
   bufferAddI8(&bo->buffer, AS_NUMBER(args[0]));
@@ -351,6 +367,8 @@ static CFunction funcBufferSetF64 = {
 
 void initBufferClass() {
   CFunction *methods[] = {
+    &funcBufferLock,
+    &funcBufferIsLocked,
     &funcBufferAddI8,
     &funcBufferAddU8,
     &funcBufferAddI16,

@@ -1,0 +1,12 @@
+
+
+final buffer = Buffer([1, 2, 3])
+
+print("buffer = %r" % [buffer])
+print("buffer.isLocked() = %r" % [buffer.isLocked()])
+buffer.addU8(10)
+print("buffer = %r" % [buffer])
+print("buffer.lock() = %r" % [buffer.lock()])
+print("buffer.isLocked() = %r" % [buffer.isLocked()])
+buffer.addU8(15)
+print("buffer = %r" % [buffer])
