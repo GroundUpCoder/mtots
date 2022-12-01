@@ -11,6 +11,7 @@
 #include "mtots_util_strbuf.h"
 #include "mtots_util_escape.h"
 #include "mtots_util_readfile.h"
+#include "mtots_util_buffer.h"
 
 /* Not mtots specific, but also maybe not the most generally useful utilities */
 #include "mtots_util_filemode.h"
