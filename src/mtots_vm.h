@@ -50,6 +50,7 @@ typedef struct VM {
   ObjClass *boolClass;
   ObjClass *numberClass;
   ObjClass *stringClass;
+  ObjClass *bufferClass;
   ObjClass *byteArrayClass;
   ObjClass *byteArrayViewClass;
   ObjClass *listClass;

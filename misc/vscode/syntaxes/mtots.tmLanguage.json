@@ -41,12 +41,12 @@
 				{
 					"comment": "Globals provided by the runtime (types)",
 					"name": "support.class.mtots",
-					"match": "\\b(Nil|Bool|Number|String|List|Dict|Function|Class|File|Table)\\b"
+					"match": "\\b(Nil|Bool|Number|String|Buffer|List|Dict|Function|Class|File|Table)\\b"
 				},
 				{
 					"comment": "Pseudo Types (Not provide by the runtime, purely for type annotations)",
 					"name": "support.class.mtots",
-					"match": "\\b(Int|Float|ByteArray|ByteArrayView)\\b"
+					"match": "\\b(Int|Float|ByteArray|ByteArrayView|Any|Never)\\b"
 				},
 				{
 					"comment": "Globals provided by the runtime (variables and constants)",

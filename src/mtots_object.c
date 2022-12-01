@@ -163,6 +163,12 @@ static u32 hashTuple(Value *buffer, size_t length) {
   return hash;
 }
 
+ObjBuffer *newBuffer() {
+  ObjBuffer *buffer = ALLOCATE_OBJ(ObjBuffer, OBJ_BUFFER);
+  initBuffer(&buffer->buffer);
+  return buffer;
+}
+
 ObjByteArray *newByteArray(size_t length) {
   u8 *newBuffer = ALLOCATE(u8, length);
   ObjByteArray *byteArray = ALLOCATE_OBJ(ObjByteArray, OBJ_BYTE_ARRAY);
@@ -325,6 +331,7 @@ ObjClass *getClassOfValue(Value value) {
         case OBJ_THUNK: panic("function kinds do not have classes");
         case OBJ_NATIVE_CLOSURE: return vm.functionClass;
         case OBJ_INSTANCE: return AS_INSTANCE(value)->klass;
+        case OBJ_BUFFER: return vm.bufferClass;
         case OBJ_BYTE_ARRAY: return vm.byteArrayClass;
         case OBJ_BYTE_ARRAY_VIEW: return vm.byteArrayViewClass;
         case OBJ_LIST: return vm.listClass;
@@ -371,6 +378,9 @@ void printObject(Value value) {
     case OBJ_INSTANCE:
       printf("<%s instance>", AS_INSTANCE(value)->klass->name->chars);
       break;
+    case OBJ_BUFFER:
+      printf("<buffer %lu>", (unsigned long)AS_BUFFER(value)->buffer.length);
+      break;
     case OBJ_BYTE_ARRAY:
       printf("<byteArray %lu>", (unsigned long)AS_BYTE_ARRAY(value)->length);
       break;
@@ -405,6 +415,7 @@ const char *getObjectTypeName(ObjType type) {
   case OBJ_THUNK: return "OBJ_THUNK";
   case OBJ_NATIVE_CLOSURE: return "OBJ_NATIVE_CLOSURE";
   case OBJ_INSTANCE: return "OBJ_INSTANCE";
+  case OBJ_BUFFER: return "OBJ_BUFFER";
   case OBJ_BYTE_ARRAY: return "OBJ_BYTE_ARRAY";
   case OBJ_BYTE_ARRAY_VIEW: return "OBJ_BYTE_ARRAY_VIEW";
   case OBJ_LIST: return "OBJ_LIST";
@@ -431,6 +442,10 @@ Value DICT_VAL(ObjDict *dict) {
 
 Value INSTANCE_VAL(ObjInstance *instance) {
   return OBJ_VAL_EXPLICIT((Obj*)instance);
+}
+
+Value BUFFER_VAL(ObjBuffer *buffer) {
+  return OBJ_VAL_EXPLICIT((Obj*)buffer);
 }
 
 Value BYTE_ARRAY_VAL(ObjByteArray *byteArray) {

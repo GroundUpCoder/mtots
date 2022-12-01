@@ -143,6 +143,7 @@ const char *getKindName(Value value) {
       case OBJ_THUNK: return "function";
       case OBJ_NATIVE_CLOSURE: return "native-closure";
       case OBJ_INSTANCE: return "instance";
+      case OBJ_BUFFER: return "buffer";
       case OBJ_BYTE_ARRAY: return "byteArray";
       case OBJ_LIST: return "list";
       case OBJ_TUPLE: return "tuple";
@@ -165,6 +166,7 @@ ubool typePatternMatch(TypePattern pattern, Value value) {
       }
       /* fallthrough */
     case TYPE_PATTERN_STRING: return IS_STRING(value);
+    case TYPE_PATTERN_BUFFER: return IS_BUFFER(value);
     case TYPE_PATTERN_BYTE_ARRAY: return IS_BYTE_ARRAY(value);
     case TYPE_PATTERN_BYTE_ARRAY_OR_VIEW:
       return IS_BYTE_ARRAY(value) || IS_BYTE_ARRAY_VIEW(value);
@@ -195,8 +197,9 @@ ubool typePatternMatch(TypePattern pattern, Value value) {
 const char *getTypePatternName(TypePattern pattern) {
   switch (pattern.type) {
     case TYPE_PATTERN_ANY: return "any";
-    case TYPE_PATTERN_STRING_OR_NIL: return "(string|nil)";
-    case TYPE_PATTERN_STRING: return "string";
+    case TYPE_PATTERN_STRING_OR_NIL: return "(String|nil)";
+    case TYPE_PATTERN_STRING: return "String";
+    case TYPE_PATTERN_BUFFER: return "Buffer";
     case TYPE_PATTERN_BYTE_ARRAY: return "ByteArray";
     case TYPE_PATTERN_BYTE_ARRAY_OR_VIEW: return "(ByteArray|ByteArrayView)";
     case TYPE_PATTERN_BOOL: return "bool";

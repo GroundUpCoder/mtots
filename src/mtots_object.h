@@ -15,6 +15,7 @@
 #define IS_THUNK(value) isObjType(value, OBJ_THUNK)
 #define IS_NATIVE_CLOSURE(value) isObjType(value, OBJ_NATIVE_CLOSURE)
 #define IS_INSTANCE(value) isObjType(value, OBJ_INSTANCE)
+#define IS_BUFFER(value) isObjType(value, OBJ_BUFFER)
 #define IS_BYTE_ARRAY(value) isObjType(value, OBJ_BYTE_ARRAY)
 #define IS_BYTE_ARRAY_VIEW(value) isObjType(value, OBJ_BYTE_ARRAY_VIEW)
 #define IS_LIST(value) isObjType(value, OBJ_LIST)
@@ -28,6 +29,7 @@
 #define AS_THUNK(value) ((ObjThunk*)AS_OBJ(value))
 #define AS_NATIVE_CLOSURE(value) ((ObjNativeClosure*)AS_OBJ(value))
 #define AS_INSTANCE(value) ((ObjInstance*)AS_OBJ(value))
+#define AS_BUFFER(value) ((ObjBuffer*)AS_OBJ(value))
 #define AS_BYTE_ARRAY(value) ((ObjByteArray*)AS_OBJ(value))
 #define AS_BYTE_ARRAY_VIEW(value) ((ObjByteArrayView*)AS_OBJ(value))
 #define AS_LIST(value) ((ObjList*)AS_OBJ(value))
@@ -54,6 +56,7 @@ typedef enum ObjType {
   OBJ_THUNK,
   OBJ_NATIVE_CLOSURE,
   OBJ_INSTANCE,
+  OBJ_BUFFER,
   OBJ_BYTE_ARRAY,
   OBJ_BYTE_ARRAY_VIEW,
   OBJ_LIST,
@@ -83,6 +86,16 @@ typedef struct ObjThunk {
   i16 defaultArgsCount;
   String *moduleName;
 } ObjThunk;
+
+/**
+ * Buffer object for manipulating raw bytes.
+ * NOTE: the location of the raw bytes is not stable because
+ * the buffer may reallocate memory when appending bytes.
+ */
+typedef struct ObjBuffer {
+  Obj obj;
+  Buffer buffer;
+} ObjBuffer;
 
 /* NOTE: ByteArray objects can never change size. This is because in many
  * cases, a ByteArray will be used as a backing buffer (e.g. for SDL_Surface)
@@ -217,6 +230,7 @@ ObjNativeClosure *newNativeClosure(
   i16 arity,
   i16 maxArity);
 ObjInstance *newInstance(ObjClass *klass);
+ObjBuffer *newBuffer();
 ObjByteArray *newByteArray(size_t size);
 ObjByteArray *takeByteArray(u8 *buffer, size_t size);
 ObjByteArray *copyByteArray(const u8 *buffer, size_t size);
@@ -240,6 +254,7 @@ const char *getObjectTypeName(ObjType type);
 Value LIST_VAL(ObjList *list);
 Value DICT_VAL(ObjDict *dict);
 Value INSTANCE_VAL(ObjInstance *instance);
+Value BUFFER_VAL(ObjBuffer *buffer);
 Value BYTE_ARRAY_VAL(ObjByteArray *byteArray);
 Value BYTE_ARRAY_VIEW_VAL(ObjByteArrayView *byteArrayView);
 Value THUNK_VAL(ObjThunk *thunk);

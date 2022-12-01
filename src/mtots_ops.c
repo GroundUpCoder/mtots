@@ -44,6 +44,13 @@ ubool valuesEqual(Value a, Value b) {
         return UTRUE;
       }
       switch (objA->type) {
+        case OBJ_BUFFER: {
+          ObjBuffer *bA = (ObjBuffer*)objA, *bB = (ObjBuffer*)objB;
+          if (bA->buffer.length != bB->buffer.length) {
+            return UFALSE;
+          }
+          return memcmp(bA->buffer.data, bB->buffer.data, bA->buffer.length) == 0;
+        }
         case OBJ_BYTE_ARRAY: {
           ObjByteArray *aa = (ObjByteArray*)objA, *ab = (ObjByteArray*)objB;
           if (aa->length != ab->length) {
@@ -280,6 +287,19 @@ ubool valueRepr(StringBuffer *out, Value value) {
             sbprintf(out, "<%s instance>", AS_INSTANCE(value)->klass->name->chars);
           }
           return UTRUE;
+        case OBJ_BUFFER: {
+          ObjBuffer *bufObj = AS_BUFFER(value);
+          Buffer *buf = &bufObj->buffer;
+          StringEscapeOptions opts;
+          initStringEscapeOptions(&opts);
+          opts.shorthandControlCodes = UFALSE;
+          opts.tryUnicode = UFALSE;
+          sbputchar(out, 'b');
+          sbputchar(out, '"');
+          escapeString2(out, (const char*)buf->data, buf->length, &opts);
+          sbputchar(out, '"');
+          return UTRUE;
+        }
         case OBJ_BYTE_ARRAY: {
           ObjByteArray *ba = AS_BYTE_ARRAY(value);
           StringEscapeOptions opts;

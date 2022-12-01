@@ -53,7 +53,9 @@ static void setDataWithByteOrder(Buffer *buf, size_t pos, void *src, size_t leng
 
 static void addBufferSize(Buffer *buf, size_t length) {
   if (buf->length + length > buf->capacity) {
-    buf->capacity = buf->capacity < 8 ? 8 : 2 * buf->capacity;
+    do {
+      buf->capacity = buf->capacity < 8 ? 8 : 2 * buf->capacity;
+    } while (buf->length + length > buf->capacity);
     buf->data = (u8*)realloc(buf->data, buf->capacity);
   }
   buf->length += length;

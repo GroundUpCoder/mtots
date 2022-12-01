@@ -170,7 +170,10 @@ ubool mapSetStr(Map *map, String *key, Value value) {
   return mapSet(map, STRING_VAL(key), value);
 }
 
-/* Like mapSet, but a version that's more convenient for use in
+/**
+ * "mapSet with Name"
+ *
+ * Like mapSet, but a version that's more convenient for use in
  * native code in two ways:
  *   1) the key parameter is a C-string that is automatically be converted
  *      to an String and properly retained and released using the stack

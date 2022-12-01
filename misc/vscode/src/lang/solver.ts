@@ -693,17 +693,19 @@ class StatementVisitor extends ast.StatementVisitor<void> {
   }
 
   visitFor(s: ast.For) {
-    const variableSymbol = this.solver.recordSymbolDefinition(s.variable, true);
-    const containerType = this.solveExpression(s.container);
+    const forScope = new MScope(this.solver.scope);
+    const forSolver = this.withScope(forScope);
+    const variableSymbol = forSolver.recordSymbolDefinition(s.variable, true);
+    const containerType = forSolver.solveExpression(s.container);
     const variableType = containerType.getForInItemType();
     if (variableType) {
       variableSymbol.valueType = variableType;
     } else {
-      this.solver.errors.push(new MError(
+      forSolver.errors.push(new MError(
         s.container.location,
         `${containerType} is not iterable`));
     }
-    this.solveStatement(s.body);
+    forSolver.solveStatement(s.body);
   }
 
   visitIf(s: ast.If) {

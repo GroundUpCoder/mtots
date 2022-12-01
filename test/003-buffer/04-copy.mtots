@@ -1,7 +1,7 @@
 
-final ba1 = ByteArray([1, 2, 3])
+final ba1 = Buffer([1, 2, 3])
 print('repr(ba1) = %s' % [repr(ba1)])
-final ba2 = ByteArray(ba1)
+final ba2 = Buffer(ba1)
 print('repr(ba2) = %s' % [repr(ba2)])
 print('ba1 == ba2 = %s' % [ba1 == ba2])
 

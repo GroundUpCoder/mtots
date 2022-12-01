@@ -7,6 +7,7 @@
 #include "mtots_class_dict.h"
 #include "mtots_class_ba.h"
 #include "mtots_class_class.h"
+#include "mtots_class_buffer.h"
 #include "mtots_modules.h"
 
 #include <stdio.h>
@@ -147,6 +148,7 @@ void initVM() {
   initNoMethodClass(&vm.boolClass, "Bool");
   initNoMethodClass(&vm.numberClass, "Number");
   initStringClass();
+  initBufferClass();
   initByteArrayClass();
   initByteArrayViewClass();
   initListClass();
@@ -341,6 +343,73 @@ ubool call(ObjClosure *closure, i16 argCount) {
   return UTRUE;
 }
 
+static ubool callBufferClass(i16 argCount) {
+  Value arg;
+  if (argCount == 0) {
+    pop(); /* Buffer class */
+    push(BUFFER_VAL(newBuffer()));
+  }
+  if (argCount != 1) {
+    runtimeError("Buffer() can only have up to one argument");
+    return UFALSE;
+  }
+  arg = peek(0);
+  if (IS_NUMBER(arg)) {
+    size_t size = AS_NUMBER(arg);
+    ObjBuffer *bo = newBuffer();
+    while (bo->buffer.length < size) {
+      bufferAddU8(&bo->buffer, 0);
+    }
+    pop(); /* arg */
+    pop(); /* Buffer class */
+    push(BUFFER_VAL(bo));
+    return UTRUE;
+  }
+  if (IS_BUFFER(arg)) {
+    ObjBuffer *other = AS_BUFFER(arg);
+    ObjBuffer *bo = newBuffer();
+    bufferAddBytes(&bo->buffer, other->buffer.data, other->buffer.length);
+    pop(); /* arg */
+    pop(); /* Buffer class */
+    push(BUFFER_VAL(bo));
+    return UTRUE;
+  }
+  if (IS_STRING(arg)) {
+    String *other = AS_STRING(arg);
+    ObjBuffer *bo = newBuffer();
+    bufferAddBytes(&bo->buffer, other->chars, other->length);
+    pop(); /* arg */
+    pop(); /* Buffer class */
+    push(BUFFER_VAL(bo));
+    return UTRUE;
+  }
+  if (IS_LIST(arg)) {
+    ObjList *list = AS_LIST(arg);
+    ObjBuffer *bo = newBuffer();
+    size_t i;
+    for (i = 0; i < list->length; i++) {
+      Value item = list->buffer[i];
+      if (IS_NUMBER(item)) {
+        u8 itemValue = AS_NUMBER(item);
+        bufferAddU8(&bo->buffer, itemValue);
+      } else {
+        runtimeError(
+          "Buffer() requires a list of numbers, "
+          "but found list item %s", getKindName(item));
+        return UFALSE;
+      }
+    }
+    pop(); /* arg */
+    pop(); /* Buffer class */
+    push(BUFFER_VAL(bo));
+    return UTRUE;
+  }
+  runtimeError(
+    "Buffer() expects a Number, String, List, or another Buffer "
+    "but got %s", getKindName(arg));
+  return UFALSE;
+}
+
 static ubool callByteArrayClass(i16 argCount) {
   Value arg;
   if (argCount != 1) {
@@ -417,6 +486,8 @@ static ubool callClass(ObjClass *klass, i16 argCount) {
     /* builtin class */
     if (klass == vm.byteArrayClass) {
       return callByteArrayClass(argCount);
+    } else if (klass == vm.bufferClass) {
+      return callBufferClass(argCount);
     }
     runtimeError("Builtin class %s does not allow instantiation",
       klass->name->chars);
@@ -454,8 +525,12 @@ static ubool callOperator(Operator op, i16 argCount) {
         return UTRUE;
       } else if (IS_OBJ(receiver)) {
         switch (AS_OBJ(receiver)->type) {
+          case OBJ_BUFFER:
+            vm.stackTop[-1] = NUMBER_VAL(AS_BUFFER(receiver)->buffer.length);
+            return UTRUE;
           case OBJ_BYTE_ARRAY:
             vm.stackTop[-1] = NUMBER_VAL(AS_BYTE_ARRAY(receiver)->length);
+            return UTRUE;
           case OBJ_LIST:
             vm.stackTop[-1] = NUMBER_VAL(AS_LIST(receiver)->length);
             return UTRUE;

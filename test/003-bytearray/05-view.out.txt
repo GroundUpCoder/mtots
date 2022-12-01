@@ -1,9 +1,0 @@
-ord(ba.raw()[0]) = 241
-repr(ba.raw()) = "\xF1\xF2\xF3\xF4\xF5\xF6\xF7"
-repr(view1.raw()) = "\xF3\xF4\xF5"
-repr(view1.raw()) = "\xF0\xF4\xF5"
-repr(ba.raw()) = "\xF1\xF2\xF0\xF4\xF5\xF6\xF7"
-repr(view2.raw()) = "\xF5"
-repr(view2.raw()) = "\xFA"
-repr(view1.raw()) = "\xF0\xF4\xFA"
-repr(ba.raw()) = "\xF1\xF2\xF0\xF4\xFA\xF6\xF7"

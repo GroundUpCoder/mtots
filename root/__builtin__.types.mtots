@@ -72,6 +72,100 @@ def print(x) nil:
   "print str(x) to stdout"
 
 
+class Buffer:
+  r"""
+  Mutable, appendable array of bytes.
+
+  NOTE: Because Buffer is appendable, the location of the bytes
+  is not stable. Care should be taken when using C API
+  that requires access to raw bytes.
+  """
+
+  def __init__(n) nil:
+    r"""
+    Argument n may be one of:
+    * Int - to create a zerod out Buffer of n bytes
+    * Buffer - to create a copy
+    * String - to create a Buffer by copying the bytes from a String
+    * List[Int] - from a list of direct byte values
+    """
+
+  def toRawString() String:
+    "Returns a new String with the current contents of this Buffer"
+
+  def getI8(index Int) Int:
+    pass
+
+  def getU8(index Int) Int:
+    pass
+
+  def getI16(index Int) Int:
+    pass
+
+  def getU16(index Int) Int:
+    pass
+
+  def getI32(index Int) Int:
+    pass
+
+  def getU32(index Int) Int:
+    pass
+
+  def getF32(index Int) Float:
+    pass
+
+  def getF64(index Int) Float:
+    pass
+
+  def setI8(index Int, value Int):
+    pass
+
+  def setU8(index Int, value Int):
+    pass
+
+  def setI16(index Int, value Int):
+    pass
+
+  def setU16(index Int, value Int):
+    pass
+
+  def setI32(index Int, value Int):
+    pass
+
+  def setU32(index Int, value Int):
+    pass
+
+  def setF32(index Int, value Float):
+    pass
+
+  def setF64(index Int, value Float):
+    pass
+
+  def addI8(value Int):
+    pass
+
+  def addU8(value Int):
+    pass
+
+  def addI16(value Int):
+    pass
+
+  def addU16(value Int):
+    pass
+
+  def addI32(value Int):
+    pass
+
+  def addU32(value Int):
+    pass
+
+  def addF32(value Float):
+    pass
+
+  def addF64(value Float):
+    pass
+
+
 class ByteArrayView:
   r"View into ByteArray"
 
