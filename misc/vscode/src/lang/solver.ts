@@ -132,7 +132,7 @@ class TypeVisitor {
     const name = te.identifier.toString();
     switch (name) {
       case 'Any': this.checkTypeArgc(te, 0); return type.Any;
-      case 'noreturn': this.checkTypeArgc(te, 0); return type.NoReturn;
+      case 'Never': this.checkTypeArgc(te, 0); return type.Never;
       case 'StopIteration': this.checkTypeArgc(te, 0); return type.StopIteration;
       case 'nil': this.checkTypeArgc(te, 0); return type.Nil;
       case 'Bool':
@@ -298,7 +298,7 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
   }
 
   visitListDisplay(e: ast.ListDisplay): type.MType {
-    let itemType: MType = type.NoReturn;
+    let itemType: MType = type.Never;
     if (this.typeHint instanceof type.List) {
       itemType = this.typeHint.itemType;
     }
@@ -309,8 +309,8 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
   }
 
   visitDictDisplay(e: ast.DictDisplay): type.MType {
-    let keyType: MType = type.NoReturn;
-    let valueType: MType = type.NoReturn;
+    let keyType: MType = type.Never;
+    let valueType: MType = type.Never;
     if (this.typeHint instanceof type.Dict) {
       keyType = this.typeHint.keyType;
       valueType = this.typeHint.valueType;
@@ -522,7 +522,7 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
 
   visitRaise(e: ast.Raise): type.MType {
     this.solveExpression(e.exception);
-    return type.NoReturn;
+    return type.Never;
   }
 }
 

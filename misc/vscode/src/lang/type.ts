@@ -72,10 +72,10 @@ class AnyType extends MType {
 
 export const Any = new AnyType();
 
-/** aka 'bottom' or 'never' type */
-class NoReturnType extends MType {
+/** aka 'bottom' or 'noreturn' type */
+class NeverType extends MType {
   toString() {
-    return 'noreturn';
+    return 'Never';
   }
   isAssignableTo(other: MType): boolean {
     return true;
@@ -91,7 +91,7 @@ class NoReturnType extends MType {
   }
 }
 
-export const NoReturn = new NoReturnType();
+export const Never = new NeverType();
 
 export class BuiltinPrimitive extends MType {
   readonly parent: MType;

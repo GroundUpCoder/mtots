@@ -13,7 +13,7 @@ def sorted(iterable, key Any = nil) List:
   "Sorts all the items in the iterable and returns them as a list"
 
 
-def exit() noreturn:
+def exit() Never:
   pass
 
 
