@@ -13,6 +13,13 @@ are borrowed from Python to help someone from Python feel at home,
 but all variables need to be declared with `var` or `final`,
 making it impossible to run most Python code as mtots or vice versa.
 
+For some sample mtots code see:
+  [tests](test/)
+  [sample apps](misc/apps/)
+
+There is also a vscode extension for [mtots](https://marketplace.visualstudio.com/items?itemName=mtots.mtots)
+(The source for the vscode extension is in this repository [here](misc/vscode/))
+
 ## Goals
 
 None of these goals are novel in and of themselves, but as far as I know
