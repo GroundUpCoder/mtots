@@ -21,8 +21,8 @@ There is also a vscode extension for [mtots](https://marketplace.visualstudio.co
 ## Goals
 
 None of these goals are novel in and of themselves, but as far as I know
-I am not aware of any single mainstream programming language that satisfies
-all these goals.
+I am not aware of any single mainstream programming language implementation
+that satisfies all these goals at the same time.
 
 ### Clean Implementation
 
