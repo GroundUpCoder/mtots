@@ -649,15 +649,17 @@ static void parseOr() {
 }
 
 static void parseRawString() {
-  emitConstant(STRING_VAL(internString(
-    parser.previous.start + 2,
-    parser.previous.length - 3)));
-}
-
-static void parseTripleQuoteRawString() {
-  emitConstant(STRING_VAL(internString(
-    parser.previous.start + 4,
-    parser.previous.length - 7)));
+  char quote = parser.previous.start[1];
+  if (quote == parser.previous.start[2] &&
+      quote == parser.previous.start[3]) {
+    emitConstant(STRING_VAL(internString(
+      parser.previous.start + 4,
+      parser.previous.length - 7)));
+  } else {
+    emitConstant(STRING_VAL(internString(
+      parser.previous.start + 2,
+      parser.previous.length - 3)));
+  }
 }
 
 static String *stringTokenToObjString() {
@@ -863,8 +865,6 @@ void initParseRules() {
   rules[TOKEN_IDENTIFIER] = newRule(parseVariable, NULL, PREC_NONE);
   rules[TOKEN_STRING] = newRule(parseString, NULL, PREC_NONE);
   rules[TOKEN_RAW_STRING] = newRule(parseRawString, NULL, PREC_NONE);
-  rules[TOKEN_TRIPLE_QUOTE_RAW_STRING] =
-    newRule(parseTripleQuoteRawString, NULL, PREC_NONE);
   rules[TOKEN_NUMBER] = newRule(parseNumber, NULL, PREC_NONE);
   rules[TOKEN_NUMBER_HEX] = newRule(parseNumberHex, NULL, PREC_NONE);
   rules[TOKEN_NUMBER_BIN] = newRule(parseNumberBin, NULL, PREC_NONE);
@@ -1068,8 +1068,7 @@ static void parseClassDeclaration() {
   expectToken(TOKEN_INDENT, "Expect INDENT before class body");
   while (consumeToken(TOKEN_NEWLINE));
   if (consumeToken(TOKEN_STRING) ||
-      consumeToken(TOKEN_RAW_STRING) ||
-      consumeToken(TOKEN_TRIPLE_QUOTE_RAW_STRING)) {
+      consumeToken(TOKEN_RAW_STRING)) {
     while (consumeToken(TOKEN_NEWLINE));
   }
   while (atToken(TOKEN_VAR) || atToken(TOKEN_FINAL)) {

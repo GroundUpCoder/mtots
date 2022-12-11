@@ -373,7 +373,7 @@ static Token scanRawTripleQuoteString(char quote) {
     return errorToken("Unterminated raw triple quote string literal");
   }
 
-  return makeToken(TOKEN_TRIPLE_QUOTE_RAW_STRING);
+  return makeToken(TOKEN_RAW_STRING);
 }
 
 Token scanToken() {
