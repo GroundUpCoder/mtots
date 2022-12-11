@@ -216,6 +216,46 @@ export class MScanner {
     return this.makeToken('NUMBER', value);
   }
 
+  scanTripleQuoteString(quoteChar: string): MToken {
+    const quoteStr = quoteChar + quoteChar + quoteChar;
+    const parts: string[] = [];
+    while (!this.isAtEnd() && !this.s.startsWith(quoteStr, this.i)) {
+      if (this.peek() === '\\') {
+        this.advance();
+        // TODO: Handle more escapes
+        switch (this.advance()) {
+          case '\"':
+            parts.push('\"');
+            break;
+          case '\'':
+            parts.push('\'');
+            break;
+          case 'n':
+            parts.push('\n');
+            break;
+          case 't':
+            parts.push('\t');
+            break;
+          case 'r':
+            parts.push('\r');
+            break;
+          case 'v':
+            parts.push('\v');
+            break;
+          case 'f':
+            parts.push('\f');
+            break;
+        }
+      } else {
+        parts.push(this.advance());
+      }
+    }
+    this.advance(); // closing quote
+    this.advance(); // closing quote
+    this.advance(); // closing quote
+    return this.makeToken('STRING', parts.join(''));
+  }
+
   scanString(quote: string): MToken {
     while (this.peek() !== quote && !this.isAtEnd()) {
       if (this.peek() === '\\') {
@@ -342,6 +382,11 @@ export class MScanner {
     }
 
     if (c === '"' || c === "'") {
+      if (this.peek() === c && this.peekNext() === c) {
+        this.advance();
+        this.advance();
+        return this.scanTripleQuoteString(c);
+      }
       return this.scanString(c);
     }
 
