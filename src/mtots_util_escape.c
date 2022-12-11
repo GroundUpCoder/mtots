@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define INVALID_HEX 24
 
@@ -310,87 +311,72 @@ ubool escapeString(
   return UTRUE;
 }
 
-
-ubool unescapeString(const char *str, char quote, size_t *outLen, char *outBytes) {
-  size_t len = 0;
-  char *p = outBytes;
-
-  while (*str != quote && *str != '\0') {
+ubool unescapeString2(
+    StringBuffer *out, const char *str, const char *quote, size_t quoteLen) {
+  while (*str != '\0' && strncmp(str, quote, quoteLen) != 0) {
     if (*str == '\\') {
       str++;
       switch (*str) {
-      case '"': str++; len++; if (p) *p++ = '\"'; break;
-      case '\'': str++; len++; if (p) *p++ = '\''; break;
-      case '\\': str++; len++; if (p) *p++ = '\\'; break;
-      case '/': str++; len++; if (p) *p++ = '/'; break;
-      case 'b': str++; len++; if (p) *p++ = '\b'; break;
-      case 'f': str++; len++; if (p) *p++ = '\f'; break;
-      case 'n': str++; len++; if (p) *p++ = '\n'; break;
-      case 'r': str++; len++; if (p) *p++ = '\r'; break;
-      case 't': str++; len++; if (p) *p++ = '\t'; break;
-      case '0': str++; len++; if (p) *p++ = '\0'; break;
-      case 'x': {
-        u32 byte;
-        str++;
-        if (evalHex(str[0]) == INVALID_HEX ||
-            evalHex(str[1]) == INVALID_HEX) {
-          char invalid = evalHex(str[0]) == INVALID_HEX ? str[0] : str[1];
-          runtimeError("in string unescape, invalid hex digit '%c'", invalid);
-          return UFALSE;
+        case '"': str++; sbputchar(out, '\"'); break;
+        case '\'': str++; sbputchar(out, '\''); break;
+        case '\\': str++; sbputchar(out, '\\'); break;
+        case '/': str++; sbputchar(out, '/'); break;
+        case 'b': str++; sbputchar(out, '\b'); break;
+        case 'f': str++; sbputchar(out, '\f'); break;
+        case 'n': str++; sbputchar(out, '\n'); break;
+        case 'r': str++; sbputchar(out, '\r'); break;
+        case 't': str++; sbputchar(out, '\t'); break;
+        case '0': str++; sbputchar(out, '\0'); break;
+        case 'x': {
+          u32 byte;
+          str++;
+          if (evalHex(str[0]) == INVALID_HEX ||
+              evalHex(str[1]) == INVALID_HEX) {
+            char invalid = evalHex(str[0]) == INVALID_HEX ? str[0] : str[1];
+            runtimeError("in string unescape, invalid hex digit '%c'", invalid);
+            return UFALSE;
+          }
+          byte = evalHex(str[0]) << 4 | evalHex(str[1]);
+          sbputchar(out, (char)(unsigned char)byte);
+          str += 2;
+          break;
         }
-        byte = evalHex(str[0]) << 4 | evalHex(str[1]);
-        if (p) *p++ = (char)(u8)byte;
-        len++;
-        str += 2; /* 2 hex digits we just processed */
-        break;
-      }
-      case 'u': {
-        int charBytes;
-        u32 codePoint;
-        str++;
-        if (evalHex(str[0]) == INVALID_HEX ||
-            evalHex(str[1]) == INVALID_HEX ||
-            evalHex(str[2]) == INVALID_HEX ||
-            evalHex(str[3]) == INVALID_HEX) {
-          char invalid =
-            evalHex(str[0]) == INVALID_HEX ? str[0] :
-            evalHex(str[1]) == INVALID_HEX ? str[1] :
-            evalHex(str[2]) == INVALID_HEX ? str[2] : str[3];
-          runtimeError("in string unescape, invalid hex digit '%c'", invalid);
-          return UFALSE;
+        case 'u': {
+          int charBytes;
+          u32 codePoint;
+          char charStr[5];
+          charStr[0] = charStr[1] = charStr[2] = charStr[3] = charStr[4] = 0;
+          str++;
+          if (evalHex(str[0]) == INVALID_HEX ||
+              evalHex(str[1]) == INVALID_HEX ||
+              evalHex(str[2]) == INVALID_HEX ||
+              evalHex(str[3]) == INVALID_HEX) {
+            char invalid =
+              evalHex(str[0]) == INVALID_HEX ? str[0] :
+              evalHex(str[1]) == INVALID_HEX ? str[1] :
+              evalHex(str[2]) == INVALID_HEX ? str[2] : str[3];
+            runtimeError("in string unescape, invalid hex digit '%c'", invalid);
+            return UFALSE;
+          }
+          codePoint =
+            evalHex(str[0]) << 12 |
+            evalHex(str[1]) << 8 |
+            evalHex(str[2]) << 4 |
+            evalHex(str[3]);
+          charBytes = encodeUTF8Char(codePoint, charStr);
+          sbputstrlen(out, charStr, charBytes);
+          str += 4;
+          break;
         }
-        codePoint =
-          evalHex(str[0]) << 12 |
-          evalHex(str[1]) << 8 |
-          evalHex(str[2]) << 4 |
-          evalHex(str[3]);
-        charBytes = encodeUTF8Char(codePoint, p);
-        if (p) p += charBytes;
-        len += charBytes;
-        str += 4; /* 4 hex digits we just processed */
-        break;
-      }
-      default:
-        len = snprintf(NULL, 0,
-          "in string unescape, invalid escape '%c' (%d)",
-          *str, (int)*str);
-        if (outLen) *outLen = len;
-        if (outBytes) {
-          snprintf(outBytes, len + 1,
+        default:
+          runtimeError(
             "in string unescape, invalid escape '%c' (%d)",
             *str, (int)*str);
-        }
+          return UFALSE;
       }
     } else {
-      len++;
-      if (p) *p++ = *str;
-      str++;
+      sbputchar(out, *str++);
     }
   }
-
-  if (outLen) {
-    *outLen = len;
-  }
-
   return UTRUE;
 }
