@@ -318,7 +318,20 @@ static Token scanNumber() {
 }
 
 static Token scanString(char quote, TokenType type) {
-  while (peekScanner() != quote && !isAtEnd()) {
+  size_t quoteLen, i;
+  char quoteStr[4];
+  if (peekScanner() == quote && peekNextInScanner() == quote) {
+    quoteLen = 3;
+    quoteStr[0] = quoteStr[1] = quoteStr[2] = quote;
+    quoteStr[3] = '\0';
+    advanceScanner();
+    advanceScanner();
+  } else {
+    quoteLen = 1;
+    quoteStr[0] = quote;
+    quoteStr[1] = '\0';
+  }
+  while (!isAtEnd() && strncmp(scanner.current, quoteStr, quoteLen) != 0) {
     if (peekScanner() == '\n') {
       scanner.line++;
     }
@@ -335,7 +348,9 @@ static Token scanString(char quote, TokenType type) {
     return errorToken("Unterminated string");
   }
 
-  advanceScanner(); /* The closing quote */
+  for (i = 0; i < quoteLen; i++) {
+    advanceScanner(); /* The closing quote */
+  }
   return makeToken(type);
 }
 

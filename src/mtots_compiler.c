@@ -663,15 +663,28 @@ static void parseTripleQuoteRawString() {
 static String *stringTokenToObjString() {
   size_t size = 0;
   char *s;
-  char quote = parser.previous.start[0];
+  char quoteChar = parser.previous.start[0];
+  char quoteStr[4];
+  size_t quoteLen;
+  if (parser.previous.start[1] == quoteChar &&
+      parser.previous.start[2] == quoteChar) {
+    quoteStr[0] = quoteStr[1] = quoteStr[2] = quoteChar;
+    quoteStr[3] = '\0';
+    quoteLen = 3;
+  } else {
+    quoteStr[0] = quoteChar;
+    quoteStr[1] = '\0';
+    quoteLen = 1;
+  }
 
-  if (!unescapeString(parser.previous.start + 1, quote, &size, NULL)) {
+  if (!unescapeString(
+      parser.previous.start + quoteLen, quoteStr, &size, NULL)) {
     error("Failed to unescape string");
     return NULL;
   }
 
   s = malloc(sizeof(char) * size + 1);
-  unescapeString(parser.previous.start + 1, quote, NULL, s);
+  unescapeString(parser.previous.start + 1, quoteStr, NULL, s);
   s[size] = '\0';
 
   return internOwnedString(s, size);
