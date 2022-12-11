@@ -317,7 +317,41 @@ static Token scanNumber() {
   return makeToken(TOKEN_NUMBER);
 }
 
-static Token scanString(char quote, TokenType type) {
+static Token scanTripleQuoteString(char quoteChar) {
+  while (!isAtEnd() &&
+      !(
+        scanner.current[0] == quoteChar &&
+        scanner.current[1] == quoteChar &&
+        scanner.current[2] == quoteChar
+      )) {
+    if (peekScanner() == '\n') {
+      scanner.line++;
+    }
+    if (peekScanner() == '\\') {
+      advanceScanner();
+      if (isAtEnd()) {
+        return errorToken("Expected string escape but got EOF");
+      }
+    }
+    advanceScanner();
+  }
+
+  if (isAtEnd()) {
+    return errorToken("Unterminated string literal (triple quotes)");
+  }
+
+  advanceScanner(); /* The closing quote */
+  advanceScanner(); /* The closing quote */
+  advanceScanner(); /* The closing quote */
+  return makeToken(TOKEN_STRING);
+}
+
+static Token scanString(char quote) {
+  if (peekScanner() == quote && peekNextInScanner() == quote) {
+    advanceScanner();
+    advanceScanner();
+    return scanTripleQuoteString(quote);
+  }
   while (peekScanner() != quote && !isAtEnd()) {
     if (peekScanner() == '\n') {
       scanner.line++;
@@ -332,11 +366,11 @@ static Token scanString(char quote, TokenType type) {
   }
 
   if (isAtEnd()) {
-    return errorToken("Unterminated string");
+    return errorToken("Unterminated string literal");
   }
 
   advanceScanner(); /* The closing quote */
-  return makeToken(type);
+  return makeToken(TOKEN_STRING);
 }
 
 static Token scanRawString(char quote) {
@@ -461,8 +495,8 @@ Token scanToken() {
       return makeToken(
         matchScanner('>') ? TOKEN_SHIFT_RIGHT :
         matchScanner('=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
-    case '"': return scanString('"', TOKEN_STRING);
-    case '\'': return scanString('\'', TOKEN_STRING);
+    case '"': return scanString('"');
+    case '\'': return scanString('\'');
     case '\n': {
       Token newlineToken;
       i32 spaceCount = 0, newIndentationLevel;
