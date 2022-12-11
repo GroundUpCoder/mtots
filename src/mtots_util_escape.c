@@ -5,7 +5,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #define INVALID_HEX 24
 
@@ -312,20 +311,11 @@ ubool escapeString(
 }
 
 
-ubool unescapeStringCharQuote(
-    const char *str, char quote, size_t *outLen, char *outBytes) {
-  char quoteString[2];
-  quoteString[0] = quote;
-  quoteString[1] = '\0';
-  return unescapeString(str, quoteString, outLen, outBytes);
-}
-
-ubool unescapeString(
-    const char *str, const char *quote, size_t *outLen, char *outBytes) {
-  size_t len = 0, quoteLen = strlen(quote);
+ubool unescapeString(const char *str, char quote, size_t *outLen, char *outBytes) {
+  size_t len = 0;
   char *p = outBytes;
 
-  while (*str != '\0' && strncmp(str, quote, quoteLen) != 0) {
+  while (*str != quote && *str != '\0') {
     if (*str == '\\') {
       str++;
       switch (*str) {

@@ -38,10 +38,6 @@ ubool escapeString(
  * When NULL is passed to out* parameters, they are ignored
  * outLen: length of the final string not including the null terminator
  * outBytes: the buffer to write out the final string */
-ubool unescapeString(
-  const char *str, const char *quote, size_t *outLen, char *outBytes);
-
-ubool unescapeStringCharQuote(
-  const char *str, char quote, size_t *outLen, char *outBytes);
+ubool unescapeString(const char *str, char quote, size_t *outLen, char *outBytes);
 
 #endif/*mtots_util_escape_h*/
