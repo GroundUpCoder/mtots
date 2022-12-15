@@ -18,7 +18,30 @@ export abstract class MType {
    * i.e. given two types, what is the most specific base type
    * shared between two types?
    */
-  abstract closestCommonType(other: MType): MType;
+  closestCommonType(other: MType): MType {
+    const self: MType = this;
+    if (self === other) {
+      return self;
+    }
+    if (self === Any || other === Any) {
+      return Any;
+    }
+    if (self === Never) {
+      return other;
+    }
+    if (other === Never) {
+      return self;
+    }
+    if (self instanceof Optional && self.itemType === other) {
+      return self;
+    }
+    if (other instanceof Optional && other.itemType === self) {
+      return other;
+    }
+    return self._closestCommonType(other);
+  }
+
+  abstract _closestCommonType(other: MType): MType;
 
   getFieldSymbol(fieldName: string): MSymbol | null {
     return null;
@@ -26,6 +49,14 @@ export abstract class MType {
 
   getMethodSymbol(methodName: string): MSymbol | null {
     return AnyMap.get(methodName) || null;
+  }
+
+  /**
+   * Return a subset of this that has a possibility of being truthy.
+   * (i.e. nil, StopIteration and other falsy values will be filtered out)
+   */
+  filterTruthy(): MType {
+    return this;
   }
 
   /**
@@ -59,7 +90,7 @@ class AnyType extends MType {
   isAssignableTo(other: MType): boolean {
     return this === other;
   }
-  closestCommonType(other: MType): MType {
+  _closestCommonType(other: MType): MType {
     return this;
   }
   getFieldSymbol(fieldName: string): MSymbol | null {
@@ -80,7 +111,7 @@ class NeverType extends MType {
   isAssignableTo(other: MType): boolean {
     return true;
   }
-  closestCommonType(other: MType): MType {
+  _closestCommonType(other: MType): MType {
     return other;
   }
   getFieldSymbol(fieldName: string): MSymbol | null {
@@ -123,7 +154,7 @@ export class BuiltinPrimitive extends MType {
     return this === other || this.parent.isAssignableTo(other);
   }
 
-  closestCommonType(other: MType): MType {
+  _closestCommonType(other: MType): MType {
     return other.isAssignableTo(this) ? this : this.parent.closestCommonType(other);
   }
 
@@ -193,7 +224,7 @@ export class List extends MType {
     return this === other || UntypedList.isAssignableTo(other);
   }
 
-  closestCommonType(other: MType): MType {
+  _closestCommonType(other: MType): MType {
     return this === other ? this : UntypedList.closestCommonType(other);
   }
 
@@ -250,7 +281,7 @@ export class Dict extends MType {
     return this === other || UntypedDict.isAssignableTo(other);
   }
 
-  closestCommonType(other: MType): MType {
+  _closestCommonType(other: MType): MType {
     return this === other ? this : UntypedDict.closestCommonType(other);
   }
 
@@ -306,7 +337,11 @@ export class Optional extends MType {
       Any.isAssignableTo(other);
   }
 
-  closestCommonType(other: MType): MType {
+  filterTruthy(): MType {
+    return this.itemType;
+  }
+
+  _closestCommonType(other: MType): MType {
     if (this === other) {
       return this;
     }
@@ -344,7 +379,7 @@ export class StopIterationType extends MType {
     return Any.isAssignableTo(other);
   }
 
-  closestCommonType(other: MType): MType {
+  _closestCommonType(other: MType): MType {
     if (this === other) {
       return this;
     }
@@ -352,6 +387,10 @@ export class StopIterationType extends MType {
       return other;
     }
     return Any;
+  }
+
+  filterTruthy(): MType {
+    return Never;
   }
 
   toString(): string {
@@ -392,7 +431,7 @@ export class Iterate extends MType {
       Any.isAssignableTo(other);
   }
 
-  closestCommonType(other: MType): MType {
+  _closestCommonType(other: MType): MType {
     if (this === other || other === StopIteration) {
       return this;
     }
@@ -400,6 +439,10 @@ export class Iterate extends MType {
       return Iterate.of(this.itemType.closestCommonType(other.itemType));
     }
     return Any;
+  }
+
+  filterTruthy(): MType {
+    return this.itemType;
   }
 
   getForInItemType(): MType | null {
@@ -439,7 +482,7 @@ export class Function extends MType {
     return this === other || UntypedFunction.isAssignableTo(other);
   }
 
-  closestCommonType(other: MType): MType {
+  _closestCommonType(other: MType): MType {
     return this === other ? this : UntypedFunction.closestCommonType(other);
   }
 
@@ -470,7 +513,7 @@ export class Class extends MType {
     return this === other || UntypedClass.isAssignableTo(other);
   }
 
-  closestCommonType(other: MType): MType {
+  _closestCommonType(other: MType): MType {
     return this === other ? this : UntypedClass.closestCommonType(other);
   }
 
@@ -507,7 +550,7 @@ export class Instance extends MType {
     return this === other || other === Optional.of(this) || Any.isAssignableTo(other);
   }
 
-  closestCommonType(other: MType): MType {
+  _closestCommonType(other: MType): MType {
     // TODO: consider base classes
     return this === other ? this : Any;
   }
@@ -556,7 +599,7 @@ export class Module extends MType {
     return this === other;
   }
 
-  closestCommonType(other: MType): MType {
+  _closestCommonType(other: MType): MType {
     return this === other ? this : UntypedModule.closestCommonType(other);
   }
 

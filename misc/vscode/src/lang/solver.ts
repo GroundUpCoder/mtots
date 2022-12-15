@@ -509,14 +509,22 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
         }
         this.solveExpression(e.args[0]);
         return type.Bool;
-      case 'and':
-      case 'or':
+      case 'and': {
         if (e.args.length !== 2) {
           throw new Error(`assertion error ${e.op}, ${e.args.length}`);
         }
         const lhsType = this.solveExpression(e.args[0]);
         const rhsType = this.solveExpression(e.args[1]);
         return lhsType.closestCommonType(rhsType);
+      }
+      case 'or': {
+        if (e.args.length !== 2) {
+          throw new Error(`assertion error ${e.op}, ${e.args.length}`);
+        }
+        const lhsType = this.solveExpression(e.args[0]).filterTruthy();
+        const rhsType = this.solveExpression(e.args[1]);
+        return lhsType.closestCommonType(rhsType);
+      }
     }
   }
 

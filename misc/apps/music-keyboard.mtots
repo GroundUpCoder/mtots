@@ -204,9 +204,10 @@ def eventLoop() nil:
       elif key not in keyToTrackMap and kstate[key]:
         final track = getOpenTrack()
         if track is not nil:
-          trackToKeyMap[track] = key
-          keyToTrackMap[key] = track
-          sdl.setAudioTrack(track, freq, 0.12, waveforms[waveformIndex])
+          final trac = track or 0
+          trackToKeyMap[trac] = key
+          keyToTrackMap[key] = trac
+          sdl.setAudioTrack(trac, freq, 0.12, waveforms[waveformIndex])
           if key in colors:
             colorStack.append(colors[key])
 
