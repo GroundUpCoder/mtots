@@ -107,7 +107,7 @@ static ubool implDictRget(i16 argCount, Value *args, Value *out) {
   }
   /* If no entry is found, and no optional argument is provided
    * we throw an error */
-  runtimeError("No entry with given value found in Map");
+  runtimeError("No entry with given value found in Dict");
   return UFALSE;
 }
 
@@ -126,7 +126,7 @@ void initDictClass() {
   size_t i;
   ObjClass *cls;
 
-  tmpstr = internCString("Map");
+  tmpstr = internCString("Dict");
   push(STRING_VAL(tmpstr));
   cls = vm.mapClass = newClass(tmpstr);
   cls->isBuiltinClass = UTRUE;
