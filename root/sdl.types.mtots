@@ -71,6 +71,13 @@ final QUIT = 0
 
 final scancode Dict[String, Int] = {}
 final key Dict[String, Int] = {}
+final button Dict[String, Int] = {
+  "LEFT": 0,
+  "MIDDLE": 0,
+  "RIGHT": 0,
+  "X1": 0,
+  "X2": 0,
+}
 
 
 class Event:
@@ -91,6 +98,14 @@ class Rect:
     pass
 
 
+class Point:
+  var x Int
+  var y Int
+
+  def __init__(x, y):
+    pass
+
+
 class Window:
   "Window comments"
 
@@ -99,6 +114,14 @@ def createWindow(title String, x Int, y Int, width Int, height Int, flags Int) W
   r"""
   Create a window
   """
+
+
+class Surface:
+  pass
+
+
+class Texture:
+  pass
 
 
 class Renderer:
@@ -155,8 +178,26 @@ class Renderer:
       or NULL for the entire rendering target
 
     Returns:
-    0 on success or a negative error code on failure; call SDL_GetError()
-    for more information.
+    None - this method raises on error.
+    SDL_RenderFillRect will return 0 or negative error code on failure.
+    This method will check and raise an error if the return value
+    indicates failure.
+    """
+
+  def clear() Int:
+    """
+    ## SDL_RenderClear
+
+    Clear the current rendering target with the drawing color.
+
+    This function clears the entire rendering target, ignoring the viewport and
+    the clip rectangle.
+
+    Returns:
+    None - this method raises on error.
+    SDL_RenderClear will return 0 or negative error code on failure.
+    This method will check and raise an error if the return value
+    indicates failure.
     """
 
 
@@ -184,7 +225,8 @@ def getTicks() Float:
 
 
 class KeyboardState:
-  pass
+  def __getitem__(index Int) Bool:
+    pass
 
 
 def getKeyboardState() KeyboardState:
@@ -334,7 +376,118 @@ class AudioDevice:
   specific, or capture devices.
   """
 
+  def pause(pause_on Int) nil:
+    """
+    Wrapper around SDL_PauseAudioDevice.
+
+    Note that unlike if you used this API directly in C,
+    there is no way to provide a callback to generate the PCM data for
+    the audio. This is because mtots does not support multithreading
+    and also it would probably be very inefficient for mtots to handle
+    real time audio directly at the PCM level.
+
+    Instead there are higher level API for generating audio.
+
+    See e.g. sdl.setAudioTrack.
+
+    ## SDL_PauseAudioDevice
+    Use this function to pause and unpause audio playback on a specified
+    device.
+
+    This function pauses and unpauses the audio callback processing for a given
+    device. Newly-opened audio devices start in the paused state, so you must
+    call this function with **pause_on**=0 after opening the specified audio
+    device to start playing sound. This allows you to safely initialize data
+    for your callback function after opening the audio device. Silence will be
+    written to the audio device while paused, and the audio callback is
+    guaranteed to not be called. Pausing one device does not prevent other
+    unpaused devices from running their callbacks.
+
+    Pausing state does not stack; even if you pause a device several times, a
+    single unpause will start the device playing again, and vice versa. This is
+    different from how SDL_LockAudioDevice() works.
+
+    If you just need to protect a few variables from race conditions vs your
+    callback, you shouldn't pause the audio device, as it will lead to dropouts
+    in the audio playback. Instead, you should use SDL_LockAudioDevice().
+
+    Parameters:
+    * pause_on non-zero to pause, 0 to unpause
+    """
+
 
 def openAudioDevice(device optional[String]) AudioDevice:
-  r"""
+  """
+  Due to the way SDL audio works with mtots, much of SDL's documentation
+  about the functions arguments are not really relevant.
+
+  ## SDL_OpenAudioDevice
+  Open a specific audio device.
+
+  SDL_OpenAudio(), unlike this function, always acts on device ID 1. As such,
+  this function will never return a 1 so as not to conflict with the legacy
+  function.
+
+  Please note that SDL 2.0 before 2.0.5 did not support recording; as such,
+  this function would fail if `iscapture` was not zero. Starting with SDL
+  2.0.5, recording is implemented and this value can be non-zero.
+  (mtots does not currently support recording at all)
+
+  Passing in a `device` name of NULL requests the most reasonable default
+  (and is equivalent to what SDL_OpenAudio() does to choose a device). The
+  `device` name is a UTF-8 string reported by SDL_GetAudioDeviceName(), but
+  some drivers allow arbitrary and driver-specific strings, such as a
+  hostname/IP address for a remote audio server, or a filename in the
+  diskaudio driver.
+
+  An opened audio device starts out paused, and should be enabled for playing
+  by calling SDL_PauseAudioDevice(devid, 0) when you are ready for your audio
+  callback function to be called. Since the audio driver may modify the
+  requested size of the audio buffer, you should allocate any local mixing
+  buffers after you open the audio device.
+
+  The audio callback runs in a separate thread in most cases; you can prevent
+  race conditions between your callback and other threads without fully
+  pausing playback with SDL_LockAudioDevice(). For more information about the
+  callback, see SDL_AudioSpec.
+
+  Parameters:
+  * device - a UTF-8 string reported by SDL_GetAudioDeviceName() or a
+    driver-specific name as appropriate. NULL requests the most
+    reasonable default device.
+
+  Returns:
+  None - this function raises on error.
+  SDL_OpenAudioDevice will return 0 on failure.
+  This function will check and raise an error if the return value
+  indicates failure.
+  """
+
+
+def setAudioTrack(trackID Int, freq Float, amp Float, waveForm Int):
+  """
+  This method allows playing a fixed synth sound.
+  When the audio device is unpaused, this note will be played.
+
+  SDL audio actually does not normally work like this - normally with SDL
+  you generate audio by feeding PCM values in a separate thread in an audio
+  callback.
+
+  However, mtots does not support multithreading, and even if it did,
+  as a scripting language, it would probably be too slow to efficiently
+  support it anyway.
+
+  Parameters:
+  * trackID - ID of the track to modify.
+    Should be an integer in [0, AUDIO_TRACK_COUNT).
+    AUDIO_TRACK_COUNT is currently fixed at 8.
+  * freq - Frequency to synthesize with.
+  * amp - Amplitude to synthesize with.
+    Should be between 0 and 1. Any value outside this range will
+    be clamped to [0, 1].
+  * waveForm - Should be one of:
+    * WAVE_FORM_SINE
+    * WAVE_FORM_SAWTOOTH
+    * WAVE_FORM_SQUARE
+    * WAVE_FORM_TRIANGLE
   """

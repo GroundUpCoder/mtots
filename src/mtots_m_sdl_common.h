@@ -90,6 +90,7 @@ typedef struct ObjEvent {
 typedef struct ObjKeyboardState {
   ObjNative obj;
   const Uint8 *state;
+  int numKeys;
 } ObjKeyboardState;
 
 typedef struct ObjRect {

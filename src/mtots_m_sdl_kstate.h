@@ -12,6 +12,13 @@ static ubool implKeyboardStateGetItem(i16 argCount, Value *args, Value *out) {
     return UFALSE;
   }
   index = (size_t) AS_NUMBER(args[0]);
+  if (index > (size_t)(kstate->numKeys)) {
+    runtimeError(
+      "KeyboardState index out of bounds (index=%lu, numKeys=%d)",
+      (unsigned long)index,
+      kstate->numKeys);
+    return UFALSE;
+  }
   *out = BOOL_VAL(kstate->state[index] != 0);
   return UTRUE;
 }

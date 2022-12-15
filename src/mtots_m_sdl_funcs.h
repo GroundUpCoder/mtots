@@ -138,7 +138,7 @@ static CFunction funcPollEvent = { implPollEvent, "pollEvent",
 static ubool implGetKeyboardState(i16 argCount, Value *args, Value *out) {
   ObjKeyboardState *kstate =
     NEW_NATIVE(ObjKeyboardState, &descriptorKeyboardState);
-  kstate->state = SDL_GetKeyboardState(NULL);
+  kstate->state = SDL_GetKeyboardState(&kstate->numKeys);
   *out = OBJ_VAL_EXPLICIT((Obj*)kstate);
   return UTRUE;
 }

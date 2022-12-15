@@ -187,7 +187,7 @@ def eventLoop() nil:
       elif event.type == sdl.KEYDOWN:
         if adev is nil:
           adev = sdl.openAudioDevice(nil)
-          adev.pause(0)
+          (adev or raise 0).pause(0)
         if event.key == sdl.key.SPACE:
           waveformIndex = (waveformIndex + 1) % len(waveforms)
 
