@@ -6,6 +6,7 @@ import { MScanner } from "./scanner";
 import { MParser } from "./parser";
 import { Solver } from "./solver";
 import { MError } from "./error";
+import { MModule } from "./module";
 
 export type SourceFinder = (
   path: string,
@@ -15,7 +16,7 @@ export type SourceFinder = (
 export class ParseContext {
   readonly sourceFinder: SourceFinder;
   private readonly fileCache: Map<string, [ast.File, [Uri, number]]> = new Map();
-  private readonly moduleCache: Map<string, ast.Module> = new Map();
+  private readonly moduleCache: Map<string, MModule> = new Map();
   private currentVersion: number = 1;
   readonly builtinScope: MScope = new MScope();
   private builtinPromise: Promise<void>;
@@ -74,7 +75,7 @@ export class ParseContext {
 
   private async loadModule(
       moduleName: string,
-      localCache: Map<string, ast.Module>): Promise<ast.Module | null> {
+      localCache: Map<string, MModule>): Promise<MModule | null> {
     const locallyCachedModule = localCache.get(moduleName);
     if (locallyCachedModule) {
       return locallyCachedModule;
@@ -86,7 +87,7 @@ export class ParseContext {
     const { file, fromCache } = loadFileResult;
     if (fromCache) {
       // If the File was cached, there's a chance that we can use the
-      // cached Module as well.
+      // cached MModule as well.
       const cachedModule = this.moduleCache.get(moduleName);
       if (cachedModule) {
         const cachedVersion = cachedModule.version;
@@ -120,8 +121,8 @@ export class ParseContext {
 
   private async solveFile(
       file: ast.File,
-      localCache: Map<string, ast.Module>): Promise<ast.Module> {
-    const module = new ast.Module(this.currentVersion, file, new MScope(this.builtinScope));
+      localCache: Map<string, MModule>): Promise<MModule> {
+    const module = new MModule(this.currentVersion, file, new MScope(this.builtinScope));
     const solver = new Solver(
       module.scope,
       module.errors,
@@ -142,7 +143,7 @@ export class ParseContext {
         }
       } else {
         solver.errors.push(new MError(
-          imp.location, `Module ${imp.module} not found`));
+          imp.location, `MModule ${imp.module} not found`));
       }
     }
 
