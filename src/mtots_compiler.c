@@ -1209,9 +1209,18 @@ static void parseIfStatement() {
 
 static void parseImportStatement() {
   u8 moduleName, alias;
+  StringBuffer sb;
 
+  initStringBuffer(&sb);
   expectToken(TOKEN_IDENTIFIER, "Expect module name after 'import'");
-  moduleName = parseIdentifierConstant(&parser.previous);
+  sbputstrlen(&sb, parser.previous.start, parser.previous.length);
+  while (consumeToken(TOKEN_DOT)) {
+    sbputchar(&sb, '.');
+    expectToken(TOKEN_IDENTIFIER, "Expect name after '.'");
+    sbputstrlen(&sb, parser.previous.start, parser.previous.length);
+  }
+  moduleName = makeConstant(STRING_VAL(internString(sb.chars, sb.length)));
+  freeStringBuffer(&sb);
 
   if (consumeToken(TOKEN_AS)) {
     expectToken(TOKEN_IDENTIFIER, "Expect module alias after 'as'");

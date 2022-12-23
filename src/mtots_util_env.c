@@ -138,14 +138,28 @@ const char *findModulePath(const char *moduleName) {
     getLibRoot,
     getStdlibRoot,
   };
-  size_t i;
+  size_t i, moduleNameLen = strlen(moduleName);
+  char relativePath[MAX_PATH_LENGTH + 1];
+
+  if (moduleNameLen >= MAX_PATH_LENGTH) {
+    /* TODO: indicate some sort of error */
+    return NULL;
+  }
+
+  strcpy(relativePath, moduleName);
+
+  for (i = 0; i < moduleNameLen; i++) {
+    if (relativePath[i] == '.') {
+      relativePath[i] = PATH_SEP;
+    }
+  }
 
   for (i = 0; i < sizeof(rootfns)/sizeof(const char*); i++) {
     if (rootfns[i]() != NULL) {
       snprintf(
         modulePath,
         MAX_PATH_LENGTH, "%s" PATH_SEP_STR "%s" MTOTS_FILE_EXTENSION,
-        rootfns[i](), moduleName);
+        rootfns[i](), relativePath);
       if (canOpen(modulePath)) {
         return modulePath;
       }

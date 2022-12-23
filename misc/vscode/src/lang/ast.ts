@@ -42,7 +42,9 @@ export class QualifiedIdentifier extends Ast {
   }
   toString() {
     const parent = this.parent;
-    return parent ? parent + this.identifier.name : this.identifier.name;
+    return parent ?
+      `${parent}.${this.identifier.name}` :
+      this.identifier.name;
   }
 }
 
