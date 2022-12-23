@@ -91,11 +91,11 @@ class TypeVisitor {
 
   solveTypeExpression(te: ast.TypeExpression): MType {
     const scope = this.solver.scope;
-    if (te.identifier.parent && te.identifier.parent.parent === null) {
+    if (te.parentIdentifier) {
       // Qualified type name
-      const parentIdentifier = te.identifier.parent.identifier;
+      const parentIdentifier = te.parentIdentifier;
       const parentName = parentIdentifier.name;
-      const memberIdentifier = te.identifier.identifier;
+      const memberIdentifier = te.baseIdentifier;
       const memberName = memberIdentifier.name;
       const parentSymbol = scope.get(parentName);
       if (!parentSymbol) {
@@ -129,7 +129,7 @@ class TypeVisitor {
       }
       return symbolTypeType;
     }
-    const name = te.identifier.toString();
+    const name = te.baseIdentifier.name;
     switch (name) {
       case 'Any': this.checkTypeArgc(te, 0); return type.Any;
       case 'Never': this.checkTypeArgc(te, 0); return type.Never;
@@ -138,18 +138,18 @@ class TypeVisitor {
       case 'Bool':
         this.checkTypeArgc(te, 0);
         this.symbolUsages.push(new MSymbolUsage(
-          te.identifier.location, type.BoolSymbol));
+          te.baseIdentifier.location, type.BoolSymbol));
         return type.Bool;
       case 'Float': // TODO: specialized float and int types
       case 'Int':
       case 'Number':
         this.checkTypeArgc(te, 0);
         this.symbolUsages.push(new MSymbolUsage(
-          te.identifier.location, type.NumberSymbol));
+          te.baseIdentifier.location, type.NumberSymbol));
         return type.Number;
       case 'String':
         this.symbolUsages.push(new MSymbolUsage(
-          te.identifier.location, type.StringSymbol));
+          te.baseIdentifier.location, type.StringSymbol));
         this.checkTypeArgc(te, 0); return type.String;
       case 'List':
         if (te.args.length === 0) {
@@ -182,9 +182,9 @@ class TypeVisitor {
         const returnType = this.solveTypeExpression(te.args[te.args.length - 1]);
         return type.Function.of(parameters, 0, returnType);
     }
-    if (te.identifier.parent === null && te.args.length === 0) {
+    if (te.args.length === 0) {
       // Simple type name
-      const typeIdentifier = te.identifier.identifier;
+      const typeIdentifier = te.baseIdentifier;
       const typeName = typeIdentifier.name;
       const typeSymbol = scope.get(typeName);
       if (typeSymbol) {
@@ -203,7 +203,7 @@ class TypeVisitor {
       }
     }
     this.errors.push(new MError(
-      te.identifier.location, `unrecognized type name ${te.identifier}`));
+      te.location, `unrecognized type name ${te.baseIdentifier.name}`));
     return type.Any;
   }
 }

@@ -65,14 +65,17 @@ export abstract class Expression extends Ast {
  *
  */
 export class TypeExpression extends Ast {
-  readonly identifier: QualifiedIdentifier;
+  readonly parentIdentifier: Identifier | null;
+  readonly baseIdentifier: Identifier;
   readonly args: TypeExpression[];
   constructor(
       location: MLocation,
-      identifier: QualifiedIdentifier,
+      parentIdentifier: Identifier | null,
+      baseIdentifier: Identifier,
       args: TypeExpression[]) {
     super(location);
-    this.identifier = identifier;
+    this.parentIdentifier = parentIdentifier;
+    this.baseIdentifier = baseIdentifier;
     this.args = args;
   }
 }

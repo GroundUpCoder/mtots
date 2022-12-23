@@ -128,12 +128,15 @@ export class MParser {
       const location = this.advance().location;
       return new ast.TypeExpression(
         location,
-        new ast.QualifiedIdentifier(location, null, new ast.Identifier(location, 'nil')),
+        null,
+        new ast.Identifier(location, 'nil'),
         []);
     }
-    const identifier = this.parseQualifiedIdentifier();
+    const firstIdentifier = this.parseIdentifier();
+    const secondIdentifier =
+      this.consume('.') ? this.parseIdentifier() : null;
     const args: ast.TypeExpression[] = [];
-    let endLocation = identifier.location;
+    let endLocation = (secondIdentifier || firstIdentifier).location;
     if (this.consume('[')) {
       while (!this.at(']')) {
         args.push(this.parseTypeExpression());
@@ -143,22 +146,22 @@ export class MParser {
       }
       endLocation = this.expect(']').location;
     }
-    let location = identifier.location.merge(endLocation);
-    let te = new ast.TypeExpression(location, identifier, args);
+    let location = firstIdentifier.location.merge(endLocation);
+    let te = secondIdentifier ?
+      new ast.TypeExpression(location, firstIdentifier, secondIdentifier, args) :
+      new ast.TypeExpression(location, null, firstIdentifier, args);
     if (this.at('?')) {
       const qmarkLocation = this.expect('?').location;
-      const identifier = new ast.QualifiedIdentifier(
-        qmarkLocation, null, new ast.Identifier(qmarkLocation, 'optional'));
       location = location.merge(qmarkLocation);
-      te = new ast.TypeExpression(location, identifier, [te]);
+      te = new ast.TypeExpression(
+        location, null, new ast.Identifier(qmarkLocation, 'optional'), [te]);
     }
     if (this.at('|')) {
       const pipeLocation = this.expect('|').location;
-      const identifer = new ast.QualifiedIdentifier(
-        pipeLocation, null, new ast.Identifier(pipeLocation, 'union'));
       const rhs = this.parseTypeExpression();
       location = location.merge(rhs.location);
-      te = new ast.TypeExpression(location, identifer, [te, rhs]);
+      te = new ast.TypeExpression(
+        location, null, new ast.Identifier(pipeLocation, 'union'), [te, rhs]);
     }
     return te;
   }
@@ -626,11 +629,8 @@ export class MParser {
   private newAnyType(location: MLocation): ast.TypeExpression {
     return new ast.TypeExpression(
       location,
-      new ast.QualifiedIdentifier(
-        location,
-        null,
-        new ast.Identifier(location, 'Any')
-      ),
+      null,
+      new ast.Identifier(location, 'Any'),
       []);
   }
 
