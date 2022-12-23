@@ -237,7 +237,7 @@ export class List extends MType {
   }
 
   getCompletionScope(): MScope | null {
-    return new MScope(null, this.methodMap);
+    return MScope.new(null, this.methodMap);
   }
 
   toString() {
@@ -566,7 +566,7 @@ export class Instance extends MType {
   }
 
   getCompletionScope(): MScope | null {
-    return new MScope(null, this.symbol.members);
+    return MScope.new(null, this.symbol.members);
   }
 
   toString() {
@@ -612,7 +612,7 @@ export class Module extends MType {
   }
 
   getCompletionScope(): MScope | null {
-    return new MScope(null, this.symbol.members);
+    return MScope.new(null, this.symbol.members);
   }
 
   toString(): string {

@@ -18,7 +18,7 @@ export class ParseContext {
   private readonly fileCache: Map<string, [ast.File, [Uri, number]]> = new Map();
   private readonly moduleCache: Map<string, MModule> = new Map();
   private currentVersion: number = 1;
-  readonly builtinScope: MScope = new MScope();
+  readonly builtinScope: MScope = MScope.new();
   private builtinPromise: Promise<void>;
   constructor(sourceFinder: SourceFinder) {
     this.sourceFinder = sourceFinder;
@@ -122,7 +122,7 @@ export class ParseContext {
   private async solveFile(
       file: ast.File,
       localCache: Map<string, MModule>): Promise<MModule> {
-    const module = new MModule(this.currentVersion, file, new MScope(this.builtinScope));
+    const module = new MModule(this.currentVersion, file, MScope.new(this.builtinScope));
     const solver = new Solver(
       module.scope,
       module.errors,

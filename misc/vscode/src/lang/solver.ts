@@ -595,7 +595,7 @@ class StatementVisitor extends ast.StatementVisitor<void> {
   }
 
   private visitFunctionOrMethod(s: ast.Function, symbol: MSymbol) {
-    const functionScope = new MScope(this.solver.scope);
+    const functionScope = MScope.new(this.solver.scope);
     const functionSolver = this.withScope(functionScope);
     this.checkParameters(s.parameters);
     const parameterTypes: MType[] = [];
@@ -635,7 +635,7 @@ class StatementVisitor extends ast.StatementVisitor<void> {
     if (!classSymbol) {
       throw new Error(`Assertion Error: class symbol not found (${s.identifier.name})`);
     }
-    const classScope = new MScope(this.solver.scope);
+    const classScope = MScope.new(this.solver.scope);
     const classSolver = this.withScope(classScope);
     const baseValueTypes: type.Class[] = [];
     for (const be of s.bases) {
@@ -701,7 +701,7 @@ class StatementVisitor extends ast.StatementVisitor<void> {
   }
 
   visitFor(s: ast.For) {
-    const forScope = new MScope(this.solver.scope);
+    const forScope = MScope.new(this.solver.scope);
     const forSolver = this.withScope(forScope);
     const variableSymbol = forSolver.recordSymbolDefinition(s.variable, true);
     const containerType = forSolver.solveExpression(s.container);
@@ -727,7 +727,7 @@ class StatementVisitor extends ast.StatementVisitor<void> {
   }
 
   visitBlock(s: ast.Block) {
-    const blockScope = new MScope(this.solver.scope);
+    const blockScope = MScope.new(this.solver.scope);
     const newSolver = this.withScope(blockScope);
     for (const statement of s.statements) {
       newSolver.solveStatement(statement);
