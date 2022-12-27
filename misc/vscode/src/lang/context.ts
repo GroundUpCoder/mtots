@@ -132,7 +132,7 @@ export class ParseContext {
 
     // PREPARE IMPORTS
     for (const imp of module.file.imports) {
-      const importSymbol = solver.recordSymbolDefinition(imp.alias, true);
+      const importSymbol = solver.recordSymbolDefinition(imp.alias, true, true, true);
       importSymbol.valueType = new type.Module(importSymbol, imp.module);
       const importedModule = await this.loadModule(imp.module.toString(), localCache);
       if (importedModule) {

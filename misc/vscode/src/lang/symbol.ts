@@ -1,4 +1,3 @@
-import * as ast from "./ast";
 import { MLocation } from "./location";
 import type * as type from "./type";
 
@@ -11,6 +10,9 @@ export class MSymbol {
 
   /** whether or not this symbol should be considered immutable */
   readonly final: boolean;
+
+  /** Whether or not this symbol is from an import statement */
+  private readonly isImport: boolean;
 
   /** If available, documentation related to the MSymbol */
   documentation: string | null;
@@ -43,9 +45,11 @@ export class MSymbol {
       name: string,
       definitionLocation: MLocation | null,
       final: boolean = true,
-      members: Map<string, MSymbol> | null = null) {
+      members: Map<string, MSymbol> | null = null,
+      isImport: boolean = false) {
     this.name = name;
     this.final = final;
+    this.isImport = isImport;
     this.location = definitionLocation;
     this.documentation = null;
     this.valueType = null;
@@ -53,6 +57,14 @@ export class MSymbol {
     this.members = members || new Map();
     this.functionSignature = null;
     this.definition = definitionLocation ? new MSymbolUsage(definitionLocation, this) : null;
+  }
+
+  isImportSymbol(): boolean {
+    return this.isImport;
+  }
+
+  isTypeSymbol(): boolean {
+    return !!this.typeType;
   }
 }
 

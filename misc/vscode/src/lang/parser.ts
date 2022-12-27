@@ -133,8 +133,19 @@ export class MParser {
         []);
     }
     const firstIdentifier = this.parseIdentifier();
-    const secondIdentifier =
-      this.consume('.') ? this.parseIdentifier() : null;
+    let secondIdentifier: ast.Identifier | null = null;
+    const maybeDotLocation = this.peek.location;
+    if (this.consume('.')) {
+      if (this.at('IDENTIFIER')) {
+        secondIdentifier = this.parseIdentifier();
+      } else {
+        // while this should technically be a syntax error,
+        // allowing this form to create the AST in some form allows
+        // for better completions.
+        // So we fake it here.
+        secondIdentifier = new ast.Identifier(maybeDotLocation, ' ');
+      }
+    }
     const args: ast.TypeExpression[] = [];
     let endLocation = (secondIdentifier || firstIdentifier).location;
     if (this.consume('[')) {

@@ -1,5 +1,5 @@
 import * as ast from "./ast";
-import { CompletionPoint } from "./completion";
+import { CompletionPoint, TypeChildCompletionPoint, TypeParentCompletionPoint } from "./completion";
 import { MError } from "./error";
 import { MLocation } from "./location";
 import { MScope } from "./scope";
@@ -47,8 +47,11 @@ export class Solver {
   }
 
   recordSymbolDefinition(
-      identifier: ast.Identifier, addToScope: boolean, final: boolean = true): MSymbol {
-    const symbol = new MSymbol(identifier.name, identifier.location, final);
+      identifier: ast.Identifier,
+      addToScope: boolean,
+      final: boolean = true,
+      isImport: boolean = false): MSymbol {
+    const symbol = new MSymbol(identifier.name, identifier.location, final, null, isImport);
     if (addToScope) {
       const previous = this.scope.map.get(identifier.name);
       if (previous) {
@@ -91,7 +94,11 @@ class TypeVisitor {
 
   solveTypeExpression(te: ast.TypeExpression): MType {
     const scope = this.solver.scope;
+
     if (te.parentIdentifier) {
+      this.solver.completionPoints.push(new TypeParentCompletionPoint(
+        te.parentIdentifier.location, scope));
+
       // Qualified type name
       const parentIdentifier = te.parentIdentifier;
       const parentName = parentIdentifier.name;
@@ -111,6 +118,8 @@ class TypeVisitor {
           `'${parentName}' is not a module`));
         return type.Any;
       }
+      this.solver.completionPoints.push(new TypeChildCompletionPoint(
+        te.baseIdentifier.location, MScope.new(null, parentSymbol.members)));
       const memberSymbol = parentSymbol.members.get(memberName);
       if (!memberSymbol) {
         this.errors.push(new MError(
@@ -129,6 +138,8 @@ class TypeVisitor {
       }
       return symbolTypeType;
     }
+    this.solver.completionPoints.push(new TypeParentCompletionPoint(
+      te.baseIdentifier.location, scope));
     const name = te.baseIdentifier.name;
     switch (name) {
       case 'Any': this.checkTypeArgc(te, 0); return type.Any;
