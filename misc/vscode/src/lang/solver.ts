@@ -18,6 +18,7 @@ export class Solver {
   readonly signatureHelpers: MSignatureHelper[];
   private readonly typeVisitor: TypeVisitor;
   readonly statementVisitor: StatementVisitor;
+  basesMap: Map<string, type.Class[]> | null = null
 
   constructor(
       scope: MScope,
@@ -54,14 +55,47 @@ export class Solver {
     }
 
     // PREPARE METHOD DECLARATIONS
+    this.basesMap = new Map();
     for (const cdecl of file.statements) {
       if (cdecl instanceof ast.Class) {
         const classSymbol = this.scope.get(cdecl.identifier.name);
         if (!classSymbol) {
           throw new Error(`Assertion Error: class symbol not found (${cdecl.identifier.name})`);
         }
+        const baseValueTypes: type.Class[] = [];
+        for (const be of cdecl.bases) {
+          const baseValueType = this.solveExpression(be);
+          if (baseValueType instanceof type.Class) {
+            for (const [key, value] of baseValueType.symbol.members) {
+              if (!classSymbol.members.has(key)) {
+                classSymbol.members.set(key, value);
+              }
+            }
+            baseValueTypes.push(baseValueType);
+          } else {
+            this.errors.push(new MError(
+              be.location,
+              `Expected Class but got ${baseValueType}`));
+          }
+        }
+        this.basesMap.set(cdecl.identifier.name, baseValueTypes);
+        classSymbol.staticMembers = new Map();
+        for (const staticMethod of cdecl.staticMethods) {
+          const staticMethodSymbol = this.recordSymbolDefinition(
+            staticMethod.identifier, false, true);
+          classSymbol.staticMembers.set(staticMethodSymbol.name, staticMethodSymbol);
+          this.statementVisitor.computeFunctionSignature(
+            staticMethod, staticMethodSymbol);
+        }
+        for (const field of cdecl.fields) {
+          const fieldSymbol = this.recordSymbolDefinition(
+            field.identifier, false, field.final);
+          classSymbol.members.set(fieldSymbol.name, fieldSymbol);
+          const fieldType = this.solveType(field.typeExpression);
+          fieldSymbol.valueType = fieldType;
+        }
         for (const method of cdecl.methods) {
-          const methodSymbol = this.recordSymbolDefinition(method.identifier, false);
+          const methodSymbol = this.recordSymbolDefinition(method.identifier, false, true);
           classSymbol.members.set(methodSymbol.name, methodSymbol);
           this.statementVisitor.computeFunctionSignature(method, methodSymbol);
         }
@@ -701,31 +735,23 @@ class StatementVisitor extends ast.StatementVisitor<void> {
     if (!classSymbol) {
       throw new Error(`Assertion Error: class symbol not found (${s.identifier.name})`);
     }
-    const baseValueTypes: type.Class[] = [];
-    for (const be of s.bases) {
-      const baseValueType = this.solveExpression(be);
-      if (baseValueType instanceof type.Class) {
-        for (const [key, value] of baseValueType.symbol.members) {
-          if (!classSymbol.members.has(key)) {
-            classSymbol.members.set(key, value);
-          }
-        }
-        baseValueTypes.push(baseValueType);
-      } else {
-        this.solver.errors.push(new MError(
-          be.location,
-          `Expected Class but got ${baseValueType}`));
-      }
+    if (!this.solver.basesMap) {
+      throw new Error(`Assertion Error: baseMap is missing`);
+    }
+    const baseValueTypes = this.solver.basesMap.get(s.identifier.name);
+    if (!baseValueTypes) {
+      throw new Error(`Assertion Error: baseValueTypes not found`);
     }
     classSymbol.staticMembers = new Map();
     for (const staticMethod of s.staticMethods) {
-      const staticMethodSymbol = this.solver.recordSymbolDefinition(
-        staticMethod.identifier, false);
-      classSymbol.staticMembers.set(staticMethodSymbol.name, staticMethodSymbol);
+      const staticMethodSymbol = classSymbol.staticMembers.get(staticMethod.identifier.name);
+      if (!staticMethodSymbol) {
+        throw Error(`Assertion Error: static method not found`);
+      }
       this.solver.statementVisitor.visitFunctionOrMethod(
         staticMethod, staticMethodSymbol);
     }
-    const classScope = MScope.new(this.solver.scope, classSymbol.members);
+    const classScope = MScope.new(this.solver.scope);
     const classSolver = this.withScope(classScope);
     classSymbol.documentation = s.documentation?.value || null;
     const thisIdentifier = new ast.Identifier(s.identifier.location, 'this');
@@ -735,13 +761,6 @@ class StatementVisitor extends ast.StatementVisitor<void> {
       const superIdentifier = new ast.Identifier(s.identifier.location, 'super');
       const superSymbol = classSolver.recordSymbolDefinition(superIdentifier, true);
       superSymbol.valueType = type.Instance.of(baseValueTypes[0].symbol);
-    }
-    for (const field of s.fields) {
-      const fieldSymbol = classSolver.recordSymbolDefinition(
-        field.identifier, false, field.final);
-      classSymbol.members.set(fieldSymbol.name, fieldSymbol);
-      const fieldType = classSolver.solveType(field.typeExpression);
-      fieldSymbol.valueType = fieldType;
     }
     for (const method of s.methods) {
       const methodSymbol = classSymbol.members.get(method.identifier.name);
