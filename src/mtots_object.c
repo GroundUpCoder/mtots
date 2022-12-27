@@ -65,6 +65,7 @@ ObjClass *newClass(String *name) {
   ObjClass *klass = ALLOCATE_OBJ(ObjClass, OBJ_CLASS);
   klass->name = name;
   initMap(&klass->methods);
+  initMap(&klass->staticMethods);
   klass->isModuleClass = UFALSE;
   klass->isBuiltinClass = UFALSE;
   klass->descriptor = NULL;

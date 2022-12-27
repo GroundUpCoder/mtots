@@ -532,6 +532,23 @@ static ubool invoke(String *name, i16 argCount) {
       "%s kind does not yet support method calls", getKindName(receiver));
     return UFALSE;
   }
+  if (klass == vm.classClass) {
+    /* For classes, we invoke static methods */
+    ObjClass *cls;
+    Value method;
+    if (!IS_CLASS(receiver)) {
+      panic("Class instance is not a Class (%s)", getKindName(receiver));
+    }
+    cls = AS_CLASS(receiver);
+    if (!mapGetStr(&cls->staticMethods, name, &method)) {
+      runtimeError(
+        "Static method '%s' not found in '%s'",
+        name->chars,
+        cls->name->chars);
+      return UFALSE;
+    }
+    return callValue(method, argCount);
+  }
 
   return invokeFromClass(klass, name, argCount);
 }
@@ -574,6 +591,13 @@ static void defineMethod(String *name) {
   Value method = peek(0);
   ObjClass *klass = AS_CLASS(peek(1));
   mapSetStr(&klass->methods, name, method);
+  pop();
+}
+
+static void defineStaticMethod(String *name) {
+  Value method = peek(0);
+  ObjClass *klass = AS_CLASS(peek(1));
+  mapSetStr(&klass->staticMethods, name, method);
   pop();
 }
 
@@ -1130,6 +1154,9 @@ loop:
       }
       case OP_METHOD:
         defineMethod(READ_STRING());
+        break;
+      case OP_STATIC_METHOD:
+        defineStaticMethod(READ_STRING());
         break;
     }
   }

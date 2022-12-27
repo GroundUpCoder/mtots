@@ -179,6 +179,7 @@ struct ObjClass {
   Obj obj;
   String *name;
   Map methods;
+  Map staticMethods;
   ubool isModuleClass;
   ubool isBuiltinClass;
   NativeObjectDescriptor *descriptor; /* NULL if not native */

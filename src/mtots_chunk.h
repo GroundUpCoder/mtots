@@ -57,7 +57,8 @@ typedef enum OpCode {
   OP_NEW_DICT,
   OP_CLASS,
   OP_INHERIT,
-  OP_METHOD
+  OP_METHOD,
+  OP_STATIC_METHOD
 } OpCode;
 
 typedef struct Chunk {

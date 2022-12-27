@@ -1,3 +1,4 @@
-List.getName() = "List"
-Number.getName() = "Number"
-Tuple.getName() = "Tuple"
+Class.getName(List) = "List"
+Class.getName(Number) = "Number"
+Class.getName(Tuple) = "Tuple"
+Class.getName(Class) = "Class"

@@ -1,4 +1,5 @@
 
-print('List.getName() = %r' % [List.getName()])
-print('Number.getName() = %r' % [Number.getName()])
-print('Tuple.getName() = %r' % [Tuple.getName()])
+print('Class.getName(List) = %r' % [Class.getName(List)])
+print('Class.getName(Number) = %r' % [Class.getName(Number)])
+print('Class.getName(Tuple) = %r' % [Class.getName(Tuple)])
+print('Class.getName(Class) = %r' % [Class.getName(Class)])

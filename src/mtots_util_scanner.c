@@ -242,7 +242,12 @@ static TokenType scanIdentifierType() {
             case 'e': return checkKeyword(2, 4, "turn", TOKEN_RETURN);
           }
           break;
-        case 's': return checkKeyword(1, 4, "uper", TOKEN_SUPER);
+        case 's':
+          switch (scanner.start[1]) {
+            case 'u': return checkKeyword(2, 3, "per", TOKEN_SUPER);
+            case 't': return checkKeyword(2, 4, "atic", TOKEN_STATIC);
+          }
+          break;
         case 't':
           switch (scanner.start[1]) {
             case 'h': return checkKeyword(2, 2, "is", TOKEN_THIS);

@@ -1021,6 +1021,23 @@ static void parseMethod() {
   emitBytes(OP_METHOD, constant);
 }
 
+static void parseStaticMethod() {
+  u8 constant;
+  ThunkType type;
+  expectToken(TOKEN_STATIC, "Expect 'static' to start static method definition");
+  expectToken(TOKEN_DEF, "Expect 'def' after 'static'");
+  expectToken(TOKEN_IDENTIFIER, "Expect static method name");
+  constant = parseIdentifierConstant(&parser.previous);
+
+  type = TYPE_METHOD;
+  if (parser.previous.length == 8 &&
+      memcmp(parser.previous.start, "__init__", 8) == 0) {
+    type = TYPE_INITIALIZER;
+  }
+  parseFunction(type);
+  emitBytes(OP_STATIC_METHOD, constant);
+}
+
 static void parseClassDeclaration() {
   u8 nameConstant;
   Token className;
@@ -1070,6 +1087,9 @@ static void parseClassDeclaration() {
   if (consumeToken(TOKEN_STRING) ||
       consumeToken(TOKEN_RAW_STRING)) {
     while (consumeToken(TOKEN_NEWLINE));
+  }
+  while (atToken(TOKEN_STATIC)) {
+    parseStaticMethod();
   }
   while (atToken(TOKEN_VAR) || atToken(TOKEN_FINAL)) {
     parseFieldDeclaration();

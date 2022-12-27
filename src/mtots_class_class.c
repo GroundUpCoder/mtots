@@ -3,16 +3,21 @@
 #include "mtots_vm.h"
 
 static ubool implClassGetName(i16 argCount, Value *args, Value *out) {
-  ObjClass *cls = AS_CLASS(args[-1]);
+  ObjClass *cls = AS_CLASS(args[0]);
   *out = STRING_VAL(cls->name);
   return UTRUE;
 }
 
-static CFunction funcClassGetName = { implClassGetName, "getName", 0 };
+static TypePattern argsClassGetName[] = {
+  {TYPE_PATTERN_CLASS },
+};
+static CFunction funcClassGetName = {
+  implClassGetName, "getName", 1, 0, argsClassGetName
+};
 
 void initClassClass() {
   String *tmpstr;
-  CFunction *methods[] = {
+  CFunction *staticMethods[] = {
     &funcClassGetName,
   };
   size_t i;
@@ -24,12 +29,11 @@ void initClassClass() {
   cls->isBuiltinClass = UTRUE;
   pop();
 
-  for (i = 0; i < sizeof(methods) / sizeof(CFunction*); i++) {
-    tmpstr = internCString(methods[i]->name);
+  for (i = 0; i < sizeof(staticMethods) / sizeof(CFunction*); i++) {
+    tmpstr = internCString(staticMethods[i]->name);
     push(STRING_VAL(tmpstr));
-    methods[i]->receiverType.type = TYPE_PATTERN_CLASS;
     mapSetStr(
-      &cls->methods, tmpstr, CFUNCTION_VAL(methods[i]));
+      &cls->staticMethods, tmpstr, CFUNCTION_VAL(staticMethods[i]));
     pop();
   }
 }

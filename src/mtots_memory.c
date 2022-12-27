@@ -95,6 +95,7 @@ static void blackenObject(Obj *object) {
       ObjClass *klass = (ObjClass*)object;
       markString(klass->name);
       markMap(&klass->methods);
+      markMap(&klass->staticMethods);
       break;
     }
     case OBJ_CLOSURE: {
