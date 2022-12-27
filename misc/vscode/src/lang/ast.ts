@@ -168,6 +168,7 @@ export class Class extends Statement {
   readonly identifier: Identifier;
   readonly bases: Expression[];
   readonly documentation: StringLiteral | null;
+  readonly staticMethods: Function[];
   readonly fields: Field[];
   readonly methods: Function[];
   constructor(
@@ -175,12 +176,14 @@ export class Class extends Statement {
       identifier: Identifier,
       bases: Expression[],
       documentation: StringLiteral | null,
+      staticMethods: Function[],
       fields: Field[],
       methods: Function[]) {
     super(location);
     this.identifier = identifier;
     this.bases = bases;
     this.documentation = documentation;
+    this.staticMethods = staticMethods;
     this.fields = fields;
     this.methods = methods;
   }

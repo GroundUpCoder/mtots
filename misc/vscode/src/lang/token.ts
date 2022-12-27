@@ -6,7 +6,7 @@ export const Keywords = [
   'var', 'while', 'as', 'assert', 'async', 'await', 'break',
   'continue', 'del', 'except', 'final', 'finally', 'from',
   'global', 'import', 'in', 'is', 'lambda', 'not', 'pass',
-  'raise', 'try', 'with', 'yield'
+  'raise', 'static', 'try', 'with', 'yield'
 ] as const;
 
 export const Symbols = [

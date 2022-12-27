@@ -29,6 +29,9 @@ export class MSymbol {
   /** The members of this MSymbol, if provided */
   members: Map<string, MSymbol>;
 
+  /** The static members of this MSymbol, if provided (only for Class Symbols) */
+  staticMembers: Map<string, MSymbol> | null;
+
   /**
    * If this symbol is a function, this field contains the
    * function signature.
@@ -55,6 +58,7 @@ export class MSymbol {
     this.valueType = null;
     this.typeType = null;
     this.members = members || new Map();
+    this.staticMembers = null;
     this.functionSignature = null;
     this.definition = definitionLocation ? new MSymbolUsage(definitionLocation, this) : null;
   }

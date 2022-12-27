@@ -571,6 +571,12 @@ export class MParser {
     while (this.consume('NEWLINE') || this.consume(';'));
     while (this.consume('pass'));
     while (this.consume('NEWLINE') || this.consume(';'));
+    const staticMethods = [];
+    while (this.at('static')) {
+      this.expect('static');
+      staticMethods.push(this.parseFunctionDeclaration());
+      while (this.consume('NEWLINE') || this.consume(';'));
+    }
     const fields = [];
     while (this.at('var') || this.at('final')) {
       fields.push(this.parseFieldDeclaration());
@@ -586,7 +592,7 @@ export class MParser {
     const location = startLocation.merge(endLocation);
 
     return new ast.Class(
-      location, identifier, bases, documentation, fields, methods);
+      location, identifier, bases, documentation, staticMethods, fields, methods);
   }
 
   private parseParameter(): ast.Parameter {

@@ -646,8 +646,6 @@ class StatementVisitor extends ast.StatementVisitor<void> {
     if (!classSymbol) {
       throw new Error(`Assertion Error: class symbol not found (${s.identifier.name})`);
     }
-    const classScope = MScope.new(this.solver.scope);
-    const classSolver = this.withScope(classScope);
     const baseValueTypes: type.Class[] = [];
     for (const be of s.bases) {
       const baseValueType = this.solveExpression(be);
@@ -659,11 +657,22 @@ class StatementVisitor extends ast.StatementVisitor<void> {
         }
         baseValueTypes.push(baseValueType);
       } else {
-        classSolver.errors.push(new MError(
+        this.solver.errors.push(new MError(
           be.location,
           `Expected Class but got ${baseValueType}`));
       }
     }
+    classSymbol.staticMembers = new Map();
+    for (const staticMethod of s.staticMethods) {
+      const staticMethodSymbol = this.solver.recordSymbolDefinition(
+        staticMethod.identifier, false);
+      staticMethodSymbol.documentation = staticMethod.documentation?.value || null;
+      classSymbol.staticMembers.set(staticMethodSymbol.name, staticMethodSymbol);
+      this.solver.statementVisitor.visitFunctionOrMethod(
+        staticMethod, staticMethodSymbol);
+    }
+    const classScope = MScope.new(this.solver.scope);
+    const classSolver = this.withScope(classScope);
     classSymbol.documentation = s.documentation?.value || null;
     const thisIdentifier = new ast.Identifier(s.identifier.location, 'this');
     const thisSymbol = classSolver.recordSymbolDefinition(thisIdentifier, true);

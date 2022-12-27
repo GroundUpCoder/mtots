@@ -517,6 +517,14 @@ export class Class extends MType {
     return this === other ? this : UntypedClass.closestCommonType(other);
   }
 
+  getCompletionScope(): MScope | null {
+    return MScope.new(null, this.symbol.staticMembers);
+  }
+
+  getMethodSymbol(methodName: string): MSymbol | null {
+    return this.symbol.staticMembers?.get(methodName) || null;
+  }
+
   toString() {
     // TODO: qualify the name
     return `class[${this.symbol.name}]`;
