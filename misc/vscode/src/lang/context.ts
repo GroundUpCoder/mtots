@@ -147,19 +147,7 @@ export class ParseContext {
       }
     }
 
-    // PREPARE CLASS DEFINITIONS
-    for (const cdecl of module.file.statements) {
-      if (cdecl instanceof ast.Class) {
-        const classSymbol = solver.recordSymbolDefinition(cdecl.identifier, true);
-        classSymbol.typeType = type.Instance.of(classSymbol);
-        classSymbol.valueType = type.Class.of(classSymbol);
-      }
-    }
-
-    // MAIN SOLVE LOOP
-    for (const statement of module.file.statements) {
-      solver.solveStatement(statement);
-    }
+    solver.solveFile(module.file);
     return module;
   }
 }

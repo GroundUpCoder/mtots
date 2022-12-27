@@ -34,6 +34,22 @@ export class Solver {
     this.statementVisitor = new StatementVisitor(this);
   }
 
+  solveFile(file: ast.File) {
+    // PREPARE CLASS DEFINITIONS
+    for (const cdecl of file.statements) {
+      if (cdecl instanceof ast.Class) {
+        const classSymbol = this.recordSymbolDefinition(cdecl.identifier, true);
+        classSymbol.typeType = type.Instance.of(classSymbol);
+        classSymbol.valueType = type.Class.of(classSymbol);
+      }
+    }
+
+    // MAIN SOLVE LOOP
+    for (const statement of file.statements) {
+      this.solveStatement(statement);
+    }
+  }
+
   solveType(typeExpression: ast.TypeExpression): MType {
     return this.typeVisitor.solveTypeExpression(typeExpression);
   }
