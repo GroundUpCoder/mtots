@@ -643,11 +643,7 @@ class StatementVisitor extends ast.StatementVisitor<void> {
     const returnType = functionSolver.solveType(s.returnType);
     const signature = new type.FunctionSignature(parameters, optionalParameters, returnType);
     symbol.functionSignature = signature;
-    const functionType = type.Function.of(
-      parameterTypes,
-      s.parameters.filter(p => p.defaultValue !== null).length,
-      returnType);
-    symbol.valueType = functionType;
+    symbol.valueType = signature.toType();
     functionSolver.solveStatement(s.body);
   }
 
