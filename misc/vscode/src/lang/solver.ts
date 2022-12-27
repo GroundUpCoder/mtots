@@ -625,7 +625,6 @@ class StatementVisitor extends ast.StatementVisitor<void> {
     const functionScope = MScope.new(this.solver.scope);
     const functionSolver = this.withScope(functionScope);
     this.checkParameters(s.parameters);
-    const parameterTypes: MType[] = [];
     const parameters: [string, MType][] = [];
     const optionalParameters: [string, MType][] = [];
     for (const parameter of s.parameters) {
@@ -633,7 +632,6 @@ class StatementVisitor extends ast.StatementVisitor<void> {
         parameter.identifier, true, false);
       const parameterType = functionSolver.solveType(parameter.typeExpression);
       parameterSymbol.valueType = parameterType;
-      parameterTypes.push(parameterType);
       if (parameter.defaultValue === null) {
         parameters.push([parameter.identifier.name, parameterType]);
       } else {
