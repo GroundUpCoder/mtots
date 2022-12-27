@@ -45,7 +45,7 @@ export class Solver {
   }
 
   solveFile(file: ast.File) {
-    // PREPARE CLASS DEFINITIONS
+    // PREPARE CLASS DECLARATIONS
     for (const cdecl of file.statements) {
       if (cdecl instanceof ast.Class) {
         const classSymbol = this.recordSymbolDefinition(cdecl.identifier, true);
@@ -99,6 +99,14 @@ export class Solver {
           classSymbol.members.set(methodSymbol.name, methodSymbol);
           this.statementVisitor.computeFunctionSignature(method, methodSymbol);
         }
+      }
+    }
+
+    // PREPARE FUNCTION DECLARATIONS
+    for (const fdecl of file.statements) {
+      if (fdecl instanceof ast.Function) {
+        const functionSymbol = this.recordSymbolDefinition(fdecl.identifier, true, true);
+        this.statementVisitor.computeFunctionSignature(fdecl, functionSymbol);
       }
     }
 
@@ -726,8 +734,24 @@ class StatementVisitor extends ast.StatementVisitor<void> {
   }
 
   visitFunction(s: ast.Function) {
-    const functionSymbol = this.solver.recordSymbolDefinition(s.identifier, true);
-    this.visitFunctionOrMethod(s, functionSymbol);
+    const previous = this.solver.scope.get(s.identifier.name);
+    if (previous) {
+      // If a symbol with the same name has previously been defined,
+      // and this symbol was just a forward declare for this function,
+      // we want to use the same symbol.
+      // It's a bit of a hack, but we check this by checking if the
+      // symbol location exactly matches the identifier location.
+      if (previous.location === s.identifier.location) {
+        this.visitFunctionOrMethod(s, previous);
+      } else {
+        this.solver.errors.push(new MError(
+          s.identifier.location,
+          `Duplicate definition of ${s.identifier.name}`));
+      }
+    } else {
+      const functionSymbol = this.solver.recordSymbolDefinition(s.identifier, true);
+      this.visitFunctionOrMethod(s, functionSymbol);
+    }
   }
 
   visitClass(s: ast.Class) {
