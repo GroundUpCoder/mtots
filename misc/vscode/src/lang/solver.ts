@@ -34,6 +34,15 @@ export class Solver {
     this.statementVisitor = new StatementVisitor(this);
   }
 
+  withScope(scope: MScope): Solver {
+    return new Solver(
+      scope,
+      this.errors,
+      this.symbolUsages,
+      this.completionPoints,
+      this.signatureHelpers);
+  }
+
   solveFile(file: ast.File) {
     // PREPARE CLASS DEFINITIONS
     for (const cdecl of file.statements) {
@@ -41,6 +50,21 @@ export class Solver {
         const classSymbol = this.recordSymbolDefinition(cdecl.identifier, true);
         classSymbol.typeType = type.Instance.of(classSymbol);
         classSymbol.valueType = type.Class.of(classSymbol);
+      }
+    }
+
+    // PREPARE METHOD DECLARATIONS
+    for (const cdecl of file.statements) {
+      if (cdecl instanceof ast.Class) {
+        const classSymbol = this.scope.get(cdecl.identifier.name);
+        if (!classSymbol) {
+          throw new Error(`Assertion Error: class symbol not found (${cdecl.identifier.name})`);
+        }
+        for (const method of cdecl.methods) {
+          const methodSymbol = this.recordSymbolDefinition(method.identifier, false);
+          classSymbol.members.set(methodSymbol.name, methodSymbol);
+          this.statementVisitor.computeFunctionSignature(method, methodSymbol);
+        }
       }
     }
 
@@ -570,12 +594,7 @@ class StatementVisitor extends ast.StatementVisitor<void> {
   }
 
   private withScope(scope: MScope): Solver {
-    return new Solver(
-      scope,
-      this.solver.errors,
-      this.solver.symbolUsages,
-      this.solver.completionPoints,
-      this.solver.signatureHelpers);
+    return this.solver.withScope(scope);
   }
 
   private solveStatement(s: ast.Statement, scope: MScope | null = null) {
@@ -621,33 +640,59 @@ class StatementVisitor extends ast.StatementVisitor<void> {
     }
   }
 
-  private visitFunctionOrMethod(s: ast.Function, symbol: MSymbol) {
-    const functionScope = MScope.new(this.solver.scope);
-    const functionSolver = this.withScope(functionScope);
+  computeFunctionSignature(s: ast.Function, symbol: MSymbol) {
+    symbol.documentation = s.documentation?.value || null;
     this.checkParameters(s.parameters);
     const parameters: [string, MType][] = [];
     const optionalParameters: [string, MType][] = [];
     for (const parameter of s.parameters) {
-      const parameterSymbol = functionSolver.recordSymbolDefinition(
-        parameter.identifier, true, false);
-      const parameterType = functionSolver.solveType(parameter.typeExpression);
-      parameterSymbol.valueType = parameterType;
+      const parameterType = this.solver.solveType(parameter.typeExpression);
       if (parameter.defaultValue === null) {
         parameters.push([parameter.identifier.name, parameterType]);
       } else {
         optionalParameters.push([parameter.identifier.name, parameterType]);
       }
     }
-    const returnType = functionSolver.solveType(s.returnType);
+    const returnType = this.solver.solveType(s.returnType);
     const signature = new type.FunctionSignature(parameters, optionalParameters, returnType);
     symbol.functionSignature = signature;
     symbol.valueType = signature.toType();
+  }
+
+  private visitFunctionOrMethod(s: ast.Function, symbol: MSymbol) {
+    if (symbol.functionSignature === null) {
+      this.computeFunctionSignature(s, symbol);
+    }
+    if (symbol.functionSignature === null) {
+      throw Error(`Assertion error: symbol.functionSignature is null`);
+    }
+    const functionScope = MScope.new(this.solver.scope);
+    const functionSolver = this.withScope(functionScope);
+    const paramCount = s.parameters.filter(p => p.defaultValue === null).length;
+    const optCount = s.parameters.filter(p => p.defaultValue !== null).length;
+    if (paramCount !== symbol.functionSignature.parameters.length ||
+        optCount !== symbol.functionSignature.optionalParameters.length) {
+      throw Error(`Assertion error: function parameter length does not match`);
+    }
+    for (let i = 0; i < s.parameters.length; i++) {
+      const parameter = s.parameters[i];
+      const [name, parameterType] =
+        i < symbol.functionSignature.parameters.length ?
+          symbol.functionSignature.parameters[i] :
+          symbol.functionSignature.optionalParameters[
+            i - symbol.functionSignature.parameters.length];
+      if (parameter.identifier.name !== name) {
+        throw Error(`Assertion error: parameter name does not match`);
+      }
+      const parameterSymbol = functionSolver.recordSymbolDefinition(
+        parameter.identifier, true, false);
+      parameterSymbol.valueType = parameterType;
+    }
     functionSolver.solveStatement(s.body);
   }
 
   visitFunction(s: ast.Function) {
     const functionSymbol = this.solver.recordSymbolDefinition(s.identifier, true);
-    functionSymbol.documentation = s.documentation?.value || null;
     this.visitFunctionOrMethod(s, functionSymbol);
   }
 
@@ -676,12 +721,11 @@ class StatementVisitor extends ast.StatementVisitor<void> {
     for (const staticMethod of s.staticMethods) {
       const staticMethodSymbol = this.solver.recordSymbolDefinition(
         staticMethod.identifier, false);
-      staticMethodSymbol.documentation = staticMethod.documentation?.value || null;
       classSymbol.staticMembers.set(staticMethodSymbol.name, staticMethodSymbol);
       this.solver.statementVisitor.visitFunctionOrMethod(
         staticMethod, staticMethodSymbol);
     }
-    const classScope = MScope.new(this.solver.scope);
+    const classScope = MScope.new(this.solver.scope, classSymbol.members);
     const classSolver = this.withScope(classScope);
     classSymbol.documentation = s.documentation?.value || null;
     const thisIdentifier = new ast.Identifier(s.identifier.location, 'this');
@@ -700,9 +744,10 @@ class StatementVisitor extends ast.StatementVisitor<void> {
       fieldSymbol.valueType = fieldType;
     }
     for (const method of s.methods) {
-      const methodSymbol = classSolver.recordSymbolDefinition(method.identifier, false);
-      methodSymbol.documentation = method.documentation?.value || null;
-      classSymbol.members.set(methodSymbol.name, methodSymbol);
+      const methodSymbol = classSymbol.members.get(method.identifier.name);
+      if (!methodSymbol) {
+        throw Error(`Assertion Error: method not found`);
+      }
       classSolver.statementVisitor.visitFunctionOrMethod(method, methodSymbol);
     }
   }
