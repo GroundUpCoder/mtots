@@ -397,6 +397,17 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
     return type.List.of(itemType);
   }
 
+  visitTupleDisplay(e: ast.TupleDisplay): type.MType {
+    let itemType: MType = type.Never;
+    if (this.typeHint instanceof type.Tuple) {
+      itemType = this.typeHint.itemType;
+    }
+    for (let item of e.items) {
+      itemType = itemType.closestCommonType(this.solveExpression(item));
+    }
+    return type.Tuple.of(itemType);
+  }
+
   visitDictDisplay(e: ast.DictDisplay): type.MType {
     let keyType: MType = type.Never;
     let valueType: MType = type.Never;
@@ -409,6 +420,20 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
       valueType = valueType.closestCommonType(this.solveExpression(value));
     }
     return type.Dict.of(keyType, valueType);
+  }
+
+  visitFrozenDictDisplay(e: ast.FrozenDictDisplay): type.MType {
+    let keyType: MType = type.Never;
+    let valueType: MType = type.Never;
+    if (this.typeHint instanceof type.FrozenDict) {
+      keyType = this.typeHint.keyType;
+      valueType = this.typeHint.valueType;
+    }
+    for (let [key, value] of e.pairs) {
+      keyType = keyType.closestCommonType(this.solveExpression(key));
+      valueType = valueType.closestCommonType(this.solveExpression(value));
+    }
+    return type.FrozenDict.of(keyType, valueType);
   }
 
   private checkArgTypes(

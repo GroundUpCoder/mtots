@@ -250,6 +250,38 @@ export class MParser {
         const location = startLocation.merge(endLocation);
         return new ast.DictDisplay(location, pairs);
       }
+      case 'final': {
+        this.advance();
+        if (this.consume('[')) {
+          const items: ast.Expression[] = [];
+          while (!this.at(']')) {
+            items.push(this.parseExpression());
+            if (!this.consume(',')) {
+              break;
+            }
+          }
+          const endLocation = this.expect(']').location;
+          const location = startLocation.merge(endLocation);
+          return new ast.TupleDisplay(location, items);
+        } else if (this.consume('{')) {
+          const pairs: [ast.Expression, ast.Expression][] = [];
+          while (!this.at('}')) {
+            const key = this.parseExpression();
+            const value = this.consume(':') ?
+              this.parseExpression() :
+              this.newNil(key.location);
+            pairs.push([key, value]);
+            if (!this.consume(',')) {
+              break;
+            }
+          }
+          const endLocation = this.expect('}').location;
+          const location = startLocation.merge(endLocation);
+          return new ast.FrozenDictDisplay(location, pairs);
+        } else {
+          throw this.newError(`Expected '[' or '{' following 'final' in expression`);
+        }
+      }
       case 'NUMBER': {
         const expression = new ast.NumberLiteral(
           startLocation, <number>this.peek.value);

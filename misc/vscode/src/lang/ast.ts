@@ -397,6 +397,17 @@ export class ListDisplay extends Expression {
   }
 }
 
+export class TupleDisplay extends Expression {
+  readonly items: Expression[];
+  constructor(location: MLocation, items: Expression[]) {
+    super(location);
+    this.items = items;
+  }
+  accept<R>(visitor: ExpressionVisitor<R>): R {
+    return visitor.visitTupleDisplay(this);
+  }
+}
+
 export class DictDisplay extends Expression {
   readonly pairs: [Expression, Expression][];
   constructor(location: MLocation, pairs: [Expression, Expression][]) {
@@ -405,6 +416,17 @@ export class DictDisplay extends Expression {
   }
   accept<R>(visitor: ExpressionVisitor<R>): R {
     return visitor.visitDictDisplay(this);
+  }
+}
+
+export class FrozenDictDisplay extends Expression {
+  readonly pairs: [Expression, Expression][];
+  constructor(location: MLocation, pairs: [Expression, Expression][]) {
+    super(location);
+    this.pairs = pairs;
+  }
+  accept<R>(visitor: ExpressionVisitor<R>): R {
+    return visitor.visitFrozenDictDisplay(this);
   }
 }
 
@@ -562,7 +584,9 @@ export abstract class ExpressionVisitor<R> {
   abstract visitStringLiteral(e: StringLiteral): R;
   abstract visitTypeAssertion(e: TypeAssertion): R;
   abstract visitListDisplay(e: ListDisplay): R;
+  abstract visitTupleDisplay(e: TupleDisplay): R;
   abstract visitDictDisplay(e: DictDisplay): R;
+  abstract visitFrozenDictDisplay(e: FrozenDictDisplay): R;
   abstract visitFunctionCall(e: FunctionCall): R;
   abstract visitMethodCall(e: MethodCall): R;
   abstract visitGetField(e: GetField): R;
