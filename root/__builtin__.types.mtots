@@ -9,6 +9,10 @@ def len(iterable) Int:
   "Returns the number of elements in a collection"
 
 
+def isinstance(value Any, klass Class) Bool:
+  "Checks whether the value is an instance of klass"
+
+
 def sorted(iterable, key Any = nil) List:
   "Sorts all the items in the iterable and returns them as a list"
 

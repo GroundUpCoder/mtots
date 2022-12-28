@@ -1,4 +1,5 @@
 Class.getName(List) = "List"
 Class.getName(Number) = "Number"
 Class.getName(Tuple) = "Tuple"
+Class.getName(Function) = "Function"
 Class.getName(Class) = "Class"

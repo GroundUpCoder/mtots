@@ -338,6 +338,20 @@ static TypePattern argsAbs[] = {
 static CFunction funcAbs = {
   implAbs, "abs", sizeof(argsAbs)/sizeof(TypePattern), 0, argsAbs };
 
+static ubool implIsInstance(i16 argCount, Value *args, Value *out) {
+  *out = BOOL_VAL(AS_CLASS(args[1]) == getClassOfValue(args[0]));
+  return UTRUE;
+}
+
+static TypePattern argsIsInstance[] = {
+  { TYPE_PATTERN_ANY },
+  { TYPE_PATTERN_CLASS },
+};
+
+static CFunction funcIsInstance = {
+  implIsInstance, "isinstance", sizeof(argsIsInstance)/sizeof(TypePattern), 0, argsIsInstance
+};
+
 static ubool implTuple(i16 argCount, Value *args, Value *out) {
   ObjList *list = AS_LIST(args[0]);
   *out = TUPLE_VAL(copyTuple(list->buffer, list->length));
@@ -424,6 +438,7 @@ void defineDefaultGlobals() {
   defineGlobal("cos", CFUNCTION_VAL(&funcCos));
   defineGlobal("tan", CFUNCTION_VAL(&funcTan));
   defineGlobal("abs", CFUNCTION_VAL(&funcAbs));
+  defineGlobal("isinstance", CFUNCTION_VAL(&funcIsInstance));
   defineGlobal("StopIteration", STOP_ITERATION_VAL());
 
   defineGlobal("__sort__", CFUNCTION_VAL(&cfunctionSort));

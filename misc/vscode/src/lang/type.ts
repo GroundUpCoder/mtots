@@ -782,7 +782,7 @@ FunctionSymbol.typeType = String;
 FunctionSymbol.valueType = Class.of(FunctionSymbol);
 
 export const ClassSymbol = new MSymbol('Class', null, true);
-ClassSymbol.typeType = String;
+ClassSymbol.typeType = UntypedClass;
 ClassSymbol.valueType = Class.of(ClassSymbol);
 ClassSymbol.staticMembers = mkmap([
   mkmethod('getName', Function.of([UntypedClass], 0, String)),
@@ -792,6 +792,7 @@ export const TypeSymbols = [
   AnySymbol,
   NeverSymbol,
   BoolSymbol,
+  NumberSymbol,
   StringSymbol,
   ListSymbol,
   TupleSymbol,
