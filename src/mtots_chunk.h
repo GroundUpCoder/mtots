@@ -55,6 +55,7 @@ typedef enum OpCode {
   OP_IMPORT,
   OP_NEW_LIST,
   OP_NEW_DICT,
+  OP_NEW_FROZEN_DICT,
   OP_CLASS,
   OP_INHERIT,
   OP_METHOD,

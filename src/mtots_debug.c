@@ -184,6 +184,8 @@ int disassembleInstruction(Chunk *chunk, int offset) {
       return byteInstruction("OP_NEW_LIST", chunk, offset);
     case OP_NEW_DICT:
       return byteInstruction("OP_NEW_DICT", chunk, offset);
+    case OP_NEW_FROZEN_DICT:
+      return byteInstruction("OP_NEW_FROZEN_DICT", chunk, offset);
     case OP_CLASS:
       return constantInstruction("OP_CLASS", chunk, offset);
     case OP_INHERIT:

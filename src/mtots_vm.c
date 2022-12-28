@@ -1143,6 +1143,21 @@ loop:
         push(DICT_VAL(dict));
         break;
       }
+      case OP_NEW_FROZEN_DICT: {
+        size_t i, length = READ_BYTE();
+        ObjFrozenDict *fdict;
+        Map map;
+        Value *start = vm.stackTop - 2 * length;
+        initMap(&map);
+        for (i = 0; i < 2 * length; i += 2) {
+          mapSet(&map, start[i], start[i + 1]);
+        }
+        vm.stackTop = start;
+        fdict = newFrozenDict(&map);
+        push(FROZEN_DICT_VAL(fdict));
+        freeMap(&map);
+        break;
+      }
       case OP_CLASS:
         push(CLASS_VAL(newClass(READ_STRING())));
         break;

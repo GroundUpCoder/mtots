@@ -7,3 +7,8 @@ final d = {1: 2}.freeze()
 print("d[1] = %r" % [d[1]])
 print("1 in d = %r" % [1 in d])
 print("5 in d = %r" % [5 in d])
+
+final d2 = final{5: "hello"}
+print("d2[5] = %r" % [d2[5]])
+print("1 in d2 = %r" % [1 in d2])
+print("5 in d2 = %r" % [5 in d2])

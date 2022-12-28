@@ -3,3 +3,6 @@ final{1: 2}
 d[1] = 2
 1 in d = true
 5 in d = false
+d2[5] = "hello"
+1 in d2 = false
+5 in d2 = true

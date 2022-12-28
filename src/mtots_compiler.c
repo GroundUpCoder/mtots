@@ -781,7 +781,7 @@ static void parseListDisplay() {
   emitBytes(OP_NEW_LIST, length);
 }
 
-static void parseMapDisplay() {
+static size_t parseMapDisplayBody() {
   size_t length = 0;
   for (;;) {
     if (consumeToken(TOKEN_RIGHT_BRACE)) {
@@ -802,9 +802,24 @@ static void parseMapDisplay() {
   }
   if (length > U8_MAX) {
     error("Number of pairs in a dict display cannot exceed 255");
-    return;
+    return 0;
   }
+  return length;
+}
+
+static void parseMapDisplay() {
+  size_t length = parseMapDisplayBody();
   emitBytes(OP_NEW_DICT, length);
+}
+
+static void parseFrozenMapDisplay() {
+  size_t length = parseMapDisplayBody();
+  emitBytes(OP_NEW_FROZEN_DICT, length);
+}
+
+static void parseImmutableCollectionDisplay() {
+  expectToken(TOKEN_LEFT_BRACE, "Expect '{' at start of FrozenDict literal");
+  parseFrozenMapDisplay();
 }
 
 static void parseUnary() {
@@ -876,6 +891,7 @@ void initParseRules() {
   rules[TOKEN_THIS] = newRule(parseThis, NULL, PREC_NONE);
   rules[TOKEN_TRUE] = newRule(parseLiteral, NULL, PREC_NONE);
   rules[TOKEN_AS] = newRule(NULL, parseAs, PREC_COMPARISON);
+  rules[TOKEN_FINAL] = newRule(parseImmutableCollectionDisplay, NULL, PREC_NONE);
   rules[TOKEN_IN] = newRule(NULL, parseBinary, PREC_COMPARISON);
   rules[TOKEN_IS] = newRule(NULL, parseBinary, PREC_COMPARISON);
   rules[TOKEN_NOT] = newRule(parseUnary, parseBinary, PREC_COMPARISON);
