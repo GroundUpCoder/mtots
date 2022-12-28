@@ -44,12 +44,15 @@ export class MModule {
   }
 
   findSignatureHelper(position: MPosition): MSignatureHelper | null {
+    let bestSoFar: MSignatureHelper | null = null;
     for (const sh of this.signatureHelpers) {
       const shRange = sh.location.range;
-      if (shRange.start.le(position) && position.le(shRange.end)) {
-        return sh;
+      if (shRange.start.le(position) && position.le(shRange.end) &&
+          (bestSoFar == null ||
+            bestSoFar.location.range.start.lt(shRange.start))) {
+        bestSoFar = sh;
       }
     }
-    return null;
+    return bestSoFar;
   }
 }
