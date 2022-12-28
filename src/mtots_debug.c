@@ -182,6 +182,8 @@ int disassembleInstruction(Chunk *chunk, int offset) {
       return constantInstruction("OP_IMPORT", chunk, offset);
     case OP_NEW_LIST:
       return byteInstruction("OP_NEW_LIST", chunk, offset);
+    case OP_NEW_TUPLE:
+      return byteInstruction("OP_NEW_TUPLE", chunk, offset);
     case OP_NEW_DICT:
       return byteInstruction("OP_NEW_DICT", chunk, offset);
     case OP_NEW_FROZEN_DICT:

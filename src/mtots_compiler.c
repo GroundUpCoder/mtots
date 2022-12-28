@@ -761,7 +761,7 @@ static void parseThis() {
   parseVariableNoAssignment();
 }
 
-static void parseListDisplay() {
+static size_t parseListDisplayBody() {
   size_t length = 0;
   for (;;) {
     if (consumeToken(TOKEN_RIGHT_BRACKET)) {
@@ -776,9 +776,19 @@ static void parseListDisplay() {
   }
   if (length > U8_MAX) {
     error("Number of items in a list display cannot exceed 255");
-    return;
+    return 0;
   }
+  return length;
+}
+
+static void parseListDisplay() {
+  size_t length = parseListDisplayBody();
   emitBytes(OP_NEW_LIST, length);
+}
+
+static void parseTupleDisplay() {
+  size_t length = parseListDisplayBody();
+  emitBytes(OP_NEW_TUPLE, length);
 }
 
 static size_t parseMapDisplayBody() {
@@ -818,8 +828,13 @@ static void parseFrozenMapDisplay() {
 }
 
 static void parseImmutableCollectionDisplay() {
-  expectToken(TOKEN_LEFT_BRACE, "Expect '{' at start of FrozenDict literal");
-  parseFrozenMapDisplay();
+  if (consumeToken(TOKEN_LEFT_BRACE)) {
+    parseFrozenMapDisplay();
+  } else if (consumeToken(TOKEN_LEFT_BRACKET)) {
+    parseTupleDisplay();
+  } else {
+    errorAtCurrent("Expected '[' or '{' after 'final' in expression");
+  }
 }
 
 static void parseUnary() {

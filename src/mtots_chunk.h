@@ -54,6 +54,7 @@ typedef enum OpCode {
   OP_RETURN,
   OP_IMPORT,
   OP_NEW_LIST,
+  OP_NEW_TUPLE,
   OP_NEW_DICT,
   OP_NEW_FROZEN_DICT,
   OP_CLASS,

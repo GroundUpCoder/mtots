@@ -17,6 +17,10 @@
 #include <time.h>
 #include <math.h>
 
+#if DEBUG_TRACE_EXECUTION
+#include <mtots_debug.h>
+#endif
+
 VM vm;
 
 static ubool invoke(String *name, i16 argCount);
@@ -1128,6 +1132,14 @@ loop:
           list->buffer[i] = start[i];
         }
         *start = LIST_VAL(list);
+        vm.stackTop = start + 1;
+        break;
+      }
+      case OP_NEW_TUPLE: {
+        size_t length = READ_BYTE();
+        Value *start = vm.stackTop - length;
+        ObjTuple *tuple = copyTuple(start, length);
+        *start = TUPLE_VAL(tuple);
         vm.stackTop = start + 1;
         break;
       }
