@@ -158,6 +158,11 @@ static void blackenObject(Obj *object) {
       markMap(&dict->dict);
       break;
     }
+    case OBJ_FROZEN_DICT: {
+      ObjFrozenDict *dict = (ObjFrozenDict*)object;
+      markMap(&dict->dict);
+      break;
+    }
     case OBJ_FILE: {
       ObjFile *file = (ObjFile*)object;
       markString(file->name);
@@ -243,6 +248,12 @@ static void freeObject(Obj *object) {
       FREE(ObjDict, object);
       break;
     }
+    case OBJ_FROZEN_DICT: {
+      ObjFrozenDict *dict = (ObjFrozenDict*)object;
+      freeMap(&dict->dict);
+      FREE(ObjFrozenDict, object);
+      break;
+    }
     case OBJ_FILE: {
       FREE(ObjFile, object);
       break;
@@ -302,6 +313,7 @@ static void markRoots() {
   markObject((Obj*)vm.listClass);
   markObject((Obj*)vm.tupleClass);
   markObject((Obj*)vm.mapClass);
+  markObject((Obj*)vm.frozenDictClass);
   markObject((Obj*)vm.functionClass);
   markObject((Obj*)vm.operatorClass);
   markObject((Obj*)vm.classClass);
@@ -360,6 +372,7 @@ void collectGarbage() {
   traceReferences();
   freeUnmarkedStrings();
   mapRemoveWhite(&vm.tuples);
+  mapRemoveWhite(&vm.frozenDicts);
   sweep();
 
   vm.nextGC = (vm.bytesAllocated + getInternedStringsAllocationSize()) * GC_HEAP_GROW_FACTOR;

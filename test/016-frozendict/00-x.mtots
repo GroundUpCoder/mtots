@@ -1,0 +1,9 @@
+
+
+print(FrozenDict)
+print({1: 2}.freeze())
+
+final d = {1: 2}.freeze()
+print("d[1] = %r" % [d[1]])
+print("1 in d = %r" % [1 in d])
+print("5 in d = %r" % [5 in d])

@@ -36,7 +36,8 @@
         "__string": "c",
         "istream": "c",
         "__functional_base_03": "c",
-        "__tuple": "c"
+        "__tuple": "c",
+        "__threading_support": "c"
     },
     "C_Cpp.default.defines": [
         "MTOTS_ENABLE_SDL=1",

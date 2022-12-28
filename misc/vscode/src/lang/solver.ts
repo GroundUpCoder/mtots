@@ -232,12 +232,26 @@ class TypeVisitor {
         }
         this.checkTypeArgc(te, 1);
         return type.List.of(this.solveTypeExpression(te.args[0]));
+      case 'Tuple':
+        if (te.args.length === 0) {
+          return type.UntypedTuple;
+        }
+        this.checkTypeArgc(te, 1);
+        return type.Tuple.of(this.solveTypeExpression(te.args[0]));
       case 'Dict':
         if (te.args.length === 0) {
           return type.UntypedDict;
         }
         this.checkTypeArgc(te, 2);
         return type.Dict.of(
+          this.solveTypeExpression(te.args[0]),
+          this.solveTypeExpression(te.args[1]));
+      case 'FrozenDict':
+        if (te.args.length === 0) {
+          return type.UntypedFrozenDict;
+        }
+        this.checkTypeArgc(te, 2);
+        return type.FrozenDict.of(
           this.solveTypeExpression(te.args[0]),
           this.solveTypeExpression(te.args[1]));
       case 'optional':

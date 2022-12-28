@@ -453,6 +453,7 @@ void defineDefaultGlobals() {
   mapSetStr(&vm.globals, vm.listClass->name, CLASS_VAL(vm.listClass));
   mapSetStr(&vm.globals, vm.tupleClass->name, CLASS_VAL(vm.tupleClass));
   mapSetStr(&vm.globals, vm.mapClass->name, CLASS_VAL(vm.mapClass));
+  mapSetStr(&vm.globals, vm.frozenDictClass->name, CLASS_VAL(vm.frozenDictClass));
   mapSetStr(&vm.globals, vm.functionClass->name, CLASS_VAL(vm.functionClass));
   mapSetStr(&vm.globals, vm.operatorClass->name, CLASS_VAL(vm.operatorClass));
   mapSetStr(&vm.globals, vm.classClass->name, CLASS_VAL(vm.classClass));

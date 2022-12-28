@@ -65,7 +65,7 @@ static ubool implDictIter(i16 argCount, Value *args, Value *out) {
     implDictIterator,
     blackenDictIterator,
     NULL,
-    "MapIterator", 0, 0);
+    "DictIterator", 0, 0);
   iter->dict = dict;
   initMapIterator(&iter->di, &dict->dict);
   *out = OBJ_VAL_EXPLICIT((Obj*)iter);
@@ -113,6 +113,16 @@ static ubool implDictRget(i16 argCount, Value *args, Value *out) {
 
 static CFunction funcDictRget = { implDictRget, "rget", 1, 2 };
 
+
+static ubool implDictFreeze(i16 argCount, Value *args, Value *out) {
+  ObjDict *dict = AS_DICT(args[-1]);
+  ObjFrozenDict *fdict = newFrozenDict(&dict->dict);
+  *out = FROZEN_DICT_VAL(fdict);
+  return UTRUE;
+}
+
+static CFunction funcDictFreeze = { implDictFreeze, "freeze", 0 };
+
 void initDictClass() {
   String *tmpstr;
   CFunction *methods[] = {
@@ -122,6 +132,7 @@ void initDictClass() {
     &funcDictContains,
     &funcDictIter,
     &funcDictRget,
+    &funcDictFreeze,
   };
   size_t i;
   ObjClass *cls;

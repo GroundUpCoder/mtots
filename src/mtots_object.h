@@ -19,6 +19,7 @@
 #define IS_LIST(value) isObjType(value, OBJ_LIST)
 #define IS_TUPLE(value) isObjType(value, OBJ_TUPLE)
 #define IS_DICT(value) isObjType(value, OBJ_DICT)
+#define IS_FROZEN_DICT(value) isObjType(value, OBJ_FROZEN_DICT)
 #define IS_FILE(value) isObjType(value, OBJ_FILE)
 #define IS_NATIVE(value) isObjType(value, OBJ_NATIVE)
 
@@ -31,6 +32,7 @@
 #define AS_LIST(value) ((ObjList*)AS_OBJ(value))
 #define AS_TUPLE(value) ((ObjTuple*)AS_OBJ(value))
 #define AS_DICT(value) ((ObjDict*)AS_OBJ(value))
+#define AS_FROZEN_DICT(value) ((ObjFrozenDict*)AS_OBJ(value))
 #define AS_FILE(value) ((ObjFile*)AS_OBJ(value))
 #define AS_NATIVE(value) ((ObjNative*)AS_OBJ(value))
 
@@ -56,6 +58,7 @@ typedef enum ObjType {
   OBJ_LIST,
   OBJ_TUPLE,
   OBJ_DICT,
+  OBJ_FROZEN_DICT,
 
   OBJ_FILE,
 
@@ -102,14 +105,20 @@ typedef struct ObjList {
 typedef struct ObjTuple {
   Obj obj;
   size_t length;
-  size_t hash;
   Value *buffer;
+  u32 hash;
 } ObjTuple;
 
 typedef struct ObjDict {
   Obj obj;
   Map dict;
 } ObjDict;
+
+typedef struct ObjFrozenDict {
+  Obj obj;
+  Map dict;
+  u32 hash;
+} ObjFrozenDict;
 
 typedef struct NativeObjectDescriptor {
   void (*blacken)(ObjNative*);
@@ -212,6 +221,7 @@ ObjBuffer *newBuffer();
 ObjList *newList(size_t size);
 ObjTuple *copyTuple(Value *buffer, size_t length);
 ObjDict *newDict();
+ObjFrozenDict *newFrozenDict(Map *map);
 ObjFile *newFile(FILE *file, ubool isOpen, String *name, FileMode mode);
 ObjFile *openFile(const char *filename, FileMode mode);
 ObjNative *newNative(NativeObjectDescriptor *descriptor, size_t objectSize);
@@ -226,6 +236,7 @@ const char *getObjectTypeName(ObjType type);
 
 Value LIST_VAL(ObjList *list);
 Value DICT_VAL(ObjDict *dict);
+Value FROZEN_DICT_VAL(ObjFrozenDict *fdict);
 Value INSTANCE_VAL(ObjInstance *instance);
 Value BUFFER_VAL(ObjBuffer *buffer);
 Value THUNK_VAL(ObjThunk *thunk);

@@ -136,6 +136,7 @@ export class BuiltinPrimitive extends MType {
   static UntypedList = new BuiltinPrimitive('List', Any);
   static UntypedTuple = new BuiltinPrimitive('Tuple', Any);
   static UntypedDict = new BuiltinPrimitive('Dict', Any);
+  static UntypedFrozenDict = new BuiltinPrimitive('Dict', Any);
   static UntypedFunction = new BuiltinPrimitive('Function', Any);
   static UntypedClass = new BuiltinPrimitive('Class', Any);
 
@@ -198,6 +199,7 @@ export const UntypedModule = BuiltinPrimitive.UntypedModule;
 export const UntypedList = BuiltinPrimitive.UntypedList;
 export const UntypedTuple = BuiltinPrimitive.UntypedTuple;
 export const UntypedDict = BuiltinPrimitive.UntypedDict;
+export const UntypedFrozenDict = BuiltinPrimitive.UntypedFrozenDict;
 export const UntypedFunction = BuiltinPrimitive.UntypedFunction;
 export const UntypedClass = BuiltinPrimitive.UntypedClass;
 
@@ -340,12 +342,77 @@ export class Dict extends MType {
     return this.methodMap.get(methodName) || super.getMethodSymbol(methodName);
   }
 
+  getCompletionScope(): MScope | null {
+    return MScope.new(null, this.methodMap);
+  }
+
   getForInItemType(): MType | null {
     return this.keyType;
   }
 
   toString() {
     return `Dict[${this.keyType},${this.valueType}]`;
+  }
+}
+
+export class FrozenDict extends MType {
+  private static readonly map: Map<string, FrozenDict> = new Map();
+
+  static of(keyType: MType, valueType: MType): FrozenDict {
+    const key = keyType.id + ':' + valueType.id;
+    const cached = this.map.get(key);
+    if (cached) {
+      return cached;
+    }
+    const newFrozenDict = new FrozenDict(keyType, valueType);
+    this.map.set(key, newFrozenDict);
+    return newFrozenDict;
+  }
+
+  readonly keyType: MType;
+  readonly valueType: MType;
+  private readonly methodMap: Map<string, MSymbol>;
+  private readonly valueSymbol: MSymbol | null;
+  private constructor(keyType: MType, valueType: MType) {
+    super();
+    this.keyType = keyType;
+    this.valueType = valueType;
+    this.methodMap = makeFrozenDictMethodMap(this);
+    if (keyType === String) {
+      const valueSymbol = new MSymbol('_', null, false, null);
+      valueSymbol.valueType = valueType;
+      this.valueSymbol = valueSymbol;
+    } else {
+      this.valueSymbol = null;
+    }
+  }
+
+  isAssignableTo(other: MType): boolean {
+    return this === other || UntypedFrozenDict.isAssignableTo(other);
+  }
+
+  _closestCommonType(other: MType): MType {
+    return this === other ? this : UntypedFrozenDict.closestCommonType(other);
+  }
+
+  getFieldSymbol(fieldName: string): MSymbol | null {
+    return this.valueSymbol;
+  }
+
+  getMethodSymbol(methodName: string): MSymbol | null {
+    return this.methodMap.get(methodName) || super.getMethodSymbol(methodName);
+  }
+
+  getCompletionScope(): MScope | null {
+    return MScope.new(null, this.methodMap);
+  }
+
+  getForInItemType(): MType | null {
+    return this.keyType;
+  }
+
+  toString() {
+    return `FrozenDict[${this.keyType},${this.valueType}]`;
   }
 }
 
@@ -777,6 +844,10 @@ export const DictSymbol = new MSymbol('Dict', null, true);
 DictSymbol.typeType = UntypedDict;
 DictSymbol.valueType = Class.of(DictSymbol);
 
+export const FrozenDictSymbol = new MSymbol('FrozenDict', null, true);
+FrozenDictSymbol.typeType = UntypedFrozenDict;
+FrozenDictSymbol.valueType = Class.of(FrozenDictSymbol);
+
 export const FunctionSymbol = new MSymbol('Function', null, true);
 FunctionSymbol.typeType = String;
 FunctionSymbol.valueType = Class.of(FunctionSymbol);
@@ -797,6 +868,7 @@ export const TypeSymbols = [
   ListSymbol,
   TupleSymbol,
   DictSymbol,
+  FrozenDictSymbol,
   FunctionSymbol,
   ClassSymbol,
 ];
@@ -857,6 +929,17 @@ export function makeDictMethodMap(self: Dict): Map<string, MSymbol> {
     mkmethod('__notcontains__', Function.of([self.keyType], 0, Bool)),
     mkmethod('__iter__', Function.of([], 0, Function.of([], 0, Iterate.of(self.keyType)))),
     mkmethod('delete', Function.of([self.keyType], 0, Bool)),
+    mkmethod('rget', Function.of([self.valueType, self.keyType], 1, self.keyType)),
+    mkmethod('freeze', Function.of([], 0, FrozenDict.of(self.keyType, self.valueType))),
+  ]);
+}
+
+export function makeFrozenDictMethodMap(self: FrozenDict): Map<string, MSymbol> {
+  return mkmap([
+    mkmethod('__getitem__', Function.of([self.keyType], 0, self.valueType)),
+    mkmethod('__contains__', Function.of([self.keyType], 0, Bool)),
+    mkmethod('__notcontains__', Function.of([self.keyType], 0, Bool)),
+    mkmethod('__iter__', Function.of([], 0, Function.of([], 0, Iterate.of(self.keyType)))),
     mkmethod('rget', Function.of([self.valueType, self.keyType], 1, self.keyType)),
   ]);
 }

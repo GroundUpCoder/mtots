@@ -226,6 +226,43 @@ ObjDict *newDict() {
   return dict;
 }
 
+static ObjFrozenDict *newFrozenDictWithHash(Map *map, u32 hash) {
+  ObjFrozenDict *fdict = mapFindFrozenDict(&vm.frozenDicts, map, hash);
+  if (fdict != NULL) {
+    return fdict;
+  }
+  fdict = ALLOCATE_OBJ(ObjFrozenDict, OBJ_FROZEN_DICT);
+  fdict->hash = hash;
+  initMap(&fdict->dict);
+  push(FROZEN_DICT_VAL(fdict));
+  mapAddAll(map, &fdict->dict);
+  mapSet(&vm.frozenDicts, FROZEN_DICT_VAL(fdict), NIL_VAL());
+  pop();
+  return fdict;
+}
+
+static u32 hashMap(Map *map) {
+  /* Essentially the CPython frozenset hash algorithm described here:
+   * https://stackoverflow.com/questions/20832279/ */
+  u32 hash = 1927868237UL;
+  MapIterator mi;
+  MapEntry *entry;
+  hash *= 2 * map->size * 2;
+  initMapIterator(&mi, map);
+  while (mapIteratorNext(&mi, &entry)) {
+    u32 kh = hashval(entry->key);
+    u32 vh = hashval(entry->value);
+    hash ^= (kh ^ (kh << 16) ^ 89869747UL)  * 3644798167UL;
+    hash ^= (vh ^ (vh << 16) ^ 89869747UL)  * 3644798167UL;
+  }
+  hash = hash * 69069U + 907133923UL;
+  return hash;
+}
+
+ObjFrozenDict *newFrozenDict(Map *map) {
+  return newFrozenDictWithHash(map, hashMap(map));
+}
+
 ObjFile *newFile(FILE *file, ubool isOpen, String *name, FileMode mode) {
   ObjFile *f = ALLOCATE_OBJ(ObjFile, OBJ_FILE);
   f->file = file;
@@ -289,6 +326,7 @@ ObjClass *getClassOfValue(Value value) {
         case OBJ_LIST: return vm.listClass;
         case OBJ_TUPLE: return vm.tupleClass;
         case OBJ_DICT: return vm.mapClass;
+        case OBJ_FROZEN_DICT: return vm.frozenDictClass;
         case OBJ_FILE: return vm.fileClass;
         case OBJ_NATIVE: return AS_NATIVE(value)->descriptor->klass;
         case OBJ_UPVALUE: panic("upvalue kinds do not have classes");
@@ -342,6 +380,9 @@ void printObject(Value value) {
     case OBJ_DICT:
       printf("<dict>");
       break;
+    case OBJ_FROZEN_DICT:
+      printf("<frozendict>");
+      break;
     case OBJ_FILE:
       printf("<file %s>", AS_FILE(value)->name->chars);
       break;
@@ -368,6 +409,7 @@ const char *getObjectTypeName(ObjType type) {
   case OBJ_LIST: return "OBJ_LIST";
   case OBJ_TUPLE: return "OBJ_TUPLE";
   case OBJ_DICT: return "OBJ_DICT";
+  case OBJ_FROZEN_DICT: return "OBJ_FROZEN_DICT";
   case OBJ_FILE: return "OBJ_FILE";
   case OBJ_NATIVE: return "OBJ_NATIVE";
   case OBJ_UPVALUE: return "OBJ_UPVALUE";
@@ -385,6 +427,10 @@ Value LIST_VAL(ObjList *list) {
 
 Value DICT_VAL(ObjDict *dict) {
   return OBJ_VAL_EXPLICIT((Obj*)dict);
+}
+
+Value FROZEN_DICT_VAL(ObjFrozenDict *fdict) {
+  return OBJ_VAL_EXPLICIT((Obj*)fdict);
 }
 
 Value INSTANCE_VAL(ObjInstance *instance) {

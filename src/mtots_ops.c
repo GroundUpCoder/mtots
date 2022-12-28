@@ -22,6 +22,28 @@ ubool valuesIs(Value a, Value b) {
   return UFALSE; /* Unreachable */
 }
 
+ubool mapsEqual(Map *a, Map *b) {
+  MapIterator di;
+  MapEntry *entry;
+  if (a->size != b->size) {
+    return UFALSE;
+  }
+  initMapIterator(&di, a);
+  while (mapIteratorNext(&di, &entry)) {
+    Value key = entry->key;
+    if (!IS_EMPTY_KEY(key)) {
+      Value value1 = entry->value, value2;
+      if (!mapGet(b, key, &value2)) {
+        return UFALSE;
+      }
+      if (!valuesEqual(value1, value2)) {
+        return UFALSE;
+      }
+    }
+  }
+  return UTRUE;
+}
+
 ubool valuesEqual(Value a, Value b) {
   if (a.type != b.type) {
     return UFALSE;
@@ -66,25 +88,7 @@ ubool valuesEqual(Value a, Value b) {
         }
         case OBJ_DICT: {
           ObjDict *mapA = (ObjDict*)objA, *mapB = (ObjDict*)objB;
-          MapIterator di;
-          MapEntry *entry;
-          if (mapA->dict.size != mapB->dict.size) {
-            return UFALSE;
-          }
-          initMapIterator(&di, &mapA->dict);
-          while (mapIteratorNext(&di, &entry)) {
-            Value key = entry->key;
-            if (!IS_EMPTY_KEY(key)) {
-              Value value1 = entry->value, value2;
-              if (!mapGet(&mapB->dict, key, &value2)) {
-                return UFALSE;
-              }
-              if (!valuesEqual(value1, value2)) {
-                return UFALSE;
-              }
-            }
-          }
-          return UTRUE;
+          return mapsEqual(&mapA->dict, &mapB->dict);
         }
         default: return objA == objB;
       }
@@ -245,6 +249,33 @@ void sortList(ObjList *list, ObjList *keys) {
   free(buffer);
 }
 
+static ubool mapRepr(StringBuffer *out, Map *map) {
+  MapIterator mi;
+  MapEntry *entry;
+  size_t i;
+
+  sbputchar(out, '{');
+  initMapIterator(&mi, map);
+  for (i = 0; mapIteratorNext(&mi, &entry); i++) {
+    if (i > 0) {
+      sbputchar(out, ',');
+      sbputchar(out, ' ');
+    }
+    if (!valueRepr(out, entry->key)) {
+      return UFALSE;
+    }
+    if (!IS_NIL(entry->value)) {
+      sbputchar(out, ':');
+      sbputchar(out, ' ');
+      if (!valueRepr(out, entry->value)) {
+        return UFALSE;
+      }
+    }
+  }
+  sbputchar(out, '}');
+  return UTRUE;
+}
+
 ubool valueRepr(StringBuffer *out, Value value) {
   switch (value.type) {
     case VAL_BOOL: sbprintf(out, AS_BOOL(value) ? "true" : "false"); return UTRUE;
@@ -327,30 +358,12 @@ ubool valueRepr(StringBuffer *out, Value value) {
         }
         case OBJ_DICT: {
           ObjDict *dict = AS_DICT(value);
-          MapIterator mi;
-          MapEntry *entry;
-          size_t i;
-
-          sbputchar(out, '{');
-          initMapIterator(&mi, &dict->dict);
-          for (i = 0; mapIteratorNext(&mi, &entry); i++) {
-            if (i > 0) {
-              sbputchar(out, ',');
-              sbputchar(out, ' ');
-            }
-            if (!valueRepr(out, entry->key)) {
-              return UFALSE;
-            }
-            if (!IS_NIL(entry->value)) {
-              sbputchar(out, ':');
-              sbputchar(out, ' ');
-              if (!valueRepr(out, entry->value)) {
-                return UFALSE;
-              }
-            }
-          }
-          sbputchar(out, '}');
-          return UTRUE;
+          return mapRepr(out, &dict->dict);
+        }
+        case OBJ_FROZEN_DICT: {
+          ObjFrozenDict *dict = AS_FROZEN_DICT(value);
+          sbputstr(out, "final");
+          return mapRepr(out, &dict->dict);
         }
         case OBJ_FILE:
           sbprintf(out, "<file %s>", AS_FILE(value)->name->chars);

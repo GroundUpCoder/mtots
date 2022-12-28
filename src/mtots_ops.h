@@ -4,6 +4,7 @@
 #include "mtots_object.h"
 
 ubool valuesIs(Value a, Value b);
+ubool mapsEqual(Map *a, Map *b);
 ubool valuesEqual(Value a, Value b);
 ubool valueLessThan(Value a, Value b);
 void sortList(ObjList *list, ObjList *keys);

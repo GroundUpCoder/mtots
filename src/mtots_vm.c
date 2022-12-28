@@ -5,6 +5,7 @@
 #include "mtots_class_file.h"
 #include "mtots_class_str.h"
 #include "mtots_class_dict.h"
+#include "mtots_class_frozendict.h"
 #include "mtots_class_class.h"
 #include "mtots_class_buffer.h"
 #include "mtots_modules.h"
@@ -116,6 +117,7 @@ void initVM() {
   vm.listClass = NULL;
   vm.tupleClass = NULL;
   vm.mapClass = NULL;
+  vm.frozenDictClass = NULL;
   vm.functionClass = NULL;
   vm.operatorClass = NULL;
   vm.classClass = NULL;
@@ -128,6 +130,7 @@ void initVM() {
   initMap(&vm.modules);
   initMap(&vm.nativeModuleThunks);
   initMap(&vm.tuples);
+  initMap(&vm.frozenDicts);
 
   vm.preludeString = internCString("__prelude__");
   vm.initString = internCString("__init__");
@@ -149,6 +152,7 @@ void initVM() {
   initListClass();
   initNoMethodClass(&vm.tupleClass, "Tuple");
   initDictClass();
+  initFrozenDictClass();
   initNoMethodClass(&vm.functionClass, "Function");
   initNoMethodClass(&vm.operatorClass, "Operator");
   initClassClass();
@@ -165,6 +169,7 @@ void freeVM() {
   freeMap(&vm.modules);
   freeMap(&vm.nativeModuleThunks);
   freeMap(&vm.tuples);
+  freeMap(&vm.frozenDicts);
   vm.preludeString = NULL;
   vm.initString = NULL;
   vm.iterString = NULL;
@@ -470,6 +475,9 @@ static ubool callOperator(Operator op, i16 argCount) {
             return UTRUE;
           case OBJ_DICT:
             vm.stackTop[-1] = NUMBER_VAL(AS_DICT(receiver)->dict.size);
+            return UTRUE;
+          case OBJ_FROZEN_DICT:
+            vm.stackTop[-1] = NUMBER_VAL(AS_FROZEN_DICT(receiver)->dict.size);
             return UTRUE;
           default:
             return invoke(vm.lenString, 0);

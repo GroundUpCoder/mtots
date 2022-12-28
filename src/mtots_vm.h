@@ -30,9 +30,10 @@ typedef struct VM {
   TrySnapshot trySnapshots[TRY_SNAPSHOTS_MAX];
   i16 trySnapshotsCount;
   Map globals;
-  Map modules;            /* all preloaded modules */
-  Map nativeModuleThunks; /* Map of CFunctions */
+  Map modules;             /* all preloaded modules */
+  Map nativeModuleThunks;  /* Map of CFunctions */
   Map tuples;              /* table of all interned tuples */
+  Map frozenDicts;         /* a table of all interned FrozenDicts */
 
   String *preludeString;
   String *initString;
@@ -54,6 +55,7 @@ typedef struct VM {
   ObjClass *listClass;
   ObjClass *tupleClass;
   ObjClass *mapClass;
+  ObjClass *frozenDictClass;
   ObjClass *functionClass;
   ObjClass *operatorClass;
   ObjClass *classClass;

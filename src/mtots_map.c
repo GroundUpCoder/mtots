@@ -36,6 +36,7 @@ u32 hashval(Value value) {
     case VAL_SENTINEL: return (u32) AS_SENTINEL(value);
     case VAL_OBJ: switch (AS_OBJ(value)->type) {
       case OBJ_TUPLE: return AS_TUPLE(value)->hash;
+      case OBJ_FROZEN_DICT: return AS_FROZEN_DICT(value)->hash;
       default: break;
     }
   }
@@ -300,6 +301,34 @@ ObjTuple *mapFindTuple(
         if (equal) {
           return key; /* We found it */
         }
+      }
+    }
+    /* OPT: (index + 1) % map->capacity */
+    index = (index + 1) & (map->capacity - 1);
+  }
+}
+
+ObjFrozenDict *mapFindFrozenDict(
+    Map *map,
+    Map *frozenDictMap,
+    u32 hash) {
+  u32 index;
+  if (map->occupied == 0) {
+    return NULL;
+  }
+  /* OPT: hash % map->capacity */
+  index = hash & (map->capacity - 1);
+  for (;;) {
+    MapEntry *entry = &map->entries[index];
+    if (IS_EMPTY_KEY(entry->key)) {
+      /* Stop if we find an empty non-tombstone entry */
+      if (IS_NIL(entry->value)) {
+        return NULL;
+      }
+    } else if (IS_FROZEN_DICT(entry->key)) {
+      ObjFrozenDict *key = AS_FROZEN_DICT(entry->key);
+      if (key->hash == hash && mapsEqual(frozenDictMap, &key->dict)) {
+        return key; /* We found it */
       }
     }
     /* OPT: (index + 1) % map->capacity */

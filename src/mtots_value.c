@@ -147,6 +147,7 @@ const char *getKindName(Value value) {
       case OBJ_LIST: return "list";
       case OBJ_TUPLE: return "tuple";
       case OBJ_DICT: return "dict";
+      case OBJ_FROZEN_DICT: return "frozendict";
       case OBJ_FILE: return "file";
       case OBJ_NATIVE: return AS_NATIVE(value)->descriptor->name;
       case OBJ_UPVALUE: return "upvalue";
@@ -175,6 +176,7 @@ ubool typePatternMatch(TypePattern pattern, Value value) {
       /* fallthrough */
     case TYPE_PATTERN_LIST: return IS_LIST(value);
     case TYPE_PATTERN_DICT: return IS_DICT(value);
+    case TYPE_PATTERN_FROZEN_DICT: return IS_FROZEN_DICT(value);
     case TYPE_PATTERN_CLASS: return IS_CLASS(value);
     case TYPE_PATTERN_NATIVE_OR_NIL:
       if (IS_NIL(value)) {
@@ -201,6 +203,7 @@ const char *getTypePatternName(TypePattern pattern) {
     case TYPE_PATTERN_LIST_OR_NIL: return "(list|nil)";
     case TYPE_PATTERN_LIST: return "list";
     case TYPE_PATTERN_DICT: return "dict";
+    case TYPE_PATTERN_FROZEN_DICT: return "frozendict";
     case TYPE_PATTERN_CLASS: return "class";
     case TYPE_PATTERN_NATIVE_OR_NIL:
       return pattern.nativeTypeDescriptor ?

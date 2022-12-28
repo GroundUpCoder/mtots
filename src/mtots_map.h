@@ -51,6 +51,10 @@ struct ObjTuple *mapFindTuple(
     Value *buffer,
     size_t length,
     u32 hash);
+struct ObjFrozenDict *mapFindFrozenDict(
+    Map *map,
+    Map *frozenDictMap,
+    u32 hash);
 void mapRemoveWhite(Map *map);
 void markMap(Map *map);
 
