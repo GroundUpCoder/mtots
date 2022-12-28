@@ -58,21 +58,21 @@ static ubool impl(i16 argCount, Value *args, Value *out) {
   mapSetN(&module->fields, "key", DICT_VAL(dict));
   for (i = 0; i < sizeof(keyConstants)/sizeof(KeyConstant); i++) {
     KeyConstant c = keyConstants[i];
-    mapSetN(&dict->dict, c.name, NUMBER_VAL(c.value));
+    mapSetN(&dict->map, c.name, NUMBER_VAL(c.value));
   }
 
   dict = newDict();
   mapSetN(&module->fields, "scancode", DICT_VAL(dict));
   for (i = 0; i < sizeof(scanConstants)/sizeof(KeyConstant); i++) {
     KeyConstant c = scanConstants[i];
-    mapSetN(&dict->dict, c.name, NUMBER_VAL(c.value));
+    mapSetN(&dict->map, c.name, NUMBER_VAL(c.value));
   }
 
   dict = newDict();
   mapSetN(&module->fields, "button", DICT_VAL(dict));
   for (i = 0; i < sizeof(buttonConstants)/sizeof(KeyConstant); i++) {
     KeyConstant c = buttonConstants[i];
-    mapSetN(&dict->dict, c.name, NUMBER_VAL(c.value));
+    mapSetN(&dict->map, c.name, NUMBER_VAL(c.value));
   }
 
   for (i = 0; i < sizeof(numericConstants)/sizeof(NumericConstant); i++) {

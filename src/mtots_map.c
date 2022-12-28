@@ -327,7 +327,7 @@ ObjFrozenDict *mapFindFrozenDict(
       }
     } else if (IS_FROZEN_DICT(entry->key)) {
       ObjFrozenDict *key = AS_FROZEN_DICT(entry->key);
-      if (key->hash == hash && mapsEqual(frozenDictMap, &key->dict)) {
+      if (key->hash == hash && mapsEqual(frozenDictMap, &key->map)) {
         return key; /* We found it */
       }
     }

@@ -474,10 +474,10 @@ static ubool callOperator(Operator op, i16 argCount) {
             vm.stackTop[-1] = NUMBER_VAL(AS_TUPLE(receiver)->length);
             return UTRUE;
           case OBJ_DICT:
-            vm.stackTop[-1] = NUMBER_VAL(AS_DICT(receiver)->dict.size);
+            vm.stackTop[-1] = NUMBER_VAL(AS_DICT(receiver)->map.size);
             return UTRUE;
           case OBJ_FROZEN_DICT:
-            vm.stackTop[-1] = NUMBER_VAL(AS_FROZEN_DICT(receiver)->dict.size);
+            vm.stackTop[-1] = NUMBER_VAL(AS_FROZEN_DICT(receiver)->map.size);
             return UTRUE;
           default:
             return invoke(vm.lenString, 0);
@@ -774,7 +774,7 @@ loop:
         if (IS_DICT(peek(0))) {
           ObjDict *d = AS_DICT(peek(0));
           name = READ_STRING();
-          if (mapGet(&d->dict, STRING_VAL(name), &value)) {
+          if (mapGet(&d->map, STRING_VAL(name), &value)) {
             pop(); /* Instance */
             push(value);
             break;
@@ -820,7 +820,7 @@ loop:
 
         if (IS_DICT(peek(1))) {
           ObjDict *d = AS_DICT(peek(1));
-          mapSet(&d->dict, STRING_VAL(READ_STRING()), peek(0));
+          mapSet(&d->map, STRING_VAL(READ_STRING()), peek(0));
           value = pop();
           pop();
           push(value);
@@ -1137,7 +1137,7 @@ loop:
         Value *start = vm.stackTop - 2 * length;
         push(DICT_VAL(dict)); /* preserve for GC */
         for (i = 0; i < 2 * length; i += 2) {
-          mapSet(&dict->dict, start[i], start[i + 1]);
+          mapSet(&dict->map, start[i], start[i + 1]);
         }
         vm.stackTop = start;
         push(DICT_VAL(dict));

@@ -222,7 +222,7 @@ ObjTuple *copyTuple(Value *buffer, size_t length) {
 
 ObjDict *newDict() {
   ObjDict *dict = ALLOCATE_OBJ(ObjDict, OBJ_DICT);
-  initMap(&dict->dict);
+  initMap(&dict->map);
   return dict;
 }
 
@@ -233,9 +233,9 @@ static ObjFrozenDict *newFrozenDictWithHash(Map *map, u32 hash) {
   }
   fdict = ALLOCATE_OBJ(ObjFrozenDict, OBJ_FROZEN_DICT);
   fdict->hash = hash;
-  initMap(&fdict->dict);
+  initMap(&fdict->map);
   push(FROZEN_DICT_VAL(fdict));
-  mapAddAll(map, &fdict->dict);
+  mapAddAll(map, &fdict->map);
   mapSet(&vm.frozenDicts, FROZEN_DICT_VAL(fdict), NIL_VAL());
   pop();
   return fdict;

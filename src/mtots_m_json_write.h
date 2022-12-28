@@ -93,7 +93,7 @@ static ubool writeJSON(Value value, size_t *outLen, char *out) {
     MapEntry *entry;
     ubool first = UTRUE;
     len++; if (out) *out++ = '{';
-    initMapIterator(&di, &dict->dict);
+    initMapIterator(&di, &dict->map);
     while (mapIteratorNext(&di, &entry)) {
       size_t keyLen, valueLen;
       if (!first) {

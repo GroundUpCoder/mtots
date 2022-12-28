@@ -255,7 +255,7 @@ static ubool parseObject(JSONParseState *s) {
   for (i = 0; i < count; i++) {
     Value key   = vm.stackTop[-(2 * count) - 1 + 2 * i];
     Value value = vm.stackTop[-(2 * count) - 1 + 2 * i + 1];
-    mapSet(&dict->dict, key, value);
+    mapSet(&dict->map, key, value);
   }
   pop(); /* dict */
   vm.stackTop -= 2 * count;

@@ -155,12 +155,12 @@ static void blackenObject(Obj *object) {
     }
     case OBJ_DICT: {
       ObjDict *dict = (ObjDict*)object;
-      markMap(&dict->dict);
+      markMap(&dict->map);
       break;
     }
     case OBJ_FROZEN_DICT: {
       ObjFrozenDict *dict = (ObjFrozenDict*)object;
-      markMap(&dict->dict);
+      markMap(&dict->map);
       break;
     }
     case OBJ_FILE: {
@@ -244,13 +244,13 @@ static void freeObject(Obj *object) {
     }
     case OBJ_DICT: {
       ObjDict *dict = (ObjDict*)object;
-      freeMap(&dict->dict);
+      freeMap(&dict->map);
       FREE(ObjDict, object);
       break;
     }
     case OBJ_FROZEN_DICT: {
       ObjFrozenDict *dict = (ObjFrozenDict*)object;
-      freeMap(&dict->dict);
+      freeMap(&dict->map);
       FREE(ObjFrozenDict, object);
       break;
     }

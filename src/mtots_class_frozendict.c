@@ -2,7 +2,7 @@
 
 static ubool implFrozenDictGetItem(i16 argCount, Value *args, Value *out) {
   ObjFrozenDict *dict = AS_FROZEN_DICT(args[-1]);
-  if (!mapGet(&dict->dict, args[0], out)) {
+  if (!mapGet(&dict->map, args[0], out)) {
     runtimeError("Key not found in dict");
     return UFALSE;
   }
@@ -14,7 +14,7 @@ static CFunction funcFrozenDictGetItem = { implFrozenDictGetItem, "__getitem__",
 static ubool implFrozenDictContains(i16 argCount, Value *args, Value *out) {
   Value dummy;
   ObjFrozenDict *dict = AS_FROZEN_DICT(args[-1]);
-  *out = BOOL_VAL(mapGet(&dict->dict, args[0], &dummy));
+  *out = BOOL_VAL(mapGet(&dict->map, args[0], &dummy));
   return UTRUE;
 }
 
@@ -51,7 +51,7 @@ static ubool implFrozenDictIter(i16 argCount, Value *args, Value *out) {
     NULL,
     "FrozenDictIterator", 0, 0);
   iter->dict = dict;
-  initMapIterator(&iter->di, &dict->dict);
+  initMapIterator(&iter->di, &dict->map);
   *out = OBJ_VAL_EXPLICIT((Obj*)iter);
   return UTRUE;
 }
@@ -75,7 +75,7 @@ static ubool implFrozenDictRget(i16 argCount, Value *args, Value *out) {
   MapIterator di;
   MapEntry *entry;
 
-  initMapIterator(&di, &dict->dict);
+  initMapIterator(&di, &dict->map);
   while (mapIteratorNext(&di, &entry)) {
     if (valuesEqual(entry->value, value)) {
       *out = entry->key;

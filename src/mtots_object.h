@@ -111,12 +111,12 @@ typedef struct ObjTuple {
 
 typedef struct ObjDict {
   Obj obj;
-  Map dict;
+  Map map;
 } ObjDict;
 
 typedef struct ObjFrozenDict {
   Obj obj;
-  Map dict;
+  Map map;
   u32 hash;
 } ObjFrozenDict;
 

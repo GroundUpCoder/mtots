@@ -87,8 +87,8 @@ ubool valuesEqual(Value a, Value b) {
           return UTRUE;
         }
         case OBJ_DICT: {
-          ObjDict *mapA = (ObjDict*)objA, *mapB = (ObjDict*)objB;
-          return mapsEqual(&mapA->dict, &mapB->dict);
+          ObjDict *dictA = (ObjDict*)objA, *dictB = (ObjDict*)objB;
+          return mapsEqual(&dictA->map, &dictB->map);
         }
         default: return objA == objB;
       }
@@ -358,12 +358,12 @@ ubool valueRepr(StringBuffer *out, Value value) {
         }
         case OBJ_DICT: {
           ObjDict *dict = AS_DICT(value);
-          return mapRepr(out, &dict->dict);
+          return mapRepr(out, &dict->map);
         }
         case OBJ_FROZEN_DICT: {
           ObjFrozenDict *dict = AS_FROZEN_DICT(value);
           sbputstr(out, "final");
-          return mapRepr(out, &dict->dict);
+          return mapRepr(out, &dict->map);
         }
         case OBJ_FILE:
           sbprintf(out, "<file %s>", AS_FILE(value)->name->chars);
