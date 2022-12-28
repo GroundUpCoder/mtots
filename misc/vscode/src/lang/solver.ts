@@ -224,26 +224,8 @@ class TypeVisitor {
       te.baseIdentifier.location, scope));
     const name = te.baseIdentifier.name;
     switch (name) {
-      case 'Any': this.checkTypeArgc(te, 0); return type.Any;
-      case 'Never': this.checkTypeArgc(te, 0); return type.Never;
       case 'StopIteration': this.checkTypeArgc(te, 0); return type.StopIteration;
       case 'nil': this.checkTypeArgc(te, 0); return type.Nil;
-      case 'Bool':
-        this.checkTypeArgc(te, 0);
-        this.symbolUsages.push(new MSymbolUsage(
-          te.baseIdentifier.location, type.BoolSymbol));
-        return type.Bool;
-      case 'Float': // TODO: specialized float and int types
-      case 'Int':
-      case 'Number':
-        this.checkTypeArgc(te, 0);
-        this.symbolUsages.push(new MSymbolUsage(
-          te.baseIdentifier.location, type.NumberSymbol));
-        return type.Number;
-      case 'String':
-        this.symbolUsages.push(new MSymbolUsage(
-          te.baseIdentifier.location, type.StringSymbol));
-        this.checkTypeArgc(te, 0); return type.String;
       case 'List':
         if (te.args.length === 0) {
           return type.UntypedList;
@@ -766,11 +748,15 @@ class StatementVisitor extends ast.StatementVisitor<void> {
     if (!baseValueTypes) {
       throw new Error(`Assertion Error: baseValueTypes not found`);
     }
-    classSymbol.staticMembers = new Map();
+    if (!classSymbol.staticMembers) {
+      throw new Error(`Assertion Error: classSymbol.staticMembers is missing`);
+    }
     for (const staticMethod of s.staticMethods) {
       const staticMethodSymbol = classSymbol.staticMembers.get(staticMethod.identifier.name);
       if (!staticMethodSymbol) {
-        throw Error(`Assertion Error: static method not found`);
+        throw Error(
+          `Assertion Error: static method not found ` +
+          `(${classSymbol.name}.${staticMethod.identifier.name})`);
       }
       this.solver.statementVisitor.visitFunctionOrMethod(
         staticMethod, staticMethodSymbol);

@@ -26,6 +26,11 @@ export class ParseContext {
   }
 
   private async loadBuiltin() {
+    for (const symbol of type.TypeSymbols) {
+      this.builtinScope.set(symbol);
+    }
+    this.builtinScope.map.set('Int', type.NumberSymbol);
+    this.builtinScope.map.set('Float', type.NumberSymbol);
     const preludeModule = await this.loadModule('__builtin__', new Map());
     if (!preludeModule) {
       return; // TODO: indicate error

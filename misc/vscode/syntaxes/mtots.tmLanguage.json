@@ -41,7 +41,7 @@
 				{
 					"comment": "Globals provided by the runtime (types)",
 					"name": "support.class.mtots",
-					"match": "\\b(Nil|Bool|Number|String|Buffer|List|Dict|Function|Class|File|Table)\\b"
+					"match": "\\b(Nil|Bool|Number|String|Buffer|List|Tuple|Dict|FrozenDict|Function|Class|File|Table)\\b"
 				},
 				{
 					"comment": "Pseudo Types (Not provide by the runtime, purely for type annotations)",

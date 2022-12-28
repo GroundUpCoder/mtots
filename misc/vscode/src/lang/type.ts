@@ -134,6 +134,7 @@ export class BuiltinPrimitive extends MType {
   static String = new BuiltinPrimitive('String', Any);
   static UntypedModule = new BuiltinPrimitive('Module', Any);
   static UntypedList = new BuiltinPrimitive('List', Any);
+  static UntypedTuple = new BuiltinPrimitive('Tuple', Any);
   static UntypedDict = new BuiltinPrimitive('Dict', Any);
   static UntypedFunction = new BuiltinPrimitive('Function', Any);
   static UntypedClass = new BuiltinPrimitive('Class', Any);
@@ -195,6 +196,7 @@ export const Number = BuiltinPrimitive.Number;
 export const String = BuiltinPrimitive.String;
 export const UntypedModule = BuiltinPrimitive.UntypedModule;
 export const UntypedList = BuiltinPrimitive.UntypedList;
+export const UntypedTuple = BuiltinPrimitive.UntypedTuple;
 export const UntypedDict = BuiltinPrimitive.UntypedDict;
 export const UntypedFunction = BuiltinPrimitive.UntypedFunction;
 export const UntypedClass = BuiltinPrimitive.UntypedClass;
@@ -242,6 +244,51 @@ export class List extends MType {
 
   toString() {
     return `List[${this.itemType}]`;
+  }
+}
+export class Tuple extends MType {
+  private static readonly map: Map<MType, Tuple> = new Map();
+
+  static of(itemType: MType) {
+    const cached = this.map.get(itemType);
+    if (cached) {
+      return cached;
+    }
+    const newTuple = new Tuple(itemType);
+    this.map.set(itemType, newTuple);
+    return newTuple;
+  }
+
+  readonly itemType: MType;
+  private readonly methodMap: Map<string, MSymbol>;
+  private constructor(itemType: MType) {
+    super();
+    this.itemType = itemType;
+    this.methodMap = makeTupleMethodMap(this);
+  }
+
+  isAssignableTo(other: MType): boolean {
+    return this === other || UntypedTuple.isAssignableTo(other);
+  }
+
+  _closestCommonType(other: MType): MType {
+    return this === other ? this : UntypedTuple.closestCommonType(other);
+  }
+
+  getMethodSymbol(methodName: string): MSymbol | null {
+    return this.methodMap.get(methodName) || super.getMethodSymbol(methodName);
+  }
+
+  getForInItemType(): MType | null {
+    return this.itemType;
+  }
+
+  getCompletionScope(): MScope | null {
+    return MScope.new(null, this.methodMap);
+  }
+
+  toString() {
+    return `Tuple[${this.itemType}]`;
   }
 }
 
@@ -697,18 +744,61 @@ export const AnyMap = mkmap([
 
 export const AnySymbol = new MSymbol('Any', null, true);
 AnySymbol.typeType = Any;
+AnySymbol.valueType = Class.of(AnySymbol);
+
+export const NeverSymbol = new MSymbol('Never', null, true);
+NeverSymbol.typeType = Never;
+NeverSymbol.valueType = Class.of(NeverSymbol);
 
 export const BoolSymbol = new MSymbol('Bool', null, true);
 BoolSymbol.typeType = Bool;
+BoolSymbol.valueType = Class.of(BoolSymbol);
 
 export const NumberSymbol = new MSymbol('Number', null, true);
 NumberSymbol.typeType = Number;
+NumberSymbol.valueType = Class.of(NumberSymbol);
 NumberSymbol.documentation =
   '(NOTE: Int and Float are just aliases to Number and are mostly ' +
   'for documentation purposes only)';
 
 export const StringSymbol = new MSymbol('String', null, true);
 StringSymbol.typeType = String;
+StringSymbol.valueType = Class.of(StringSymbol);
+
+export const ListSymbol = new MSymbol('List', null, true);
+ListSymbol.typeType = UntypedList;
+ListSymbol.valueType = Class.of(ListSymbol);
+
+export const TupleSymbol = new MSymbol('Tuple', null, true);
+TupleSymbol.typeType = UntypedTuple;
+TupleSymbol.valueType = Class.of(TupleSymbol);
+
+export const DictSymbol = new MSymbol('Dict', null, true);
+DictSymbol.typeType = UntypedDict;
+DictSymbol.valueType = Class.of(DictSymbol);
+
+export const FunctionSymbol = new MSymbol('Function', null, true);
+FunctionSymbol.typeType = String;
+FunctionSymbol.valueType = Class.of(FunctionSymbol);
+
+export const ClassSymbol = new MSymbol('Class', null, true);
+ClassSymbol.typeType = String;
+ClassSymbol.valueType = Class.of(ClassSymbol);
+ClassSymbol.staticMembers = mkmap([
+  mkmethod('getName', Function.of([UntypedClass], 0, String)),
+]);
+
+export const TypeSymbols = [
+  AnySymbol,
+  NeverSymbol,
+  BoolSymbol,
+  StringSymbol,
+  ListSymbol,
+  TupleSymbol,
+  DictSymbol,
+  FunctionSymbol,
+  ClassSymbol,
+];
 
 export const BuiltinMap = new Map<BuiltinPrimitive, Map<string, MSymbol>>([
   [Number, mkmap([
@@ -744,6 +834,16 @@ export function makeListMethodMap(self: List): Map<string, MSymbol> {
     mkmethod('__notcontains__', Function.of([self.itemType], 0, Bool)),
     mkmethod('append', Function.of([self.itemType], 0, Nil)),
     mkmethod('pop', Function.of([], 0, self.itemType)),
+    mkmethod('__iter__', Function.of([], 0, Function.of([], 0, Iterate.of(self.itemType)))),
+  ]);
+}
+
+export function makeTupleMethodMap(self: Tuple): Map<string, MSymbol> {
+  return mkmap([
+    mkmethod('__mul__', Function.of([Number], 0, self)),
+    mkmethod('__getitem__', Function.of([Number], 0, self.itemType)),
+    mkmethod('__contains__', Function.of([self.itemType], 0, Bool)),
+    mkmethod('__notcontains__', Function.of([self.itemType], 0, Bool)),
     mkmethod('__iter__', Function.of([], 0, Function.of([], 0, Iterate.of(self.itemType)))),
   ]);
 }
