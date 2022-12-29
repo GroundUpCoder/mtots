@@ -1164,8 +1164,8 @@ loop:
         for (i = 0; i < 2 * length; i += 2) {
           mapSet(&map, start[i], start[i + 1]);
         }
-        vm.stackTop = start;
         fdict = newFrozenDict(&map);
+        vm.stackTop = start;
         push(FROZEN_DICT_VAL(fdict));
         freeMap(&map);
         break;
