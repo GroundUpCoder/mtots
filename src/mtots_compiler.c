@@ -996,6 +996,20 @@ static void parseFunction(ThunkType type) {
   compiler.thunk->moduleName = compiler.enclosing->thunk->moduleName;
   beginScope();
 
+  /* type parameters (ignored at runtime) */
+  if (consumeToken(TOKEN_LEFT_BRACKET)) {
+    while (atToken(TOKEN_IDENTIFIER)) {
+      advance();
+      if (atToken(TOKEN_IDENTIFIER)) {
+        parseTypeExpression();
+      }
+      if (!consumeToken(TOKEN_COMMA)) {
+        break;
+      }
+    }
+    expectToken(TOKEN_RIGHT_BRACKET, "Expect ']' after type parameters");
+  }
+
   expectToken(TOKEN_LEFT_PAREN, "Expect '(' after function name");
   if (!atToken(TOKEN_RIGHT_PAREN)) {
     do {

@@ -1,7 +1,7 @@
 
 
-final someDict = {
-  final[5, 6, 7]: [2, 5],
+final someDict = final{
+  final[5, 6, 7]: final[2, 5],
   final[5, 6, 8]: "Hello",
 }
 

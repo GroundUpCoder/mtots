@@ -106,6 +106,14 @@ export class Nop extends Statement {
   }
 }
 
+export class TypeParameter extends Ast {
+  readonly identifier: Identifier
+  constructor(location: MLocation, identifier: Identifier) {
+    super(location);
+    this.identifier = identifier;
+  }
+}
+
 export class Parameter extends Ast {
   readonly identifier: Identifier;
   readonly typeExpression: TypeExpression;
@@ -124,6 +132,7 @@ export class Parameter extends Ast {
 
 export class Function extends Statement {
   readonly identifier: Identifier;
+  readonly typeParameters: TypeParameter[];
   readonly parameters: Parameter[];
   readonly returnType: TypeExpression;
   readonly documentation: StringLiteral | null;
@@ -131,12 +140,14 @@ export class Function extends Statement {
   constructor(
       location: MLocation,
       identifier: Identifier,
+      typeParameters: TypeParameter[],
       parameters: Parameter[],
       returnType: TypeExpression,
       documentation: StringLiteral | null,
       body: Block) {
     super(location);
     this.identifier = identifier;
+    this.typeParameters = typeParameters;
     this.parameters = parameters;
     this.returnType = returnType;
     this.documentation = documentation;

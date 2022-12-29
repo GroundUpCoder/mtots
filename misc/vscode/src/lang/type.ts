@@ -248,6 +248,7 @@ export class List extends MType {
     return `List[${this.itemType}]`;
   }
 }
+
 export class Tuple extends MType {
   private static readonly map: Map<MType, Tuple> = new Map();
 
@@ -460,6 +461,40 @@ export class KeyedFrozenDict extends MType {
 
   toString(): string {
     return this.baseType.toString();
+  }
+}
+
+export class TypeParameter extends MType {
+  private static readonly map: Map<MSymbol, TypeParameter> = new Map();
+
+  static of(symbol: MSymbol, baseType: MType): TypeParameter {
+    const cached = this.map.get(symbol);
+    if (cached) {
+      throw new Error(`Cached TypeParameter already found for ${symbol.name}`);
+    }
+    const tp = new this(symbol, baseType);
+    this.map.set(symbol, tp);
+    return tp;
+  }
+
+  readonly symbol: MSymbol;
+  readonly baseType: MType;
+  constructor(symbol: MSymbol, baseType: MType) {
+    super();
+    this.symbol = symbol;
+    this.baseType = baseType;
+  }
+
+  isAssignableTo(other: MType): boolean {
+    return other === this;
+  }
+
+  _closestCommonType(other: MType): MType {
+    return this.baseType;
+  }
+
+  toString(): string {
+    return this.symbol.name;
   }
 }
 
@@ -798,31 +833,43 @@ export class Module extends MType {
 }
 
 export class FunctionSignature {
+  readonly typeParameters: TypeParameter[];
+
+  /** Required parameters (does not include optional parameters) */
   readonly parameters: [string, MType][];
+
   readonly optionalParameters: [string, MType][];
   readonly returnType: MType;
   constructor(
+      typeParameters: TypeParameter[],
       parameters: [string, MType][],
       optionalParameters: [string, MType][],
       returnType: MType) {
+    this.typeParameters = typeParameters;
     this.parameters = parameters;
     this.optionalParameters = optionalParameters;
     this.returnType = returnType;
   }
   toType(): MType {
+    if (this.typeParameters.length > 0) {
+      // TODO: Consider extending the Function type to support generics
+      return UntypedFunction;
+    }
     return Function.of(
       this.parameters.concat(this.optionalParameters).map(p => p[1]),
       this.optionalParameters.length,
       this.returnType);
   }
   format(functionName: string): string {
+    const typeargs = this.typeParameters.map(p => `${p.symbol.name}`).join(', ');
+    const typeargsStr = typeargs ? `[${typeargs}]` : '';
     const reqargs = this.parameters.map(p => `${p[0]} ${p[1]}`).join(', ');
     const optargs = this.optionalParameters.map(p => `${p[0]} ${p[1]} =...`).join(', ');
     const args =
       reqargs.length === 0 ? optargs :
       optargs.length === 0 ? reqargs :
       reqargs + ', ' + optargs;
-    return `def ${functionName}(${args}) ${this.returnType}`;
+    return `def ${functionName}${typeargsStr}(${args}) ${this.returnType}`;
   }
 }
 

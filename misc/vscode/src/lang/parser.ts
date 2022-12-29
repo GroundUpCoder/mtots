@@ -638,9 +638,29 @@ export class MParser {
     return new ast.Parameter(location, identifier, type, defaultValue);
   }
 
+  private parseTypeParameter(): ast.TypeParameter {
+    const startLocation = this.peek.location;
+    const identifier = this.parseIdentifier();
+    return new ast.TypeParameter(startLocation, identifier);
+  }
+
+  private parseTypeParameters(): ast.TypeParameter[] {
+    const tps = [];
+    this.expect('[');
+    while (this.at('IDENTIFIER')) {
+      tps.push(this.parseTypeParameter());
+      if (!this.consume(',')) {
+        break;
+      }
+    }
+    this.expect(']');
+    return tps;
+  }
+
   private parseFunctionDeclaration(): ast.Function {
     const startLocation = this.expect('def').location;
     const identifier = this.parseIdentifier();
+    const typeParameters = this.at('[') ? this.parseTypeParameters() : [];
     const parameters = [];
     this.expect('(');
     while (!this.at(')')) {
@@ -669,6 +689,7 @@ export class MParser {
     return new ast.Function(
       location,
       identifier,
+      typeParameters,
       parameters,
       returnType,
       documentation,

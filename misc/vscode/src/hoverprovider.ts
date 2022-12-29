@@ -41,6 +41,10 @@ export const hoverProvider: vscode.HoverProvider = {
               const builtinMarkdownString = new vscode.MarkdownString();
               builtinMarkdownString.appendCodeblock(`class ${typeType.name}(Builtin)`);
               markedStrings.push(builtinMarkdownString);
+            } else if (typeType instanceof type.TypeParameter) {
+              const builtinMarkdownString = new vscode.MarkdownString();
+              builtinMarkdownString.appendCodeblock(`${typeType.symbol.name}`);
+              markedStrings.push(builtinMarkdownString);
             }
           }
         }

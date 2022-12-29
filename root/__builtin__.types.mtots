@@ -17,6 +17,10 @@ def sorted(iterable, key Any = nil) List:
   "Sorts all the items in the iterable and returns them as a list"
 
 
+def tuple[T](list List[T]) Tuple[T]:
+  "Converts a List to a Tuple"
+
+
 def exit() Never:
   pass
 

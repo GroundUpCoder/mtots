@@ -227,18 +227,33 @@ class TypeVisitor {
       case 'StopIteration': this.checkTypeArgc(te, 0); return type.StopIteration;
       case 'nil': this.checkTypeArgc(te, 0); return type.Nil;
       case 'List':
+        const listSymbol = scope.get('List');
+        if (listSymbol) {
+          const typeUsage = new MSymbolUsage(te.baseIdentifier.location, listSymbol);
+          this.symbolUsages.push(typeUsage);
+        }
         if (te.args.length === 0) {
           return type.UntypedList;
         }
         this.checkTypeArgc(te, 1);
         return type.List.of(this.solveTypeExpression(te.args[0]));
       case 'Tuple':
+        const tupleSymbol = scope.get('Tuple');
+        if (tupleSymbol) {
+          const typeUsage = new MSymbolUsage(te.baseIdentifier.location, tupleSymbol);
+          this.symbolUsages.push(typeUsage);
+        }
         if (te.args.length === 0) {
           return type.UntypedTuple;
         }
         this.checkTypeArgc(te, 1);
         return type.Tuple.of(this.solveTypeExpression(te.args[0]));
       case 'Dict':
+        const dictSymbol = scope.get('Dict');
+        if (dictSymbol) {
+          const typeUsage = new MSymbolUsage(te.baseIdentifier.location, dictSymbol);
+          this.symbolUsages.push(typeUsage);
+        }
         if (te.args.length === 0) {
           return type.UntypedDict;
         }
@@ -247,6 +262,11 @@ class TypeVisitor {
           this.solveTypeExpression(te.args[0]),
           this.solveTypeExpression(te.args[1]));
       case 'FrozenDict':
+        const frozenDictSymbol = scope.get('FrozenDict');
+        if (frozenDictSymbol) {
+          const typeUsage = new MSymbolUsage(te.baseIdentifier.location, frozenDictSymbol);
+          this.symbolUsages.push(typeUsage);
+        }
         if (te.args.length === 0) {
           return type.UntypedFrozenDict;
         }
@@ -293,6 +313,58 @@ class TypeVisitor {
     }
     this.errors.push(new MError(
       te.location, `unrecognized type name ${te.baseIdentifier.name}`));
+    return type.Any;
+  }
+}
+
+class TypeBinder {
+  readonly bindings: Map<string, MType | null>
+  readonly allowNewBindings: boolean
+  constructor(bindings: Map<string, MType | null>, allowNewBindings: boolean) {
+    this.bindings = bindings;
+    this.allowNewBindings = allowNewBindings;
+  }
+
+  /** Try binding the parameter type to the actual argument type,
+   * Return the updated parameter type with bindings resolved.
+   */
+  bind(parameterType: MType, actualType: MType): MType {
+    if (parameterType instanceof type.TypeParameter) {
+      const binding = this.bindings.get(parameterType.symbol.name);
+      if (binding === undefined) {
+        // TODO: weird that this parameter type was not found. Error on this.
+        return type.Any;
+      } else if (binding === null) {
+        if (this.allowNewBindings) {
+          this.bindings.set(parameterType.symbol.name, actualType);
+          console.log(`binding ${parameterType.symbol.name} => ${actualType}`);
+          return actualType;
+        } else {
+          // New bindings are not allowed, but we found a variable with no
+          // TODO: add error
+          return type.Any;
+        }
+      }
+      return binding;
+    }
+    if (parameterType === type.Any ||
+        parameterType === type.Never ||
+        parameterType instanceof type.BuiltinPrimitive) {
+      return parameterType;
+    }
+    if (parameterType instanceof type.List) {
+      if (actualType instanceof type.List) {
+        return type.List.of(this.bind(parameterType.itemType, actualType.itemType));
+      }
+      return type.List.of(this.bind(parameterType.itemType, type.Any));
+    }
+    if (parameterType instanceof type.Tuple) {
+      if (actualType instanceof type.Tuple) {
+        return type.Tuple.of(this.bind(parameterType.itemType, actualType.itemType));
+      }
+      return type.Tuple.of(this.bind(parameterType.itemType, type.Any));
+    }
+    // TODO: Additional types
     return type.Any;
   }
 }
@@ -462,7 +534,8 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
       parameterTypes: MType[],
       parameterNames: string[] | null,
       optionalCount: number,
-      returnType: MType | null) {
+      returnType: MType | null,
+      bindings: Map<string, MType | null>) {
     if (argLocations) {
       for (let i = 0; i < argLocations.length; i++) {
         this.solver.signatureHelpers.push(new MSignatureHelper(
@@ -486,8 +559,13 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
       return;
     }
     for (let i = 0; i < args.length; i++) {
-      const parameterType = parameterTypes[i];
-      const argType = this.solveExpression(args[i], parameterType);
+      const binder = new TypeBinder(bindings, true);
+      let parameterType = parameterTypes[i];
+      const argType =
+        this.solveExpression(args[i], bindings.size > 0 ? type.Any : parameterType);
+      if (bindings.size > 0) {
+        parameterType = binder.bind(parameterType, argType);
+      }
       if (!argType.isAssignableTo(parameterType)) {
         this.errors.push(new MError(
           args[i].location,
@@ -502,6 +580,27 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
       funcSymbol: MSymbol | null,
       args: ast.Expression[],
       argLocations: MLocation[] | null): type.MType {
+    const signature = funcSymbol?.functionSignature || null;
+    if (signature) {
+      const bindings = new Map<string, MType | null>(
+        signature.typeParameters.map(tp => [tp.symbol.name, null]));
+      const allParameters = signature.parameters.concat(signature.optionalParameters);
+      const allParameterNames = allParameters.map(p => p[0]);
+      const allParameterTypes = allParameters.map(p => p[1]);
+      const returnType = signature.returnType;
+      this.checkArgTypes(
+        callLocation,
+        funcSymbol?.name || null,
+        funcSymbol?.documentation || null,
+        args,
+        argLocations,
+        allParameterTypes,
+        allParameterNames,
+        signature.optionalParameters.length,
+        returnType,
+        bindings);
+      return new TypeBinder(bindings, false).bind(returnType, type.Any);
+    }
     if (funcType === type.Any) {
       for (const arg of args) {
         this.solveExpression(arg);
@@ -529,15 +628,12 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
         parameterTypes,
         parameterNames,
         optCount,
-        null);
+        null,
+        new Map());
       return instanceType;
     }
     if (funcType instanceof type.Function) {
       let parameterNames: string[] | null = null;
-      if (funcSymbol && funcSymbol.functionSignature) {
-        const parameters = funcSymbol.functionSignature.parameters;
-        parameterNames = parameters.map(p => p[0]);
-      }
       this.checkArgTypes(
         callLocation,
         funcSymbol?.name || null,
@@ -547,7 +643,8 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
         funcType.parameters,
         parameterNames,
         funcType.optionalCount,
-        funcType.returnType);
+        funcType.returnType,
+        new Map());
       return funcType.returnType;
     }
     this.errors.push(new MError(callLocation, `${funcType} is not callable`));
@@ -723,18 +820,32 @@ class StatementVisitor extends ast.StatementVisitor<void> {
   computeFunctionSignature(s: ast.Function, symbol: MSymbol) {
     symbol.documentation = s.documentation?.value || null;
     this.checkParameters(s.parameters);
+    const typeParameters: type.TypeParameter[] = [];
     const parameters: [string, MType][] = [];
     const optionalParameters: [string, MType][] = [];
+
+    // We need a temporary scope to hold the type parameter types as we solve
+    // the parameter and return type type expressions.
+    // When we visit the function again, we'll need to add these to the scope again.
+    const innerSolver = this.solver.withScope(MScope.new(this.solver.scope));
+    for (const tp of s.typeParameters) {
+      const tpSymbol = innerSolver.recordSymbolDefinition(
+        tp.identifier, true, true);
+      const typeParameterType = new type.TypeParameter(tpSymbol, type.Any);
+      tpSymbol.typeType = typeParameterType;
+      typeParameters.push(typeParameterType);
+    }
     for (const parameter of s.parameters) {
-      const parameterType = this.solver.solveType(parameter.typeExpression);
+      const parameterType = innerSolver.solveType(parameter.typeExpression);
       if (parameter.defaultValue === null) {
         parameters.push([parameter.identifier.name, parameterType]);
       } else {
         optionalParameters.push([parameter.identifier.name, parameterType]);
       }
     }
-    const returnType = this.solver.solveType(s.returnType);
-    const signature = new type.FunctionSignature(parameters, optionalParameters, returnType);
+    const returnType = innerSolver.solveType(s.returnType);
+    const signature = new type.FunctionSignature(
+      typeParameters, parameters, optionalParameters, returnType);
     symbol.functionSignature = signature;
     symbol.valueType = signature.toType();
   }
@@ -750,6 +861,9 @@ class StatementVisitor extends ast.StatementVisitor<void> {
     const functionSolver = this.withScope(functionScope);
     const paramCount = s.parameters.filter(p => p.defaultValue === null).length;
     const optCount = s.parameters.filter(p => p.defaultValue !== null).length;
+    for (const typeParameterType of symbol.functionSignature.typeParameters) {
+      functionScope.set(typeParameterType.symbol);
+    }
     if (paramCount !== symbol.functionSignature.parameters.length ||
         optCount !== symbol.functionSignature.optionalParameters.length) {
       throw Error(`Assertion error: function parameter length does not match`);
