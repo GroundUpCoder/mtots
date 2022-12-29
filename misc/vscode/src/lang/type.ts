@@ -675,7 +675,18 @@ export class Function extends MType {
   }
 
   isAssignableTo(other: MType): boolean {
-    return this === other || UntypedFunction.isAssignableTo(other);
+    if (this === other) {
+      return true;
+    }
+    if (other instanceof Function) {
+      return other.parameters.length <= this.parameters.length &&
+        other.parameters.length - other.optionalCount >=
+          this.parameters.length - this.optionalCount &&
+        other.parameters.every((p, i) => p.isAssignableTo(this.parameters[i])) &&
+        this.returnType.isAssignableTo(other.returnType) &&
+        this.optionalCount >= other.optionalCount;
+    }
+    return UntypedFunction.isAssignableTo(other);
   }
 
   _closestCommonType(other: MType): MType {
@@ -706,7 +717,22 @@ export class Class extends MType {
   }
 
   isAssignableTo(other: MType): boolean {
-    return this === other || UntypedClass.isAssignableTo(other);
+    if (this === other) {
+      return true;
+    }
+    const initMethodSymbol = this.symbol.members.get('__init__');
+    const signature = initMethodSymbol && initMethodSymbol.functionSignature ?
+      initMethodSymbol.functionSignature : null;
+    const functionType = Function.of(
+      signature ?
+        signature.parameters.concat(signature.optionalParameters).map(p => p[1]) :
+        [],
+      signature ? signature.optionalParameters.length : 0,
+      Instance.of(this.symbol));
+    if (functionType.isAssignableTo(other)) {
+      return true;
+    }
+    return UntypedClass.isAssignableTo(other);
   }
 
   _closestCommonType(other: MType): MType {
