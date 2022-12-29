@@ -429,6 +429,23 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
       keyType = this.typeHint.keyType;
       valueType = this.typeHint.valueType;
     }
+    if (e.pairs.every(pair => pair[0] instanceof ast.StringLiteral)) {
+      const symbols: MSymbol[] = [];
+      for (const [key, value] of e.pairs) {
+        const currentKeyType = this.solveExpression(key);
+        if (!(key instanceof ast.StringLiteral)) {
+          throw new Error(`Assertion Failed: not all keys are string literals`);
+        }
+        const currentValueType = this.solveExpression(value);
+        const symbol = this.solver.recordSymbolDefinition(
+          new ast.Identifier(key.location, key.value), false, true);
+        symbol.valueType = currentValueType;
+        symbols.push(symbol);
+        keyType = keyType.closestCommonType(currentKeyType);
+        valueType = valueType.closestCommonType(currentValueType);
+      }
+      return type.KeyedFrozenDict.of(symbols, valueType);
+    }
     for (let [key, value] of e.pairs) {
       keyType = keyType.closestCommonType(this.solveExpression(key));
       valueType = valueType.closestCommonType(this.solveExpression(value));

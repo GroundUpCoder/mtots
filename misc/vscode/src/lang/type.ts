@@ -416,6 +416,53 @@ export class FrozenDict extends MType {
   }
 }
 
+export class KeyedFrozenDict extends MType {
+  static of(keySymbols: MSymbol[], valueType: MType): KeyedFrozenDict {
+    return new KeyedFrozenDict(keySymbols, valueType);
+  }
+
+  readonly baseType: FrozenDict
+  readonly keySymbols: MSymbol[]
+  private readonly keySymbolMap: Map<string, MSymbol>
+  private readonly wordKeySymbolMap: Map<string, MSymbol>
+  private constructor(keySymbols: MSymbol[], valueType: MType) {
+    super();
+    this.baseType = FrozenDict.of(String, valueType);
+    this.keySymbols = keySymbols;
+    this.keySymbolMap = new Map(keySymbols.map(s => [s.name, s]));
+    this.wordKeySymbolMap = new Map(
+      keySymbols.filter(s => /^[A-Za-z_][A-Za-z0-9_]*$/.test(s.name)).map(s => [s.name, s]));
+  }
+
+  isAssignableTo(other: MType): boolean {
+    return other === this || this.baseType.isAssignableTo(other);
+  }
+
+  _closestCommonType(other: MType): MType {
+    return this.baseType.closestCommonType(other);
+  }
+
+  getFieldSymbol(fieldName: string): MSymbol | null {
+    return this.keySymbolMap.get(fieldName) || null;
+  }
+
+  getMethodSymbol(methodName: string): MSymbol | null {
+    return this.baseType.getMethodSymbol(methodName);
+  }
+
+  getCompletionScope(): MScope | null {
+    return MScope.new(null, this.wordKeySymbolMap);
+  }
+
+  getForInItemType(): MType | null {
+    return this.baseType.getForInItemType();
+  }
+
+  toString(): string {
+    return this.baseType.toString();
+  }
+}
+
 /**
  * Union type between the given item type and nil
  */

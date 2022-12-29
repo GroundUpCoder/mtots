@@ -19,7 +19,7 @@ sdl.init(sdl.INIT_AUDIO | sdl.INIT_VIDEO)
 var adev optional[sdl.AudioDevice] = nil
 final keyToTrackMap Dict[Int, Int] = {}
 final trackToKeyMap List[Int?] = [nil as Int?] * sdl.AUDIO_TRACK_COUNT
-final keyToNoteID = {
+final keyToNoteID = final{
 
   # Number Row (sharp and flats for the QWERTY row)
   sdl.scancode.K1:             "E5",
@@ -72,7 +72,7 @@ final keyToNoteID = {
   sdl.scancode.PERIOD:         "D#5",
   sdl.scancode.SLASH:          "F5",
 }
-final noteIDToFreq = {
+final noteIDToFreq = final{
   # note frequencies from:
   # https://pages.mtu.edu/~suits/notefreqs.html
   "C4":              261.63,
