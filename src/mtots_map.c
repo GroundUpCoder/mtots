@@ -29,6 +29,8 @@ u32 hashval(Value value) {
       if (x == (double)ix) {
         return (u32) ix;
       }
+      /* TODO: smarter hashing */
+      return ((u32*)(&x))[0] ^ ((u32*)(&x))[1];
     }
     case VAL_STRING: return AS_STRING(value)->hash;
     case VAL_CFUNCTION: break;
