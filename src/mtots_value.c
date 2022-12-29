@@ -175,6 +175,7 @@ ubool typePatternMatch(TypePattern pattern, Value value) {
       }
       /* fallthrough */
     case TYPE_PATTERN_LIST: return IS_LIST(value);
+    case TYPE_PATTERN_TUPLE: return IS_TUPLE(value);
     case TYPE_PATTERN_DICT: return IS_DICT(value);
     case TYPE_PATTERN_FROZEN_DICT: return IS_FROZEN_DICT(value);
     case TYPE_PATTERN_CLASS: return IS_CLASS(value);
@@ -202,6 +203,7 @@ const char *getTypePatternName(TypePattern pattern) {
     case TYPE_PATTERN_NUMBER: return "number";
     case TYPE_PATTERN_LIST_OR_NIL: return "(list|nil)";
     case TYPE_PATTERN_LIST: return "list";
+    case TYPE_PATTERN_TUPLE: return "tuple";
     case TYPE_PATTERN_DICT: return "dict";
     case TYPE_PATTERN_FROZEN_DICT: return "frozendict";
     case TYPE_PATTERN_CLASS: return "class";

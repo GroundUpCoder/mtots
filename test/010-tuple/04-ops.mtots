@@ -1,0 +1,8 @@
+
+
+final t = final["hello", "world", "bob"]
+print("len(t) = %r" % [len(t)])
+print("t[0] = %r" % [t[0]])
+print("t[1] = %r" % [t[1]])
+print("t[2] = %r" % [t[2]])
+print("t * 3 = %r" % [t * 3])

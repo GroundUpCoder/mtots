@@ -2,6 +2,7 @@
 #include "mtots_vm.h"
 #include "mtots_globals.h"
 #include "mtots_class_list.h"
+#include "mtots_class_tuple.h"
 #include "mtots_class_file.h"
 #include "mtots_class_str.h"
 #include "mtots_class_dict.h"
@@ -154,7 +155,7 @@ void initVM() {
   initStringClass();
   initBufferClass();
   initListClass();
-  initNoMethodClass(&vm.tupleClass, "Tuple");
+  initTupleClass();
   initDictClass();
   initFrozenDictClass();
   initNoMethodClass(&vm.functionClass, "Function");
