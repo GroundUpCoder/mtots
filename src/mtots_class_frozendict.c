@@ -20,15 +20,15 @@ static ubool implFrozenDictContains(i16 argCount, Value *args, Value *out) {
 
 static CFunction funcFrozenDictContains = { implFrozenDictContains, "__contains__", 1 };
 
-typedef struct ObjDictIterator {
+typedef struct ObjFrozenDictIterator {
   ObjNativeClosure obj;
   ObjFrozenDict *dict;
   MapIterator di;
-} ObjDictIterator;
+} ObjFrozenDictIterator;
 
 static ubool implFrozenDictIterator(
     void *it, i16 argCount, Value *args, Value *out) {
-  ObjDictIterator *iter = (ObjDictIterator*)it;
+  ObjFrozenDictIterator *iter = (ObjFrozenDictIterator*)it;
   if (mapIteratorNextKey(&iter->di, out)) {
     return UTRUE;
   }
@@ -37,15 +37,15 @@ static ubool implFrozenDictIterator(
 }
 
 static void blackenFrozenDictIterator(void *it) {
-  ObjDictIterator *li = (ObjDictIterator*)it;
+  ObjFrozenDictIterator *li = (ObjFrozenDictIterator*)it;
   markObject((Obj*)(li->dict));
 }
 
 static ubool implFrozenDictIter(i16 argCount, Value *args, Value *out) {
   ObjFrozenDict *dict = AS_FROZEN_DICT(args[-1]);
-  ObjDictIterator *iter;
+  ObjFrozenDictIterator *iter;
   iter = NEW_NATIVE_CLOSURE(
-    ObjDictIterator,
+    ObjFrozenDictIterator,
     implFrozenDictIterator,
     blackenFrozenDictIterator,
     NULL,
