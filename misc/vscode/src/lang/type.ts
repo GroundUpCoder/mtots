@@ -873,8 +873,14 @@ export class Instance extends MType {
   }
 
   _isAssignableTo(other: MType): boolean {
-    // TODO: consider base classes
-    return this === other || other === Optional.of(this) || Any.isAssignableTo(other);
+    if (this === other) {
+      return true;
+    }
+    const bases = this.symbol.bases;
+    if (bases) {
+      return bases.some(base => Instance.of(base.symbol).isAssignableTo(other));
+    }
+    return Any.isAssignableTo(other);
   }
 
   _closestCommonType(other: MType): MType {

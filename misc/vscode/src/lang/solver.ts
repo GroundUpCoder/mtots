@@ -18,7 +18,6 @@ export class Solver {
   readonly signatureHelpers: MSignatureHelper[];
   private readonly typeVisitor: TypeVisitor;
   readonly statementVisitor: StatementVisitor;
-  basesMap: Map<string, type.Class[]> | null = null
   readonly usageMap: Map<MLocation, number> = new Map();
 
   constructor(
@@ -56,7 +55,6 @@ export class Solver {
     }
 
     // PREPARE METHOD DECLARATIONS
-    this.basesMap = new Map();
     for (const cdecl of file.statements) {
       if (cdecl instanceof ast.Class) {
         const classSymbol = this.scope.get(cdecl.identifier.name);
@@ -79,7 +77,7 @@ export class Solver {
               `Expected Class but got ${baseValueType}`));
           }
         }
-        this.basesMap.set(cdecl.identifier.name, baseValueTypes);
+        classSymbol.bases = baseValueTypes;
         classSymbol.staticMembers = new Map();
         for (const staticMethod of cdecl.staticMethods) {
           const staticMethodSymbol = this.recordSymbolDefinition(
@@ -1023,10 +1021,7 @@ class StatementVisitor extends ast.StatementVisitor<void> {
     if (!classSymbol) {
       throw new Error(`Assertion Error: class symbol not found (${s.identifier.name})`);
     }
-    if (!this.solver.basesMap) {
-      throw new Error(`Assertion Error: baseMap is missing`);
-    }
-    const baseValueTypes = this.solver.basesMap.get(s.identifier.name);
+    const baseValueTypes = classSymbol.bases;
     if (!baseValueTypes) {
       throw new Error(`Assertion Error: baseValueTypes not found`);
     }

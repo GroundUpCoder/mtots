@@ -38,6 +38,9 @@ export class MSymbol {
    */
   functionSignature: type.FunctionSignature | null;
 
+  /** If this MSymbol is a Class, bases contains the list of base classes */
+  bases: type.Class[] | null;
+
   /**
    * The usage that also corresponds to the definition of this MSymbol.
    * Some builtin symbols will not have a 'definition' to go to.
@@ -60,6 +63,7 @@ export class MSymbol {
     this.members = members || new Map();
     this.staticMembers = null;
     this.functionSignature = null;
+    this.bases = null;
     this.definition = definitionLocation ? new MSymbolUsage(definitionLocation, this) : null;
   }
 
