@@ -19,6 +19,7 @@ export class Solver {
   private readonly typeVisitor: TypeVisitor;
   readonly statementVisitor: StatementVisitor;
   basesMap: Map<string, type.Class[]> | null = null
+  readonly usageMap: Map<MLocation, number> = new Map();
 
   constructor(
       scope: MScope,
@@ -144,9 +145,14 @@ export class Solver {
       this.scope.set(symbol);
     }
     if (symbol.definition) {
-      this.symbolUsages.push(symbol.definition);
+      this.addSymbolUsage(symbol.definition);
     }
     return symbol;
+  }
+
+  private addSymbolUsage(usage: MSymbolUsage) {
+    this.usageMap.set(usage.location, this.symbolUsages.length);
+    this.symbolUsages.push(usage);
   }
 
   recordSymbolUsage(
@@ -154,7 +160,19 @@ export class Solver {
       symbol: MSymbol,
       bindings: Map<string, MType | null> | null = null) {
     const usage = new MSymbolUsage(identifier.location, symbol, bindings);
-    this.symbolUsages.push(usage);
+    this.addSymbolUsage(usage);
+  }
+
+  replaceOldSymbolUsage(
+      identifier: ast.Identifier,
+      symbol: MSymbol,
+      bindings: Map<string, MType | null> | null = null) {
+    const usage = new MSymbolUsage(identifier.location, symbol, bindings);
+    const oldUsageIndex = this.usageMap.get(usage.location);
+    if (oldUsageIndex === undefined) {
+      throw new Error(`replaceOldSymbolUsage: No symbol at given location`);
+    }
+    this.symbolUsages[oldUsageIndex] = usage;
   }
 }
 
@@ -755,7 +773,7 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
     const result = this.handleCall(
       e.location, funcType, funcSymbol, e.args, e.argLocations, bindingsContainer);
     if (funcIdentifier && funcSymbol && bindingsContainer.length === 1) {
-      this.solver.recordSymbolUsage(funcIdentifier, funcSymbol, bindingsContainer[0]);
+      this.solver.replaceOldSymbolUsage(funcIdentifier, funcSymbol, bindingsContainer[0]);
     }
     return result;
   }
