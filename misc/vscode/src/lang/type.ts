@@ -12,7 +12,7 @@ export abstract class MType {
   }
 
   isAssignableTo(other: MType): boolean {
-    if (this === other) {
+    if (this === other || other === Any) {
       return true;
     }
     if (!(this instanceof Optional) &&
