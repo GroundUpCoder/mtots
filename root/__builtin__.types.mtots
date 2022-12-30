@@ -5,7 +5,7 @@ final NAN Number = raise 0
 final INFINITY Number = raise 0
 
 
-def len(iterable) Int:
+def len(collection) Int:
   "Returns the number of elements in a collection"
 
 
@@ -13,12 +13,16 @@ def isinstance(value Any, klass Class) Bool:
   "Checks whether the value is an instance of klass"
 
 
-def sorted(iterable, key Any = nil) List:
+def sorted[T, K](iterable Iterable[T], key Function[T, K]? = nil) List[T]:
   "Sorts all the items in the iterable and returns them as a list"
 
 
-def tuple[T](list List[T]) Tuple[T]:
+def tuple[T](iterable Iterable[T]) Tuple[T]:
   "Converts a List to a Tuple"
+
+
+def list[T](iterable Iterable[T]) List[T]:
+  "Converts any iterable into a list"
 
 
 def exit() Never:
@@ -42,7 +46,7 @@ def ord(ch String) Int:
   """
 
 
-def range(start Int, end Int=0, step Int=1) iterate[Int]:
+def range(start Int, end Int=0, step Int=1) Iteration[Int]:
   "Iterates over the numbers from start (inclusive) to end (exclusive)"
 
 

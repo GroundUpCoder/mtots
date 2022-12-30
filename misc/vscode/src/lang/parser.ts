@@ -165,14 +165,14 @@ export class MParser {
       const qmarkLocation = this.expect('?').location;
       location = location.merge(qmarkLocation);
       te = new ast.TypeExpression(
-        location, null, new ast.Identifier(qmarkLocation, 'optional'), [te]);
+        location, null, new ast.Identifier(qmarkLocation, 'Optional'), [te]);
     }
     if (this.at('|')) {
       const pipeLocation = this.expect('|').location;
       const rhs = this.parseTypeExpression();
       location = location.merge(rhs.location);
       te = new ast.TypeExpression(
-        location, null, new ast.Identifier(pipeLocation, 'union'), [te, rhs]);
+        location, null, new ast.Identifier(pipeLocation, 'Union'), [te, rhs]);
     }
     return te;
   }

@@ -56,9 +56,8 @@ export abstract class Expression extends Ast {
  * in some form.
  *
  * Some syntactic sugar:
- *   SomeType?  => optional[SomeType]
- *   A.B        => member[A, B]
- *   A | B | C  => union[A, union[B, C]]
+ *   SomeType?  => Optional[SomeType]
+ *   A | B | C  => Union[A, Union[B, C]]
  *
  */
 export class TypeExpression extends Ast {

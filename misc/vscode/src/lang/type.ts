@@ -11,8 +11,15 @@ export abstract class MType {
     this.id = MType.nextID++;
   }
 
+  isAssignableTo(other: MType): boolean {
+    if (!(this instanceof Optional) && other instanceof Optional) {
+      return this.isAssignableTo(other.itemType);
+    }
+    return this._isAssignableTo(other);
+  }
+
   /** i.e. is `this` a subtype of `type` */
-  abstract isAssignableTo(other: MType): boolean;
+  protected abstract _isAssignableTo(other: MType): boolean;
 
   /**
    * i.e. given two types, what is the most specific base type
@@ -41,7 +48,7 @@ export abstract class MType {
     return self._closestCommonType(other);
   }
 
-  abstract _closestCommonType(other: MType): MType;
+  protected abstract _closestCommonType(other: MType): MType;
 
   getFieldSymbol(fieldName: string): MSymbol | null {
     return null;
@@ -87,7 +94,7 @@ class AnyType extends MType {
   toString() {
     return 'Any';
   }
-  isAssignableTo(other: MType): boolean {
+  _isAssignableTo(other: MType): boolean {
     return this === other;
   }
   _closestCommonType(other: MType): MType {
@@ -108,7 +115,7 @@ class NeverType extends MType {
   toString() {
     return 'Never';
   }
-  isAssignableTo(other: MType): boolean {
+  _isAssignableTo(other: MType): boolean {
     return true;
   }
   _closestCommonType(other: MType): MType {
@@ -137,6 +144,9 @@ export class BuiltinPrimitive extends MType {
   static UntypedTuple = new BuiltinPrimitive('Tuple', Any);
   static UntypedDict = new BuiltinPrimitive('Dict', Any);
   static UntypedFrozenDict = new BuiltinPrimitive('Dict', Any);
+  static UntypedOptional = new BuiltinPrimitive('Optional', Any);
+  static UntypedIterable = new BuiltinPrimitive('Iterable', Any);
+  static UntypedIterate = new BuiltinPrimitive('Iteration', Any);
   static UntypedFunction = new BuiltinPrimitive('Function', Any);
   static UntypedClass = new BuiltinPrimitive('Class', Any);
 
@@ -146,7 +156,7 @@ export class BuiltinPrimitive extends MType {
     this.name = name;
   }
 
-  isAssignableTo(other: MType): boolean {
+  _isAssignableTo(other: MType): boolean {
     if (this === Nil && other instanceof Optional) {
       return true;
     }
@@ -200,6 +210,9 @@ export const UntypedList = BuiltinPrimitive.UntypedList;
 export const UntypedTuple = BuiltinPrimitive.UntypedTuple;
 export const UntypedDict = BuiltinPrimitive.UntypedDict;
 export const UntypedFrozenDict = BuiltinPrimitive.UntypedFrozenDict;
+export const UntypedOptional = BuiltinPrimitive.UntypedOptional;
+export const UntypedIterable = BuiltinPrimitive.UntypedIterable;
+export const UntypedIterate = BuiltinPrimitive.UntypedIterate;
 export const UntypedFunction = BuiltinPrimitive.UntypedFunction;
 export const UntypedClass = BuiltinPrimitive.UntypedClass;
 
@@ -224,8 +237,14 @@ export class List extends MType {
     this.methodMap = makeListMethodMap(this);
   }
 
-  isAssignableTo(other: MType): boolean {
-    return this === other || UntypedList.isAssignableTo(other);
+  _isAssignableTo(other: MType): boolean {
+    if (this === other) {
+      return true;
+    }
+    if (other instanceof Iterable) {
+      return this.itemType.isAssignableTo(other.itemType);
+    }
+    return UntypedList.isAssignableTo(other);
   }
 
   _closestCommonType(other: MType): MType {
@@ -270,8 +289,14 @@ export class Tuple extends MType {
     this.methodMap = makeTupleMethodMap(this);
   }
 
-  isAssignableTo(other: MType): boolean {
-    return this === other || UntypedTuple.isAssignableTo(other);
+  _isAssignableTo(other: MType): boolean {
+    if (this === other) {
+      return true;
+    }
+    if (other instanceof Iterable) {
+      return this.itemType.isAssignableTo(other.itemType);
+    }
+    return UntypedTuple.isAssignableTo(other);
   }
 
   _closestCommonType(other: MType): MType {
@@ -327,8 +352,14 @@ export class Dict extends MType {
     }
   }
 
-  isAssignableTo(other: MType): boolean {
-    return this === other || UntypedDict.isAssignableTo(other);
+  _isAssignableTo(other: MType): boolean {
+    if (this === other) {
+      return true;
+    }
+    if (other instanceof Iterable) {
+      return this.keyType.isAssignableTo(other.itemType);
+    }
+    return UntypedDict.isAssignableTo(other);
   }
 
   _closestCommonType(other: MType): MType {
@@ -388,8 +419,14 @@ export class FrozenDict extends MType {
     }
   }
 
-  isAssignableTo(other: MType): boolean {
-    return this === other || UntypedFrozenDict.isAssignableTo(other);
+  _isAssignableTo(other: MType): boolean {
+    if (this === other) {
+      return true;
+    }
+    if (other instanceof Iterable) {
+      return this.keyType.isAssignableTo(other.itemType);
+    }
+    return UntypedFrozenDict.isAssignableTo(other);
   }
 
   _closestCommonType(other: MType): MType {
@@ -435,7 +472,7 @@ export class KeyedFrozenDict extends MType {
       keySymbols.filter(s => /^[A-Za-z_][A-Za-z0-9_]*$/.test(s.name)).map(s => [s.name, s]));
   }
 
-  isAssignableTo(other: MType): boolean {
+  _isAssignableTo(other: MType): boolean {
     return other === this || this.baseType.isAssignableTo(other);
   }
 
@@ -485,12 +522,12 @@ export class TypeParameter extends MType {
     this.baseType = baseType;
   }
 
-  isAssignableTo(other: MType): boolean {
-    return other === this;
+  _isAssignableTo(other: MType): boolean {
+    return other === this || this.baseType.isAssignableTo(other);
   }
 
   _closestCommonType(other: MType): MType {
-    return this.baseType;
+    return this.baseType.closestCommonType(other);
   }
 
   toString(): string {
@@ -508,8 +545,8 @@ export class Optional extends MType {
     if (itemType instanceof Optional) {
       return itemType;
     }
-    if (itemType instanceof Iterate) {
-      return Iterate.of(Optional.of(itemType.itemType));
+    if (itemType instanceof Iteration) {
+      return Iteration.of(Optional.of(itemType.itemType));
     }
     const cached = this.map.get(itemType);
     if (cached) {
@@ -527,7 +564,7 @@ export class Optional extends MType {
   }
 
   /** The optional is truly covariant, unlike List or Dict */
-  isAssignableTo(other: MType): boolean {
+  _isAssignableTo(other: MType): boolean {
     return this === other || (
       other instanceof Optional && this.itemType.isAssignableTo(other.itemType)) ||
       Any.isAssignableTo(other);
@@ -558,6 +595,64 @@ export class Optional extends MType {
   }
 }
 
+/**
+ * Union type between the given item type and nil
+ */
+export class Iterable extends MType {
+  private static readonly map: Map<MType, Iterable> = new Map();
+
+  static of(itemType: MType): MType {
+    if (itemType instanceof Iterable) {
+      return itemType;
+    }
+    const cached = this.map.get(itemType);
+    if (cached) {
+      return cached;
+    }
+    const optional = new Iterable(itemType);
+    this.map.set(itemType, optional);
+    return optional;
+  }
+
+  readonly itemType: MType;
+  private constructor(itemType: MType) {
+    super();
+    this.itemType = itemType;
+  }
+
+  /** The optional is truly covariant, unlike List or Dict */
+  _isAssignableTo(other: MType): boolean {
+    return this === other || (
+      other instanceof Iterable && this.itemType.isAssignableTo(other.itemType)) ||
+      Any.isAssignableTo(other);
+  }
+
+  filterTruthy(): MType {
+    return this.itemType;
+  }
+
+  _closestCommonType(other: MType): MType {
+    if (this === other) {
+      return this;
+    }
+    if (other === Nil) {
+      return this;
+    }
+    if (other instanceof Iterable) {
+      return Iterable.of(this.itemType.closestCommonType(other.itemType));
+    }
+    return Any;
+  }
+
+  getForInItemType(): MType | null {
+    return this.itemType;
+  }
+
+  toString() {
+    return `Iterable[${this.itemType}]`;
+  }
+}
+
 export class StopIterationType extends MType {
   static Instance = new StopIterationType();
 
@@ -565,11 +660,11 @@ export class StopIterationType extends MType {
     super();
   }
 
-  isAssignableTo(other: MType): boolean {
+  _isAssignableTo(other: MType): boolean {
     if (this === other) {
       return true;
     }
-    if (other instanceof Iterate) {
+    if (other instanceof Iteration) {
       return true;
     }
     return Any.isAssignableTo(other);
@@ -579,7 +674,7 @@ export class StopIterationType extends MType {
     if (this === other) {
       return this;
     }
-    if (other instanceof Iterate) {
+    if (other instanceof Iteration) {
       return other;
     }
     return Any;
@@ -599,18 +694,18 @@ export const StopIteration = StopIterationType.Instance;
 /**
  * Union type between the given item type and StopIteration
  */
-export class Iterate extends MType {
-  private static readonly map: Map<MType, Iterate> = new Map();
+export class Iteration extends MType {
+  private static readonly map: Map<MType, Iteration> = new Map();
 
   static of(itemType: MType) {
-    if (itemType instanceof Iterate) {
+    if (itemType instanceof Iteration) {
       return itemType;
     }
     const cached = this.map.get(itemType);
     if (cached) {
       return cached;
     }
-    const optional = new Iterate(itemType);
+    const optional = new Iteration(itemType);
     this.map.set(itemType, optional);
     return optional;
   }
@@ -621,9 +716,9 @@ export class Iterate extends MType {
     this.itemType = itemType;
   }
 
-  isAssignableTo(other: MType): boolean {
+  _isAssignableTo(other: MType): boolean {
     return this === other || (
-      other instanceof Iterate && this.itemType.isAssignableTo(other.itemType)) ||
+      other instanceof Iteration && this.itemType.isAssignableTo(other.itemType)) ||
       Any.isAssignableTo(other);
   }
 
@@ -631,8 +726,8 @@ export class Iterate extends MType {
     if (this === other || other === StopIteration) {
       return this;
     }
-    if (other instanceof Iterate) {
-      return Iterate.of(this.itemType.closestCommonType(other.itemType));
+    if (other instanceof Iteration) {
+      return Iteration.of(this.itemType.closestCommonType(other.itemType));
     }
     return Any;
   }
@@ -646,7 +741,7 @@ export class Iterate extends MType {
   }
 
   toString(): string {
-    return `iterate[${this.itemType}]`;
+    return `Iteration[${this.itemType}]`;
   }
 }
 
@@ -674,7 +769,7 @@ export class Function extends MType {
     this.returnType = returnType;
   }
 
-  isAssignableTo(other: MType): boolean {
+  _isAssignableTo(other: MType): boolean {
     if (this === other) {
       return true;
     }
@@ -716,7 +811,7 @@ export class Class extends MType {
     this.symbol = symbol;
   }
 
-  isAssignableTo(other: MType): boolean {
+  _isAssignableTo(other: MType): boolean {
     if (this === other) {
       return true;
     }
@@ -775,7 +870,7 @@ export class Instance extends MType {
     this.symbol = symbol;
   }
 
-  isAssignableTo(other: MType): boolean {
+  _isAssignableTo(other: MType): boolean {
     // TODO: consider base classes
     return this === other || other === Optional.of(this) || Any.isAssignableTo(other);
   }
@@ -793,6 +888,15 @@ export class Instance extends MType {
   getMethodSymbol(methodName: string): MSymbol | null {
     // TODO: consider base classes
     return this.symbol.members.get(methodName) || super.getMethodSymbol(methodName);
+  }
+
+  getForInItemType(): MType | null {
+    const iterMethodSymbol = this.symbol.members.get('__iter__');
+    const signature = iterMethodSymbol?.functionSignature || null;
+    if (!signature || signature.typeParameters.length > 0 || signature.parameters.length > 0) {
+      return null;
+    }
+    return signature.returnType.getForInItemType();
   }
 
   getCompletionScope(): MScope | null {
@@ -825,7 +929,7 @@ export class Module extends MType {
     this.path = path;
   }
 
-  isAssignableTo(other: MType): boolean {
+  _isAssignableTo(other: MType): boolean {
     return this === other;
   }
 
@@ -968,8 +1072,20 @@ export const FrozenDictSymbol = new MSymbol('FrozenDict', null, true);
 FrozenDictSymbol.typeType = UntypedFrozenDict;
 FrozenDictSymbol.valueType = Class.of(FrozenDictSymbol);
 
+export const OptionalSymbol = new MSymbol('Optional', null, true);
+OptionalSymbol.typeType = UntypedOptional;
+OptionalSymbol.valueType = Class.of(OptionalSymbol);
+
+export const IterableSymbol = new MSymbol('Iterable', null, true);
+IterableSymbol.typeType = UntypedIterable;
+IterableSymbol.valueType = Class.of(IterableSymbol);
+
+export const IterateSymbol = new MSymbol('Iteration', null, true);
+IterateSymbol.typeType = UntypedIterate;
+IterateSymbol.valueType = Class.of(IterateSymbol);
+
 export const FunctionSymbol = new MSymbol('Function', null, true);
-FunctionSymbol.typeType = String;
+FunctionSymbol.typeType = UntypedFunction;
 FunctionSymbol.valueType = Class.of(FunctionSymbol);
 
 export const ClassSymbol = new MSymbol('Class', null, true);
@@ -989,6 +1105,9 @@ export const TypeSymbols = [
   TupleSymbol,
   DictSymbol,
   FrozenDictSymbol,
+  OptionalSymbol,
+  IterableSymbol,
+  IterateSymbol,
   FunctionSymbol,
   ClassSymbol,
 ];
@@ -1027,7 +1146,7 @@ export function makeListMethodMap(self: List): Map<string, MSymbol> {
     mkmethod('__notcontains__', Function.of([self.itemType], 0, Bool)),
     mkmethod('append', Function.of([self.itemType], 0, Nil)),
     mkmethod('pop', Function.of([], 0, self.itemType)),
-    mkmethod('__iter__', Function.of([], 0, Function.of([], 0, Iterate.of(self.itemType)))),
+    mkmethod('__iter__', Function.of([], 0, Function.of([], 0, Iteration.of(self.itemType)))),
   ]);
 }
 
@@ -1037,7 +1156,7 @@ export function makeTupleMethodMap(self: Tuple): Map<string, MSymbol> {
     mkmethod('__getitem__', Function.of([Number], 0, self.itemType)),
     mkmethod('__contains__', Function.of([self.itemType], 0, Bool)),
     mkmethod('__notcontains__', Function.of([self.itemType], 0, Bool)),
-    mkmethod('__iter__', Function.of([], 0, Function.of([], 0, Iterate.of(self.itemType)))),
+    mkmethod('__iter__', Function.of([], 0, Function.of([], 0, Iteration.of(self.itemType)))),
   ]);
 }
 
@@ -1047,7 +1166,7 @@ export function makeDictMethodMap(self: Dict): Map<string, MSymbol> {
     mkmethod('__setitem__', Function.of([self.keyType, self.valueType], 0, Nil)),
     mkmethod('__contains__', Function.of([self.keyType], 0, Bool)),
     mkmethod('__notcontains__', Function.of([self.keyType], 0, Bool)),
-    mkmethod('__iter__', Function.of([], 0, Function.of([], 0, Iterate.of(self.keyType)))),
+    mkmethod('__iter__', Function.of([], 0, Function.of([], 0, Iteration.of(self.keyType)))),
     mkmethod('delete', Function.of([self.keyType], 0, Bool)),
     mkmethod('rget', Function.of([self.valueType, self.keyType], 1, self.keyType)),
     mkmethod('freeze', Function.of([], 0, FrozenDict.of(self.keyType, self.valueType))),
@@ -1059,7 +1178,7 @@ export function makeFrozenDictMethodMap(self: FrozenDict): Map<string, MSymbol> 
     mkmethod('__getitem__', Function.of([self.keyType], 0, self.valueType)),
     mkmethod('__contains__', Function.of([self.keyType], 0, Bool)),
     mkmethod('__notcontains__', Function.of([self.keyType], 0, Bool)),
-    mkmethod('__iter__', Function.of([], 0, Function.of([], 0, Iterate.of(self.keyType)))),
+    mkmethod('__iter__', Function.of([], 0, Function.of([], 0, Iteration.of(self.keyType)))),
     mkmethod('rget', Function.of([self.valueType, self.keyType], 1, self.keyType)),
   ]);
 }

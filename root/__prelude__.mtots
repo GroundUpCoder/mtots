@@ -14,7 +14,7 @@ def list(iterable):
 
 
 def tuple(iterable):
-  if iterable in Tuple:
+  if isinstance(iterable, Tuple):
     return iterable
   var items = []
   for item in iterable:

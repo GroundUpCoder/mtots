@@ -274,13 +274,36 @@ class TypeVisitor {
         return type.FrozenDict.of(
           this.solveTypeExpression(te.args[0]),
           this.solveTypeExpression(te.args[1]));
-      case 'optional':
+      case 'Optional':
+        const optionalSymbol = scope.get('Optional');
+        if (optionalSymbol) {
+          const typeUsage = new MSymbolUsage(te.baseIdentifier.location, optionalSymbol);
+          this.symbolUsages.push(typeUsage);
+        }
         this.checkTypeArgc(te, 1);
         return type.Optional.of(this.solveTypeExpression(te.args[0]));
-      case 'iterate':
+      case 'Iteration':
+        const iterationSymbol = scope.get('Iteration');
+        if (iterationSymbol) {
+          const typeUsage = new MSymbolUsage(te.baseIdentifier.location, iterationSymbol);
+          this.symbolUsages.push(typeUsage);
+        }
         this.checkTypeArgc(te, 1);
-        return type.Iterate.of(this.solveTypeExpression(te.args[0]));
+        return type.Iteration.of(this.solveTypeExpression(te.args[0]));
+      case 'Iterable':
+        const iterableSymbol = scope.get('Iterable');
+        if (iterableSymbol) {
+          const typeUsage = new MSymbolUsage(te.baseIdentifier.location, iterableSymbol);
+          this.symbolUsages.push(typeUsage);
+        }
+        this.checkTypeArgc(te, 1);
+        return type.Iterable.of(this.solveTypeExpression(te.args[0]));
       case 'Function':
+        const functionSymbol = scope.get('Function');
+        if (functionSymbol) {
+          const typeUsage = new MSymbolUsage(te.baseIdentifier.location, functionSymbol);
+          this.symbolUsages.push(typeUsage);
+        }
         if (te.args.length === 0) {
           return type.UntypedFunction;
         }
@@ -349,8 +372,30 @@ class TypeBinder {
     }
     if (parameterType === type.Any ||
         parameterType === type.Never ||
-        parameterType instanceof type.BuiltinPrimitive) {
+        parameterType instanceof type.BuiltinPrimitive ||
+        parameterType instanceof type.Class ||
+        parameterType instanceof type.Instance ||
+        parameterType instanceof type.Module) {
       return parameterType;
+    }
+    if (parameterType instanceof type.Optional) {
+      if (actualType instanceof type.Optional) {
+        return type.Optional.of(this.bind(parameterType.itemType, actualType.itemType));
+      }
+      return type.Optional.of(this.bind(parameterType.itemType, actualType));
+    }
+    if (parameterType instanceof type.Iteration) {
+      if (actualType instanceof type.Iteration) {
+        return type.Iteration.of(this.bind(parameterType.itemType, actualType.itemType));
+      }
+      return type.Iteration.of(this.bind(parameterType.itemType, actualType));
+    }
+    if (parameterType instanceof type.Iterable) {
+      const itemType = actualType.getForInItemType();
+      if (itemType) {
+        return type.Iterable.of(this.bind(parameterType.itemType, itemType));
+      }
+      return type.Iterable.of(this.bind(parameterType.itemType, type.Any));
     }
     if (parameterType instanceof type.List) {
       if (actualType instanceof type.List) {
@@ -363,6 +408,39 @@ class TypeBinder {
         return type.Tuple.of(this.bind(parameterType.itemType, actualType.itemType));
       }
       return type.Tuple.of(this.bind(parameterType.itemType, type.Any));
+    }
+    if (parameterType instanceof type.Dict) {
+      if (actualType instanceof type.Dict) {
+        return type.Dict.of(
+          this.bind(parameterType.keyType, actualType.keyType),
+          this.bind(parameterType.valueType, actualType.valueType));
+      }
+      return type.Dict.of(
+        this.bind(parameterType.keyType, type.Any),
+        this.bind(parameterType.valueType, type.Any));
+    }
+    if (parameterType instanceof type.FrozenDict) {
+      if (actualType instanceof type.FrozenDict) {
+        return type.FrozenDict.of(
+          this.bind(parameterType.keyType, actualType.keyType),
+          this.bind(parameterType.valueType, actualType.valueType));
+      }
+      return type.FrozenDict.of(
+        this.bind(parameterType.keyType, type.Any),
+        this.bind(parameterType.valueType, type.Any));
+    }
+    if (parameterType instanceof type.Function) {
+      if (actualType instanceof type.Function) {
+        return type.Function.of(
+          parameterType.parameters.map((p, i) => this.bind(
+            p, i < actualType.parameters.length ? actualType.parameters[i] : type.Any)),
+          parameterType.optionalCount,
+          this.bind(parameterType.returnType, actualType.returnType));
+      }
+      return type.Function.of(
+        parameterType.parameters.map(p => this.bind(p, type.Any)),
+        parameterType.optionalCount,
+        this.bind(parameterType.returnType, type.Any));
     }
     // TODO: Additional types
     return type.Any;
@@ -599,7 +677,9 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
         signature.optionalParameters.length,
         returnType,
         bindings);
-      return new TypeBinder(bindings, false).bind(returnType, type.Any);
+      return bindings.size > 0 ?
+        new TypeBinder(bindings, false).bind(returnType, type.Any) :
+        returnType;
     }
     if (funcType === type.Any) {
       for (const arg of args) {
