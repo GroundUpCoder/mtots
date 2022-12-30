@@ -912,7 +912,7 @@ class AudioDevice:
     """
 
 
-def openAudioDevice(device optional[String]) AudioDevice:
+def openAudioDevice(device Optional[String]) AudioDevice:
   """
   Due to the way SDL audio works with mtots, much of SDL's documentation
   about the functions arguments are not really relevant.
