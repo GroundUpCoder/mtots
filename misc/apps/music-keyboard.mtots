@@ -16,7 +16,7 @@ sdl.init(sdl.INIT_AUDIO | sdl.INIT_VIDEO)
 # Initialize Audio
 ################################################################
 # we can't initialize this right away on web
-var adev optional[sdl.AudioDevice] = nil
+var adev Optional[sdl.AudioDevice] = nil
 final keyToTrackMap Dict[Int, Int] = {}
 final trackToKeyMap List[Int?] = [nil as Int?] * sdl.AUDIO_TRACK_COUNT
 final keyToNoteID = final{
