@@ -149,8 +149,11 @@ export class Solver {
     return symbol;
   }
 
-  recordSymbolUsage(identifier: ast.Identifier, symbol: MSymbol) {
-    const usage = new MSymbolUsage(identifier.location, symbol);
+  recordSymbolUsage(
+      identifier: ast.Identifier,
+      symbol: MSymbol,
+      bindings: Map<string, MType | null> | null = null) {
+    const usage = new MSymbolUsage(identifier.location, symbol, bindings);
     this.symbolUsages.push(usage);
   }
 }
@@ -340,7 +343,7 @@ class TypeVisitor {
   }
 }
 
-class TypeBinder {
+export class TypeBinder {
   readonly bindings: Map<string, MType | null>
   readonly allowNewBindings: boolean
   constructor(bindings: Map<string, MType | null>, allowNewBindings: boolean) {
@@ -360,7 +363,6 @@ class TypeBinder {
       } else if (binding === null) {
         if (this.allowNewBindings) {
           this.bindings.set(parameterType.symbol.name, actualType);
-          console.log(`binding ${parameterType.symbol.name} => ${actualType}`);
           return actualType;
         } else {
           // New bindings are not allowed, but we found a variable with no
@@ -657,11 +659,15 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
       funcType: MType,
       funcSymbol: MSymbol | null,
       args: ast.Expression[],
-      argLocations: MLocation[] | null): type.MType {
+      argLocations: MLocation[] | null,
+      bindingsContainer: Map<string, MType | null>[] | null = null): type.MType {
     const signature = funcSymbol?.functionSignature || null;
     if (signature) {
       const bindings = new Map<string, MType | null>(
         signature.typeParameters.map(tp => [tp.symbol.name, null]));
+      if (bindingsContainer) {
+        bindingsContainer.push(bindings);
+      }
       const allParameters = signature.parameters.concat(signature.optionalParameters);
       const allParameterNames = allParameters.map(p => p[0]);
       const allParameterTypes = allParameters.map(p => p[1]);
@@ -737,13 +743,21 @@ class ExpressionVisitor extends ast.ExpressionVisitor<MType> {
   visitFunctionCall(e: ast.FunctionCall): type.MType {
     const funcType = this.solveExpression(e.func);
     let funcSymbol: MSymbol | null = null;
+    let funcIdentifier: ast.Identifier | null = null;
     if (e.func instanceof ast.GetVariable) {
-      const foundSymbol = this.scope.get(e.func.identifier.name);
+      funcIdentifier = e.func.identifier;
+      const foundSymbol = this.scope.get(funcIdentifier.name);
       if (foundSymbol) {
         funcSymbol = foundSymbol;
       }
     }
-    return this.handleCall(e.location, funcType, funcSymbol, e.args, e.argLocations);
+    const bindingsContainer: Map<string, MType | null>[] = [];
+    const result = this.handleCall(
+      e.location, funcType, funcSymbol, e.args, e.argLocations, bindingsContainer);
+    if (funcIdentifier && funcSymbol && bindingsContainer.length === 1) {
+      this.solver.recordSymbolUsage(funcIdentifier, funcSymbol, bindingsContainer[0]);
+    }
+    return result;
   }
 
   visitMethodCall(e: ast.MethodCall): type.MType {

@@ -25,12 +25,14 @@ export class MModule {
   }
 
   findUsage(position: MPosition): MSymbolUsage | null {
+    let foundUsage = null;
     for (const usage of this.symbolUsages) {
       if (usage.location.range.contains(position)) {
-        return usage;
+        // We want the last added one
+        foundUsage = usage;
       }
     }
-    return null;
+    return foundUsage;
   }
 
   findCompletionPoint(position: MPosition): CompletionPoint | null {

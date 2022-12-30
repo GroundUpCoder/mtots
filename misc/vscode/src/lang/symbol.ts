@@ -75,8 +75,13 @@ export class MSymbol {
 export class MSymbolUsage {
   readonly location: MLocation;
   readonly symbol: MSymbol;
-  constructor(location: MLocation, symbol: MSymbol) {
+  readonly bindings: Map<string, type.MType | null> | null
+  constructor(
+      location: MLocation,
+      symbol: MSymbol,
+      bindings: Map<string, type.MType | null> | null = null) {
     this.location = location;
     this.symbol = symbol;
+    this.bindings = bindings;
   }
 }

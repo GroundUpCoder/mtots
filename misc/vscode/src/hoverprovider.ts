@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as type from './lang/type';
 import * as converter from './converter';
 import { MContext } from './state';
+import { TypeBinder } from './lang/solver';
 
 function formatDocString(docString: string): string {
   if (docString.startsWith('\n    ')) {
@@ -28,6 +29,17 @@ export const hoverProvider: vscode.HoverProvider = {
         const signatureMarkdownString = new vscode.MarkdownString();
         signatureMarkdownString.appendCodeblock(signature.format(symbol.name));
         markedStrings.push(signatureMarkdownString);
+        if (usage.bindings) {
+          const binder = new TypeBinder(usage.bindings, false);
+          const boundSignature = new type.FunctionSignature(
+            [],
+            signature.parameters.map(p => [p[0], binder.bind(p[1], type.Any)]),
+            signature.optionalParameters.map(p => [p[0], binder.bind(p[1], type.Any)]),
+            binder.bind(signature.returnType, type.Any));
+            const signatureMarkdownString = new vscode.MarkdownString();
+            signatureMarkdownString.appendCodeblock(boundSignature.format(symbol.name));
+            markedStrings.push(signatureMarkdownString);
+        }
       } else {
         const valueType = symbol.valueType
         if (valueType) {
