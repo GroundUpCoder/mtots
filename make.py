@@ -89,7 +89,7 @@ def buildDesktop():
         ] + getSources())
     elif sys.platform.startswith('darwin'):
         # MacOS
-        run([
+        command = [
             'clang',
             "-std=c89",
             "-Wall", "-Werror", "-Wpedantic",
@@ -105,16 +105,22 @@ def buildDesktop():
             "-framework", "IOKit",
             "-framework", "CoreHaptics",
             "-framework", "Metal",
-            "-DMTOTS_ENABLE_SDL=1",
             "-Isrc",
             "-Ilib/sdl/include",
             "-Ilib/angle/include",
-            "lib/sdl/targets/macos/libSDL2.a",
             "-fsanitize=address",
             "-O0", "-g",
             "-flto",
             "-o", join(mtotsDir, "out", "desktop", "mtots"),
-        ] + getSources())
+        ]
+        sdl2Path = f"{mtotsDir}/../minibrew/pkgs/lib/libSDL2.a"
+        if os.path.exists(sdl2Path):
+            command.extend([
+                "-DMTOTS_ENABLE_SDL=1",
+                sdl2Path,
+            ])
+        command.extend(getSources())
+        run(command)
     elif sys.platform.startswith('linux'):
         # Linux
         raise "TODO"
