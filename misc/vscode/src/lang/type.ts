@@ -12,8 +12,10 @@ export abstract class MType {
   }
 
   isAssignableTo(other: MType): boolean {
-    if (!(this instanceof Optional) && other instanceof Optional) {
-      return this.isAssignableTo(other.itemType);
+    if (!(this instanceof Optional) &&
+        other instanceof Optional &&
+        this.isAssignableTo(other.itemType)) {
+      return true;
     }
     return this._isAssignableTo(other);
   }
@@ -157,11 +159,8 @@ export class BuiltinPrimitive extends MType {
   }
 
   _isAssignableTo(other: MType): boolean {
-    if (this === Nil && other instanceof Optional) {
-      return true;
-    }
-    if (other instanceof Optional && this === other.itemType) {
-      return true;
+    if (other instanceof Optional) {
+      return this === Nil || this.isAssignableTo(other.itemType);
     }
     return this === other || this.parent.isAssignableTo(other);
   }
@@ -567,7 +566,7 @@ export class Optional extends MType {
   _isAssignableTo(other: MType): boolean {
     return this === other || (
       other instanceof Optional && this.itemType.isAssignableTo(other.itemType)) ||
-      Any.isAssignableTo(other);
+      UntypedOptional.isAssignableTo(other);
   }
 
   filterTruthy(): MType {

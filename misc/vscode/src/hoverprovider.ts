@@ -29,7 +29,7 @@ export const hoverProvider: vscode.HoverProvider = {
         const signatureMarkdownString = new vscode.MarkdownString();
         signatureMarkdownString.appendCodeblock(signature.format(symbol.name));
         markedStrings.push(signatureMarkdownString);
-        if (usage.bindings) {
+        if (usage.bindings && usage.bindings.size > 0) {
           const binder = new TypeBinder(usage.bindings, false);
           const boundSignature = new type.FunctionSignature(
             [],
