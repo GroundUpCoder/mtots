@@ -112,13 +112,11 @@ def buildDesktop():
             "-O0", "-g",
             "-flto",
             "-o", join(mtotsDir, "out", "desktop", "mtots"),
+
+            # SDL2
+            "-DMTOTS_ENABLE_SDL=1",
+            f"{mtotsDir}/../minibrew/pkgs/lib/libSDL2.a",
         ]
-        sdl2Path = f"{mtotsDir}/../minibrew/pkgs/lib/libSDL2.a"
-        if os.path.exists(sdl2Path):
-            command.extend([
-                "-DMTOTS_ENABLE_SDL=1",
-                sdl2Path,
-            ])
         command.extend(getSources())
         run(command)
     elif sys.platform.startswith('linux'):
