@@ -1,62 +1,78 @@
 r"""SDL Utilities
+Library for quickly creating programs with SDL
 """
 import sdl
 
 
-class App:
-  r"""Base class for Apps
-  Not strictly necessary, but will set required
-  field values to sensible defaults and
-  define nop implementations of required methods
+class Config:
   """
+  Init configurations for creating a new SDLU app
+  """
+  var title String
+  var screenWidth Int
+  var screenHeight Int
+  var sdlInitFlags Int
+  var fps Int
 
-  def __init__():
-    # to be set before 'init' is called
-    this.window = nil
-    this.renderer = nil
-
-    # configuration
-    this.title = 'app'
-    this.screenWidth = 640
-    this.screenHeight = 480
+  def __init__(title String = 'app', screenWidth Int = 640, screenHeight Int = 480) nil:
+    this.title = title
+    this.screenWidth = screenWidth
+    this.screenHeight = screenHeight
     this.sdlInitFlags = sdl.INIT_VIDEO|sdl.INIT_AUDIO
     this.fps = 60
 
-  def init():
+
+class App:
+  """Base class for applications.
+  """
+  final context Context
+
+  def __init__(context Context):
+    this.context = context
+
+  def update() nil:
     pass
 
-  def update():
+  def draw() nil:
     pass
 
-  def draw():
-    pass
-
-  def keyDown(event):
-    pass
+  def keyDown(event sdl.Event):
+    "Callback for keydown events"
 
 
-def runApp(app):
-  sdl.init(app.sdlInitFlags)
-  final window = sdl.createWindow(
-    app.title,
-    sdl.WINDOWPOS_CENTERED, sdl.WINDOWPOS_CENTERED,
-    app.screenWidth, app.screenHeight,
-    sdl.WINDOW_ALLOW_HIGHDPI)
-  final renderer = sdl.createRenderer(window, -1, 0)
+class Context:
+  r"""App Context
+  Contains common application resources like the Widnow and Renderer.
+  """
 
-  # 1 tick <-> 1 millisecond
-  final fps = app.fps
+  final config Config
+  final window sdl.Window
+  final renderer sdl.Renderer
+
+  def __init__(config Config):
+    this.config = config
+    this.window = sdl.createWindow(
+      config.title,
+      sdl.WINDOWPOS_CENTERED,
+      sdl.WINDOWPOS_CENTERED,
+      config.screenWidth,
+      config.screenHeight,
+      sdl.WINDOW_ALLOW_HIGHDPI)
+    this.renderer = sdl.createRenderer(this.window, -1, 0)
+
+
+def run(appFactory Function[Context, App], config Config? = nil):
+  final conf = config or Config()
+  final context = Context(conf)
+  final app = appFactory(context)
+  final fps = conf.fps
   final ticksPerFrame = (1 / fps) * 1000
-
-  app.window = window
-  app.renderer = renderer
-  app.init()
-
+  final window = context.window
+  final renderer = context.renderer
   final event = sdl.Event()
 
   while true:
     final startTicks = sdl.getTicks()
-
     while sdl.pollEvent(event):
       if event.type == sdl.QUIT:
         sdl.quit()
@@ -66,11 +82,10 @@ def runApp(app):
           pass # for now ignore repeats
         else:
           app.keyDown(event)
-
-    app.update()
-    app.draw()
-    renderer.present()
-    final endTicks = sdl.getTicks()
-    final elapsedTicks = endTicks - startTicks
-    if 0 < elapsedTicks and elapsedTicks < ticksPerFrame:
-      sdl.delay((ticksPerFrame - elapsedTicks) // 1)
+      app.update()
+      app.draw()
+      renderer.present()
+      final endTicks = sdl.getTicks()
+      final elapsedTicks = endTicks - startTicks
+      if 0 < elapsedTicks and elapsedTicks < ticksPerFrame:
+        sdl.delay((ticksPerFrame - elapsedTicks) // 1)

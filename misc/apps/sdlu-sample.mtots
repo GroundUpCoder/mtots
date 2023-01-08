@@ -1,0 +1,25 @@
+import sdlu
+import sdl
+
+
+final config = sdlu.Config()
+
+class App(sdlu.App):
+  ""
+
+  def draw() nil:
+    final W = this.context.config.screenWidth
+    final H = this.context.config.screenHeight
+    final r = this.context.renderer
+    r.setDrawColor(0, 50, 0, 0)
+    r.clear()
+    r.setDrawColor(50, 255, 50, 255)
+    r.fillRect(sdl.Rect(W // 2, H // 2, 100, 100))
+    r.setDrawColor(50, 50, 50, 255)
+    r.fillRect(sdl.Rect(W // 4, H // 2, 100, 100))
+
+  def keyDown(event sdl.Event) nil:
+    if event.type == sdl.KEYDOWN:
+      print('KEYDOWN %r' % [event.key])
+
+sdlu.run(App)
